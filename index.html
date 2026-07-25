@@ -423,6 +423,33 @@
       </div>
     </section>
 
+    <section id="gestor-override-panel" class="card" style="margin-bottom:32px;">
+      <button type="button" id="gestor-override-toggle" style="width:100%;background:none;border:none;padding:0;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:12px;text-align:left;color:var(--text);font:inherit;-webkit-appearance:none;appearance:none;">
+        <div class="section-title" style="margin:0;flex:1;">
+          <h2 style="color:var(--text);">Ajustar Gestor dos Técnicos</h2>
+          <span class="hint">Correção pontual — a fonte principal continua sendo a aba Líder</span>
+        </div>
+        <span id="gestor-override-arrow" style="color:var(--text-mute);font-size:13px;flex-shrink:0;">Expandir ▾</span>
+      </button>
+
+      <div id="gestor-override-body" style="display:none;margin-top:18px;">
+        <div id="gestor-override-alerta"></div>
+        <div class="field-wrap" style="margin-bottom:14px;max-width:360px;">
+          <input type="text" id="gestor-override-search" placeholder="Buscar técnico por nome...">
+        </div>
+        <div class="table-scroll">
+          <table class="tech-table" id="gestor-override-table">
+            <thead><tr><th style="text-align:left;">Técnico</th><th>Gestor atual</th><th>Ajustar para</th><th></th><th></th></tr></thead>
+            <tbody id="gestor-override-tbody"></tbody>
+          </table>
+        </div>
+        <div style="margin-top:18px;padding-top:16px;border-top:1px solid var(--border);">
+          <button type="button" class="btn-link" id="excluidos-toggle" style="margin:0;padding:0;">Ver técnicos excluídos (desligados) →</button>
+          <div id="excluidos-body" style="display:none;margin-top:12px;"></div>
+        </div>
+      </div>
+    </section>
+
     <section id="admin-access-panel" class="card" style="margin-bottom:32px;">
       <button type="button" id="access-panel-toggle" style="width:100%;background:none;border:none;padding:0;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:12px;text-align:left;color:var(--text);font:inherit;-webkit-appearance:none;appearance:none;">
         <div class="section-title" style="margin:0;flex:1;">
@@ -842,6 +869,64 @@ async function refreshManualAdjustmentsCache(){
   manualAdjustmentsCache = await getManualAdjustments();
 }
 
+/* ---- Ajuste pontual de gestor por técnico (camada extra sobre a aba Líder) ---- */
+let liderOverridesCache = {};
+async function getLiderOverrides(){
+  try{
+    await authReady;
+    const snap = await getDoc(doc(db, 'config', 'lider_overrides'));
+    return snap.exists() ? (snap.data().overrides || {}) : {};
+  }catch(e){
+    return {};
+  }
+}
+async function setLiderOverride(tecnicoSlug, gestorNome){
+  await authReady;
+  const current = await getLiderOverrides();
+  current[tecnicoSlug] = gestorNome;
+  await setDoc(doc(db, 'config', 'lider_overrides'), {overrides: current});
+  liderOverridesCache = current;
+}
+async function clearLiderOverride(tecnicoSlug){
+  await authReady;
+  const current = await getLiderOverrides();
+  delete current[tecnicoSlug];
+  await setDoc(doc(db, 'config', 'lider_overrides'), {overrides: current});
+  liderOverridesCache = current;
+}
+async function refreshLiderOverridesCache(){
+  liderOverridesCache = await getLiderOverrides();
+}
+
+/* ---- Técnicos excluídos (desligados) — somem de todo o painel, mesmo se ainda aparecerem no Consolidado ---- */
+let excludedTecnicosCache = {};
+async function getExcludedTecnicos(){
+  try{
+    await authReady;
+    const snap = await getDoc(doc(db, 'config', 'tecnicos_excluidos'));
+    return snap.exists() ? (snap.data().excluidos || {}) : {};
+  }catch(e){
+    return {};
+  }
+}
+async function excluirTecnico(slug, nomeDisplay){
+  await authReady;
+  const current = await getExcludedTecnicos();
+  current[slug] = { nome: nomeDisplay, excluidoEm: Date.now() };
+  await setDoc(doc(db, 'config', 'tecnicos_excluidos'), {excluidos: current});
+  excludedTecnicosCache = current;
+}
+async function restaurarTecnico(slug){
+  await authReady;
+  const current = await getExcludedTecnicos();
+  delete current[slug];
+  await setDoc(doc(db, 'config', 'tecnicos_excluidos'), {excluidos: current});
+  excludedTecnicosCache = current;
+}
+async function refreshExcludedTecnicosCache(){
+  excludedTecnicosCache = await getExcludedTecnicos();
+}
+
 /* ---- Indicadores calculados: salvos no Firestore após o admin importar o Consolidado ---- */
 async function saveComputedIndicators(tecnicosArray){
   await authReady;
@@ -864,6 +949,7 @@ async function loadComputedIndicators(){
 let RAW = {"metas": {"nps": 0.7, "eficiencia": 0.8, "wo_min": 510, "revisita_ativacao": 0.05, "revisita_reparo": 0.1, "produtividade": 3.5}, "tecnicos": [{"gestor": "CRISTIANO", "nome": "CIP _ RAFAEL GIELINSKI", "nps": 0.7, "eficiencia": 0.6962025316455697, "wo_min": 509, "revisita_ativacao": 0.0, "revisita_reparo": 0.02564102564102564, "produtividade": 4.230769230769231, "dias_trab_pct": 0.6842105263157895, "dias_trab": 13.0, "cq": 0, "ativacao": 6.0, "ativacao_corp": 0.0, "rem_ext": 7.0, "rem_int": 0.0, "reparo": 42.0, "total_geral": 55.0, "mesh": null}, {"gestor": "CRISTIANO", "nome": "CIP _ ADILSON DOS SANTOS MARQUES", "nps": 0.7, "eficiencia": 0.7333333333333333, "wo_min": 497, "revisita_ativacao": 0.041666666666666664, "revisita_reparo": 0.0, "produtividade": 3.5833333333333335, "dias_trab_pct": 0.631578947368421, "dias_trab": 12.0, "cq": 2, "ativacao": 21.0, "ativacao_corp": 2.0, "rem_ext": 1.0, "rem_int": 1.0, "reparo": 18.0, "total_geral": 43.0, "mesh": 1.0}, {"gestor": "CRISTIANO", "nome": "CIP _ ADRIANO JOAO LINO ROCHA", "nps": 0.7, "eficiencia": 0.8194444444444444, "wo_min": 531, "revisita_ativacao": 0.3, "revisita_reparo": 0.05555555555555555, "produtividade": 3.2941176470588234, "dias_trab_pct": 0.8947368421052632, "dias_trab": 17.0, "cq": 0, "ativacao": 16.0, "ativacao_corp": 10.0, "rem_ext": 6.0, "rem_int": 0.0, "reparo": 24.0, "total_geral": 56.0, "mesh": 2.0}, {"gestor": "CRISTIANO", "nome": "CIP _ DEIVIDY FERREIRA DO AMARA", "nps": 0.7, "eficiencia": 0.8461538461538461, "wo_min": 567, "revisita_ativacao": 0.07692307692307693, "revisita_reparo": 0.1111111111111111, "produtividade": 2.9285714285714284, "dias_trab_pct": 0.7368421052631579, "dias_trab": 14.0, "cq": 0, "ativacao": 7.0, "ativacao_corp": 21.0, "rem_ext": 2.0, "rem_int": 0.0, "reparo": 11.0, "total_geral": 41.0, "mesh": 1.0}, {"gestor": "CRISTIANO", "nome": "CIP _ DIEGO FELIZARDO DE OLIVEIRA", "nps": 0.7, "eficiencia": 0.8518518518518519, "wo_min": 526, "revisita_ativacao": 0.11538461538461539, "revisita_reparo": 0.06060606060606061, "produtividade": 3.823529411764706, "dias_trab_pct": 0.8947368421052632, "dias_trab": 17.0, "cq": 0, "ativacao": 26.0, "ativacao_corp": 1.0, "rem_ext": 2.0, "rem_int": 1.0, "reparo": 35.0, "total_geral": 65.0, "mesh": 4.0}, {"gestor": "CRISTIANO", "nome": "CIP _ ERICO LEANDRO ROSA", "nps": 0.7, "eficiencia": 0.819672131147541, "wo_min": 532, "revisita_ativacao": 0.45454545454545453, "revisita_reparo": 0.2222222222222222, "produtividade": 3.6923076923076925, "dias_trab_pct": 0.6842105263157895, "dias_trab": 13.0, "cq": 0, "ativacao": 25.0, "ativacao_corp": 0.0, "rem_ext": 1.0, "rem_int": 0.0, "reparo": 22.0, "total_geral": 48.0, "mesh": 2.0}, {"gestor": "CRISTIANO", "nome": "CIP _ JONHATHAN ATTOS DE SOUSA", "nps": 0.7, "eficiencia": 0.8481012658227848, "wo_min": 511, "revisita_ativacao": 0.14285714285714285, "revisita_reparo": 0.0, "produtividade": 4.0, "dias_trab_pct": 0.8421052631578947, "dias_trab": 16.0, "cq": 8, "ativacao": 22.0, "ativacao_corp": 1.0, "rem_ext": 9.0, "rem_int": 0.0, "reparo": 32.0, "total_geral": 64.0, "mesh": 1.0}, {"gestor": "CRISTIANO", "nome": "CIP _ JOSE CARLOS ZACARIAS", "nps": 0.7, "eficiencia": 0.8082191780821918, "wo_min": 509, "revisita_ativacao": 0.0, "revisita_reparo": 0.1, "produtividade": 3.8666666666666667, "dias_trab_pct": 0.7894736842105263, "dias_trab": 15.0, "cq": 2, "ativacao": 21.0, "ativacao_corp": 4.0, "rem_ext": 8.0, "rem_int": 1.0, "reparo": 24.0, "total_geral": 58.0, "mesh": 1.0}, {"gestor": "CRISTIANO", "nome": "CIP _ LEONARDO FERNANDES LUCAS", "nps": 0.7, "eficiencia": 0.8571428571428571, "wo_min": 562, "revisita_ativacao": 0.037037037037037035, "revisita_reparo": 0.15789473684210525, "produtividade": 3.4375, "dias_trab_pct": 0.8421052631578947, "dias_trab": 16.0, "cq": 2, "ativacao": 25.0, "ativacao_corp": 3.0, "rem_ext": 5.0, "rem_int": 0.0, "reparo": 22.0, "total_geral": 55.0, "mesh": 5.0}, {"gestor": "CRISTIANO", "nome": "CIP_ ANDERSON FABIANO DE OLIVEIRA", "nps": 0.7, "eficiencia": 0.9122807017543859, "wo_min": 537, "revisita_ativacao": 0.06896551724137931, "revisita_reparo": 0.0, "produtividade": 3.2666666666666666, "dias_trab_pct": 0.7894736842105263, "dias_trab": 15.0, "cq": 0, "ativacao": 24.0, "ativacao_corp": 6.0, "rem_ext": 2.0, "rem_int": 1.0, "reparo": 16.0, "total_geral": 49.0, "mesh": 3.0}, {"gestor": "CRISTIANO", "nome": "CIP _ DIEGO FELIPE GOMES", "nps": 0.7, "eficiencia": 0.75, "wo_min": 534, "revisita_ativacao": 0.0, "revisita_reparo": 0.05263157894736842, "produtividade": 3.4, "dias_trab_pct": 0.7894736842105263, "dias_trab": 15.0, "cq": 2, "ativacao": 26.0, "ativacao_corp": 1.0, "rem_ext": 3.0, "rem_int": 0.0, "reparo": 21.0, "total_geral": 51.0, "mesh": null}, {"gestor": "CRISTIANO", "nome": "CIP _ LUAN NEVES DOS SANTOS", "nps": 0.7, "eficiencia": 0.8163265306122449, "wo_min": 525, "revisita_ativacao": 0.0, "revisita_reparo": 0.0, "produtividade": 3.0, "dias_trab_pct": 0.6842105263157895, "dias_trab": 13.0, "cq": 1, "ativacao": 15.0, "ativacao_corp": 1.0, "rem_ext": 2.0, "rem_int": 0.0, "reparo": 21.0, "total_geral": 39.0, "mesh": 1.0}, {"gestor": "CRISTIANO", "nome": "CIP _ SERGIO PATRICK DOS SANTOS NUNES", "nps": 0.7, "eficiencia": 0.6721311475409836, "wo_min": 544, "revisita_ativacao": 0.1, "revisita_reparo": 0.08, "produtividade": 3.1538461538461537, "dias_trab_pct": 0.6842105263157895, "dias_trab": 13.0, "cq": 0, "ativacao": 14.0, "ativacao_corp": 0.0, "rem_ext": 1.0, "rem_int": 0.0, "reparo": 26.0, "total_geral": 41.0, "mesh": null}, {"gestor": "CRISTIANO", "nome": "CIP _ HEBER DE SOUZA FLÁVIO", "nps": 0.7, "eficiencia": 0.8311688311688312, "wo_min": 501, "revisita_ativacao": 0.1111111111111111, "revisita_reparo": 0.0, "produtividade": 3.875, "dias_trab_pct": 0.8421052631578947, "dias_trab": 16.0, "cq": 3, "ativacao": 23.0, "ativacao_corp": 1.0, "rem_ext": 4.0, "rem_int": 0.0, "reparo": 34.0, "total_geral": 62.0, "mesh": null}, {"gestor": "CRISTIANO", "nome": "CIP _ ALISSOM DA SILVA", "nps": 0.7, "eficiencia": 0.8194444444444444, "wo_min": 562, "revisita_ativacao": 0.0, "revisita_reparo": 0.0, "produtividade": 3.625, "dias_trab_pct": 0.8421052631578947, "dias_trab": 16.0, "cq": 0, "ativacao": 31.0, "ativacao_corp": 0.0, "rem_ext": 10.0, "rem_int": 0.0, "reparo": 17.0, "total_geral": 58.0, "mesh": 1.0}, {"gestor": "CRISTIANO", "nome": "CIP _ CRISTIANO RODRIGUES DE SOUSA", "nps": 0.7, "eficiencia": 0.8840579710144928, "wo_min": 582, "revisita_ativacao": 0.045454545454545456, "revisita_reparo": 0.07692307692307693, "produtividade": 3.4705882352941178, "dias_trab_pct": 0.8947368421052632, "dias_trab": 17.0, "cq": 0, "ativacao": 17.0, "ativacao_corp": 8.0, "rem_ext": 3.0, "rem_int": 0.0, "reparo": 31.0, "total_geral": 59.0, "mesh": 1.0}, {"gestor": "CRISTIANO", "nome": "CIP _ LUCIANO ANDRÉ DE OLIVEIRA", "nps": 0.7, "eficiencia": 0.8275862068965517, "wo_min": 551, "revisita_ativacao": 0.11538461538461539, "revisita_reparo": 0.07692307692307693, "produtividade": 3.357142857142857, "dias_trab_pct": 0.7368421052631579, "dias_trab": 14.0, "cq": 2, "ativacao": 14.0, "ativacao_corp": 13.0, "rem_ext": 4.0, "rem_int": 0.0, "reparo": 16.0, "total_geral": 47.0, "mesh": 1.0}, {"gestor": "CRISTIANO", "nome": "CIP _ LUCAS MARINHAK", "nps": 0.7, "eficiencia": 0.7205882352941176, "wo_min": 518, "revisita_ativacao": 0.0, "revisita_reparo": 0.0, "produtividade": 3.2857142857142856, "dias_trab_pct": 0.7368421052631579, "dias_trab": 14.0, "cq": 0, "ativacao": 19.0, "ativacao_corp": 1.0, "rem_ext": 1.0, "rem_int": 0.0, "reparo": 25.0, "total_geral": 46.0, "mesh": 2.0}, {"gestor": "CRISTIANO", "nome": "CIP _ EDUARDO DE LIMA RIBEIRO ALEGRO", "nps": 0.7, "eficiencia": 0.8311688311688312, "wo_min": 556, "revisita_ativacao": 0.05714285714285714, "revisita_reparo": 0.0, "produtividade": 3.764705882352941, "dias_trab_pct": 0.8947368421052632, "dias_trab": 17.0, "cq": 0, "ativacao": 25.0, "ativacao_corp": 16.0, "rem_ext": 2.0, "rem_int": 0.0, "reparo": 21.0, "total_geral": 64.0, "mesh": null}, {"gestor": "ISRAEL", "nome": "CIP _ ADRIANO CRUZ", "nps": 0.7, "eficiencia": 0.6888888888888889, "wo_min": 484, "revisita_ativacao": 0.0, "revisita_reparo": 0.03225806451612903, "produtividade": 3.6875, "dias_trab_pct": 0.8421052631578947, "dias_trab": 16.0, "cq": 0, "ativacao": 19.0, "ativacao_corp": 0.0, "rem_ext": 3.0, "rem_int": 0.0, "reparo": 37.0, "total_geral": 59.0, "mesh": 2.0}, {"gestor": "ISRAEL", "nome": "CIP _ GILSON RISKE", "nps": 0.7, "eficiencia": 0.8421052631578947, "wo_min": 541, "revisita_ativacao": 0.0, "revisita_reparo": 0.1111111111111111, "produtividade": 3.0, "dias_trab_pct": 0.8421052631578947, "dias_trab": 16.0, "cq": 0, "ativacao": 17.0, "ativacao_corp": 19.0, "rem_ext": 3.0, "rem_int": 0.0, "reparo": 9.0, "total_geral": 48.0, "mesh": null}, {"gestor": "ISRAEL", "nome": "CIP _ JHONATAN WILLIAN PORTO KOCHOLIK", "nps": 0.7, "eficiencia": 0.7413793103448276, "wo_min": 567, "revisita_ativacao": 0.0, "revisita_reparo": 0.08695652173913043, "produtividade": 2.8666666666666667, "dias_trab_pct": 0.7894736842105263, "dias_trab": 15.0, "cq": 0, "ativacao": 16.0, "ativacao_corp": 0.0, "rem_ext": 2.0, "rem_int": 1.0, "reparo": 24.0, "total_geral": 43.0, "mesh": null}, {"gestor": "ISRAEL", "nome": "CIP _ MAURICIO CARLOS LUCAS", "nps": 0.7, "eficiencia": 0.6410256410256411, "wo_min": 515, "revisita_ativacao": 0.0, "revisita_reparo": 0.07692307692307693, "produtividade": 1.9166666666666667, "dias_trab_pct": 0.631578947368421, "dias_trab": 12.0, "cq": 0, "ativacao": 8.0, "ativacao_corp": 0.0, "rem_ext": 1.0, "rem_int": 1.0, "reparo": 13.0, "total_geral": 23.0, "mesh": 2.0}, {"gestor": "ISRAEL", "nome": "CIP _ CLEITON SAMONEK", "nps": 0.7, "eficiencia": 0.6708860759493671, "wo_min": 510, "revisita_ativacao": 0.1, "revisita_reparo": 0.047619047619047616, "produtividade": 3.466666666666667, "dias_trab_pct": 0.7894736842105263, "dias_trab": 15.0, "cq": 0, "ativacao": 25.0, "ativacao_corp": 0.0, "rem_ext": 3.0, "rem_int": 0.0, "reparo": 24.0, "total_geral": 52.0, "mesh": 1.0}, {"gestor": "ISRAEL", "nome": "CIP _ WERYCLES GILBERTO DE OLVEIRA PEREI", "nps": 0.7, "eficiencia": 0.6511627906976745, "wo_min": 563, "revisita_ativacao": 0.0, "revisita_reparo": 0.08333333333333333, "produtividade": 2.1666666666666665, "dias_trab_pct": 0.631578947368421, "dias_trab": 12.0, "cq": 0, "ativacao": 8.0, "ativacao_corp": 0.0, "rem_ext": 1.0, "rem_int": 0.0, "reparo": 17.0, "total_geral": 26.0, "mesh": 1.0}, {"gestor": "ISRAEL", "nome": "CIP _ MARCELO PINHEIRO FERREIRA", "nps": 0.7, "eficiencia": 0.6964285714285714, "wo_min": 521, "revisita_ativacao": 0.0, "revisita_reparo": 0.0625, "produtividade": 2.923076923076923, "dias_trab_pct": 0.6842105263157895, "dias_trab": 13.0, "cq": 0, "ativacao": 15.0, "ativacao_corp": 1.0, "rem_ext": 4.0, "rem_int": 0.0, "reparo": 18.0, "total_geral": 38.0, "mesh": 1.0}, {"gestor": "ISRAEL", "nome": "CIP _ CARLOS DANILO DE SOUSA", "nps": 0.7, "eficiencia": 0.7258064516129032, "wo_min": 536, "revisita_ativacao": 0.047619047619047616, "revisita_reparo": 0.058823529411764705, "produtividade": 2.5625, "dias_trab_pct": 0.8421052631578947, "dias_trab": 16.0, "cq": 4, "ativacao": 20.0, "ativacao_corp": 2.0, "rem_ext": 4.0, "rem_int": 0.0, "reparo": 15.0, "total_geral": 41.0, "mesh": 2.0}, {"gestor": "ISRAEL", "nome": "CIP _ GILBERTO DE OLIVEIRA MIRANDA", "nps": 0.7, "eficiencia": 0.76, "wo_min": 557, "revisita_ativacao": 0.09090909090909091, "revisita_reparo": 0.03225806451612903, "produtividade": 3.6, "dias_trab_pct": 0.7894736842105263, "dias_trab": 15.0, "cq": 0, "ativacao": 15.0, "ativacao_corp": 1.0, "rem_ext": 3.0, "rem_int": 1.0, "reparo": 34.0, "total_geral": 54.0, "mesh": 1.0}, {"gestor": "ISRAEL", "nome": "CIP _ KENNEDY BISPO TOFOLO", "nps": 0.7, "eficiencia": 0.6506024096385542, "wo_min": 517, "revisita_ativacao": 0.0, "revisita_reparo": 0.0, "produtividade": 3.1875, "dias_trab_pct": 0.8421052631578947, "dias_trab": 16.0, "cq": 0, "ativacao": 15.0, "ativacao_corp": 4.0, "rem_ext": 5.0, "rem_int": 1.0, "reparo": 26.0, "total_geral": 51.0, "mesh": 1.0}, {"gestor": "ISRAEL", "nome": "CIP _ RICARDO JOSÉ GONZÁLEZ QUINTERO", "nps": 0.7, "eficiencia": 0.8636363636363636, "wo_min": 527, "revisita_ativacao": 0.0, "revisita_reparo": 0.0, "produtividade": 3.1666666666666665, "dias_trab_pct": 0.631578947368421, "dias_trab": 12.0, "cq": 0, "ativacao": 15.0, "ativacao_corp": 4.0, "rem_ext": 1.0, "rem_int": 1.0, "reparo": 17.0, "total_geral": 38.0, "mesh": null}, {"gestor": "ISRAEL", "nome": "CIP _ ELIAS HENRIQUE DO CARMO ANDRADE", "nps": 0.7, "eficiencia": 0.7125, "wo_min": 531, "revisita_ativacao": 0.0, "revisita_reparo": 0.041666666666666664, "produtividade": 3.6666666666666665, "dias_trab_pct": 0.7894736842105263, "dias_trab": 15.0, "cq": 0, "ativacao": 25.0, "ativacao_corp": 0.0, "rem_ext": 3.0, "rem_int": 0.0, "reparo": 27.0, "total_geral": 55.0, "mesh": 2.0}, {"gestor": "ISRAEL", "nome": "CIP _ TIAGO SUREK", "nps": 0.7, "eficiencia": 0.8412698412698413, "wo_min": 530, "revisita_ativacao": 0.0, "revisita_reparo": 0.0, "produtividade": 3.3333333333333335, "dias_trab_pct": 0.7894736842105263, "dias_trab": 15.0, "cq": 0, "ativacao": 19.0, "ativacao_corp": 0.0, "rem_ext": 4.0, "rem_int": 1.0, "reparo": 26.0, "total_geral": 50.0, "mesh": 2.0}, {"gestor": "ISRAEL", "nome": "CIP _ BRUNO ANTONIO DOS SANTOS WISNIESKI", "nps": 0.7, "eficiencia": 0.7164179104477612, "wo_min": 517, "revisita_ativacao": 0.0, "revisita_reparo": 0.0, "produtividade": 3.4285714285714284, "dias_trab_pct": 0.7368421052631579, "dias_trab": 14.0, "cq": 2, "ativacao": 18.0, "ativacao_corp": 2.0, "rem_ext": 5.0, "rem_int": 0.0, "reparo": 23.0, "total_geral": 48.0, "mesh": null}, {"gestor": "KAIO", "nome": "CIP _ ADEMIR DE MELO CEZAR", "nps": 0.7, "eficiencia": 0.8333333333333334, "wo_min": 783, "revisita_ativacao": 0.0, "revisita_reparo": 0.0, "produtividade": 1.25, "dias_trab_pct": 0.21052631578947367, "dias_trab": 4.0, "cq": 0, "ativacao": 4.0, "ativacao_corp": 0.0, "rem_ext": 0.0, "rem_int": 0.0, "reparo": 1.0, "total_geral": 5.0, "mesh": null}, {"gestor": "KAIO", "nome": "CIP _ ANTONIO CARLOS GONÇALVES", "nps": 0.7, "eficiencia": 0.9393939393939394, "wo_min": 580, "revisita_ativacao": 0.0, "revisita_reparo": 0.0, "produtividade": 2.142857142857143, "dias_trab_pct": 0.7368421052631579, "dias_trab": 14.0, "cq": 0, "ativacao": 10.0, "ativacao_corp": 0.0, "rem_ext": 2.0, "rem_int": 0.0, "reparo": 18.0, "total_geral": 30.0, "mesh": 1.0}, {"gestor": "KAIO", "nome": "CIP _ APARECIDO DE OLIVEIRA LIMA", "nps": 0.7, "eficiencia": 0.9354838709677419, "wo_min": 560, "revisita_ativacao": 0.0, "revisita_reparo": 0.0, "produtividade": 2.0, "dias_trab_pct": 0.7368421052631579, "dias_trab": 14.0, "cq": 0, "ativacao": 11.0, "ativacao_corp": 0.0, "rem_ext": 2.0, "rem_int": 0.0, "reparo": 15.0, "total_geral": 28.0, "mesh": 1.0}, {"gestor": "KAIO", "nome": "CIP _ CLAUDINEI BATISTA DE OLIVEIRA", "nps": 0.7, "eficiencia": 0.9130434782608695, "wo_min": 552, "revisita_ativacao": 0.0, "revisita_reparo": 0.0, "produtividade": 2.9285714285714284, "dias_trab_pct": 0.7368421052631579, "dias_trab": 14.0, "cq": 0, "ativacao": 7.0, "ativacao_corp": 0.0, "rem_ext": 5.0, "rem_int": 2.0, "reparo": 27.0, "total_geral": 41.0, "mesh": 1.0}, {"gestor": "KAIO", "nome": "CIP _ DARLAN JOSE AZEVEDO", "nps": 0.7, "eficiencia": 0.9318181818181818, "wo_min": 591, "revisita_ativacao": 0.0, "revisita_reparo": 0.058823529411764705, "produtividade": 2.5625, "dias_trab_pct": 0.8421052631578947, "dias_trab": 16.0, "cq": 0, "ativacao": 8.0, "ativacao_corp": 0.0, "rem_ext": 4.0, "rem_int": 1.0, "reparo": 28.0, "total_geral": 41.0, "mesh": null}, {"gestor": "KAIO", "nome": "CIP _ ELCIO DE ANDRADE JUNIOR", "nps": 0.7, "eficiencia": 1.0, "wo_min": 853, "revisita_ativacao": 0.0, "revisita_reparo": 0.0, "produtividade": 2.0, "dias_trab_pct": 0.3157894736842105, "dias_trab": 6.0, "cq": 0, "ativacao": 3.0, "ativacao_corp": 0.0, "rem_ext": 0.0, "rem_int": 0.0, "reparo": 9.0, "total_geral": 12.0, "mesh": null}, {"gestor": "KAIO", "nome": "CIP _ ELISON JOSE DE OLIVEIRA", "nps": 0.7, "eficiencia": 0.9387755102040817, "wo_min": 525, "revisita_ativacao": 0.0, "revisita_reparo": 0.0, "produtividade": 2.875, "dias_trab_pct": 0.8421052631578947, "dias_trab": 16.0, "cq": 0, "ativacao": 24.0, "ativacao_corp": 0.0, "rem_ext": 4.0, "rem_int": 2.0, "reparo": 16.0, "total_geral": 46.0, "mesh": null}, {"gestor": "KAIO", "nome": "CIP _ JUCIMAR MARTINS DOS SANTOS", "nps": 0.7, "eficiencia": 0.9655172413793104, "wo_min": 621, "revisita_ativacao": 0.0, "revisita_reparo": 0.0, "produtividade": 1.75, "dias_trab_pct": 0.8421052631578947, "dias_trab": 16.0, "cq": 0, "ativacao": 2.0, "ativacao_corp": 0.0, "rem_ext": 2.0, "rem_int": 1.0, "reparo": 23.0, "total_geral": 28.0, "mesh": null}, {"gestor": "KAIO", "nome": "CIP _ KAUA MATEUS BARBOSA", "nps": 0.7, "eficiencia": 0.9, "wo_min": 572, "revisita_ativacao": 0.0, "revisita_reparo": 0.06666666666666667, "produtividade": 3.2142857142857144, "dias_trab_pct": 0.7368421052631579, "dias_trab": 14.0, "cq": 0, "ativacao": 20.0, "ativacao_corp": 0.0, "rem_ext": 1.0, "rem_int": 0.0, "reparo": 24.0, "total_geral": 45.0, "mesh": null}, {"gestor": "KAIO", "nome": "CIP _ MARCELO GONCALVES", "nps": 0.7, "eficiencia": 0.9, "wo_min": 535, "revisita_ativacao": 0.0, "revisita_reparo": 0.0, "produtividade": 3.6, "dias_trab_pct": 0.2631578947368421, "dias_trab": 5.0, "cq": 0, "ativacao": 6.0, "ativacao_corp": 0.0, "rem_ext": 0.0, "rem_int": 0.0, "reparo": 12.0, "total_geral": 18.0, "mesh": null}, {"gestor": "KAIO", "nome": "CIP _ RENAN DE QUADROS FABIAN", "nps": 0.7, "eficiencia": 0.9622641509433962, "wo_min": 528, "revisita_ativacao": 0.2, "revisita_reparo": 0.04, "produtividade": 3.4, "dias_trab_pct": 0.7894736842105263, "dias_trab": 15.0, "cq": 0, "ativacao": 13.0, "ativacao_corp": 0.0, "rem_ext": 7.0, "rem_int": 0.0, "reparo": 31.0, "total_geral": 51.0, "mesh": null}, {"gestor": "KAIO", "nome": "CIP _ DOMCHARLES QUADROS KLUCH", "nps": 0.7, "eficiencia": null, "wo_min": null, "revisita_ativacao": null, "revisita_reparo": null, "produtividade": null, "dias_trab_pct": null, "dias_trab": null, "cq": 0, "ativacao": null, "ativacao_corp": null, "rem_ext": null, "rem_int": null, "reparo": null, "total_geral": null, "mesh": null}, {"gestor": "KAIO", "nome": "CIP _ GABRIEL VINICIUS NEVES", "nps": 0.7, "eficiencia": 0.9310344827586207, "wo_min": 543, "revisita_ativacao": 0.0, "revisita_reparo": 0.04, "produtividade": 3.6, "dias_trab_pct": 0.7894736842105263, "dias_trab": 15.0, "cq": 0, "ativacao": 14.0, "ativacao_corp": 0.0, "rem_ext": 5.0, "rem_int": 0.0, "reparo": 35.0, "total_geral": 54.0, "mesh": null}, {"gestor": "KAIO", "nome": "CIP _ JOÃO CARLOS DA COSTA", "nps": 0.7, "eficiencia": 0.8767123287671232, "wo_min": 547, "revisita_ativacao": 0.0, "revisita_reparo": 0.12, "produtividade": 3.5555555555555554, "dias_trab_pct": 0.9473684210526315, "dias_trab": 18.0, "cq": 0, "ativacao": 31.0, "ativacao_corp": 0.0, "rem_ext": 3.0, "rem_int": 1.0, "reparo": 29.0, "total_geral": 64.0, "mesh": null}, {"gestor": "MARCELO", "nome": "CIP _ José Augusto Rodrigues Junior", "nps": 0.7, "eficiencia": 0.6440677966101694, "wo_min": 520, "revisita_ativacao": 0.0, "revisita_reparo": 0.14285714285714285, "produtividade": 2.923076923076923, "dias_trab_pct": 0.6842105263157895, "dias_trab": 13.0, "cq": 0, "ativacao": 11.0, "ativacao_corp": 0.0, "rem_ext": 3.0, "rem_int": 1.0, "reparo": 23.0, "total_geral": 38.0, "mesh": null}, {"gestor": "MARCELO", "nome": "CIP _ Luiz Guilherme Skroch", "nps": 0.7, "eficiencia": 0.8809523809523809, "wo_min": 549, "revisita_ativacao": 0.0, "revisita_reparo": 0.11538461538461539, "produtividade": 2.8461538461538463, "dias_trab_pct": 0.6842105263157895, "dias_trab": 13.0, "cq": 0, "ativacao": 8.0, "ativacao_corp": 0.0, "rem_ext": 0.0, "rem_int": 0.0, "reparo": 29.0, "total_geral": 37.0, "mesh": null}, {"gestor": "MARCELO", "nome": "CIP _ WENDY WILIAN GOUVEA MENDES", "nps": 0.7, "eficiencia": 0.6851851851851852, "wo_min": 551, "revisita_ativacao": 0.0, "revisita_reparo": 0.0, "produtividade": 2.3125, "dias_trab_pct": 0.8421052631578947, "dias_trab": 16.0, "cq": 0, "ativacao": 7.0, "ativacao_corp": 0.0, "rem_ext": 1.0, "rem_int": 0.0, "reparo": 29.0, "total_geral": 37.0, "mesh": null}, {"gestor": "MARCELO", "nome": "CIP _ PAULO CESAR SANTOS NUNES", "nps": 0.7, "eficiencia": 0.631578947368421, "wo_min": 546, "revisita_ativacao": 0.0, "revisita_reparo": 0.3333333333333333, "produtividade": 3.0, "dias_trab_pct": 0.21052631578947367, "dias_trab": 4.0, "cq": 16, "ativacao": 2.0, "ativacao_corp": 0.0, "rem_ext": 1.0, "rem_int": 0.0, "reparo": 9.0, "total_geral": 12.0, "mesh": null}, {"gestor": "MARCELO", "nome": "CIP _ DENILSON LEME CORREA", "nps": 0.7, "eficiencia": 0.6491228070175439, "wo_min": 567, "revisita_ativacao": 0.1, "revisita_reparo": 0.1111111111111111, "produtividade": 2.466666666666667, "dias_trab_pct": 0.7894736842105263, "dias_trab": 15.0, "cq": 0, "ativacao": 13.0, "ativacao_corp": 0.0, "rem_ext": 3.0, "rem_int": 0.0, "reparo": 21.0, "total_geral": 37.0, "mesh": null}, {"gestor": "MARCELO", "nome": "CIP _ RICARDO DO ROZARIO DA SILVA", "nps": 0.7, "eficiencia": 0.7702702702702703, "wo_min": 494, "revisita_ativacao": 0.2727272727272727, "revisita_reparo": 0.0, "produtividade": 3.6666666666666665, "dias_trab_pct": 0.7894736842105263, "dias_trab": 15.0, "cq": 0, "ativacao": 11.0, "ativacao_corp": 0.0, "rem_ext": 1.0, "rem_int": 1.0, "reparo": 42.0, "total_geral": 55.0, "mesh": 2.0}, {"gestor": "MARCELO", "nome": "CIP _ TELITON RENAN CARNEIRO GONÇALVES", "nps": 0.7, "eficiencia": 0.7258064516129032, "wo_min": 523, "revisita_ativacao": 0.0, "revisita_reparo": 0.07692307692307693, "produtividade": 2.75, "dias_trab_pct": 0.8421052631578947, "dias_trab": 16.0, "cq": 0, "ativacao": 10.0, "ativacao_corp": 0.0, "rem_ext": 1.0, "rem_int": 0.0, "reparo": 33.0, "total_geral": 44.0, "mesh": 1.0}, {"gestor": "MARCELO", "nome": "CIP _ HYURIT ANDREY MAGALHAES LIMA", "nps": 0.7, "eficiencia": 0.7419354838709677, "wo_min": 537, "revisita_ativacao": 0.0, "revisita_reparo": 0.0, "produtividade": 3.2142857142857144, "dias_trab_pct": 0.7368421052631579, "dias_trab": 14.0, "cq": 0, "ativacao": 12.0, "ativacao_corp": 0.0, "rem_ext": 4.0, "rem_int": 3.0, "reparo": 26.0, "total_geral": 45.0, "mesh": 1.0}, {"gestor": "JEFFERSON", "nome": "CIP _ Paulo Anizio De Carlos", "nps": 0.7, "eficiencia": 0.675, "wo_min": 505, "revisita_ativacao": 0.0, "revisita_reparo": 0.14285714285714285, "produtividade": 2.7, "dias_trab_pct": 0.5263157894736842, "dias_trab": 10.0, "cq": 2, "ativacao": 7.0, "ativacao_corp": 0.0, "rem_ext": 4.0, "rem_int": 0.0, "reparo": 16.0, "total_geral": 27.0, "mesh": null}, {"gestor": "JEFFERSON", "nome": "CIP _ ROGERIO ALVES GARCIA", "nps": 0.7, "eficiencia": 0.7160493827160493, "wo_min": 502, "revisita_ativacao": 0.0, "revisita_reparo": 0.05714285714285714, "produtividade": 3.625, "dias_trab_pct": 0.8421052631578947, "dias_trab": 16.0, "cq": 9, "ativacao": 19.0, "ativacao_corp": 0.0, "rem_ext": 3.0, "rem_int": 0.0, "reparo": 36.0, "total_geral": 58.0, "mesh": null}, {"gestor": "JEFFERSON", "nome": "CIP _ GABRIEL HENRIQUE PEREIRA", "nps": 0.7, "eficiencia": 0.717391304347826, "wo_min": 519, "revisita_ativacao": 0.0, "revisita_reparo": 0.0, "produtividade": 2.3846153846153846, "dias_trab_pct": 0.6842105263157895, "dias_trab": 13.0, "cq": 3, "ativacao": 7.0, "ativacao_corp": 0.0, "rem_ext": 4.0, "rem_int": 0.0, "reparo": 20.0, "total_geral": 31.0, "mesh": 2.0}, {"gestor": "JEFFERSON", "nome": "CIP _ RAFAEL LUCIANO LEMOS COPETI", "nps": 0.7, "eficiencia": 0.7101449275362319, "wo_min": 507, "revisita_ativacao": 0.0, "revisita_reparo": 0.06666666666666667, "produtividade": 3.0625, "dias_trab_pct": 0.8421052631578947, "dias_trab": 16.0, "cq": 7, "ativacao": 16.0, "ativacao_corp": 0.0, "rem_ext": 2.0, "rem_int": 0.0, "reparo": 31.0, "total_geral": 49.0, "mesh": null}, {"gestor": "JEFFERSON", "nome": "CIP _ NILTON JOSE DA SILVA", "nps": 0.7, "eficiencia": 0.6170212765957447, "wo_min": 519, "revisita_ativacao": 0.25, "revisita_reparo": 0.14285714285714285, "produtividade": 1.9285714285714286, "dias_trab_pct": 0.7368421052631579, "dias_trab": 14.0, "cq": 7, "ativacao": 8.0, "ativacao_corp": 0.0, "rem_ext": 3.0, "rem_int": 0.0, "reparo": 16.0, "total_geral": 27.0, "mesh": null}]};
 const METAS = RAW.metas;
 let TECS = RAW.tecnicos;
+let ALL_TECS_RAW = [];
 let gestores = {};
 let companyAvgComposite = null;
 let GESTOR_LIST = [];
@@ -997,11 +1083,14 @@ function manualEntriesListHTML(t){
 function avg(arr){ const vals = arr.filter(v=>v!==null && v!==undefined && !isNaN(v)); if(vals.length===0) return null; return vals.reduce((a,b)=>a+b,0)/vals.length; }
 
 function applyTecnicosData(tecnicosArray){
-  TECS = tecnicosArray;
+  tecnicosArray.forEach(t=>{ t.slug = slugify(t.nome); });
+  ALL_TECS_RAW = tecnicosArray;
+  TECS = tecnicosArray.filter(t => !excludedTecnicosCache[t.slug]);
   TECS.forEach(t=>{
     t.display = prettyName(t.nome);
     t.composite = computeComposite(t);
-    t.slug = slugify(t.nome);
+    if(!t.gestor && EMBEDDED_LIDER_MAP[t.slug]) t.gestor = EMBEDDED_LIDER_MAP[t.slug];
+    if(liderOverridesCache[t.slug]) t.gestor = liderOverridesCache[t.slug];
   });
   gestores = {};
   TECS.forEach(t=>{ (gestores[t.gestor] ||= []).push(t); });
@@ -1020,6 +1109,74 @@ const RAW_CONSOLIDADO_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR4
 const RAW_CQ_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR4mE54QysVssxQ-krzAPVA9fCCmPs4QigvpxAwS6P5bl3oDuKnUdZRBu0vQ-ypcCCJ2EHk-iNd303j/pub?gid=997142980&single=true&output=csv";
 const RAW_LIDER_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR4mE54QysVssxQ-krzAPVA9fCCmPs4QigvpxAwS6P5bl3oDuKnUdZRBu0vQ-ypcCCJ2EHk-iNd303j/pub?gid=831107252&single=true&output=csv";
 const NPS_FIXO_SITE = 0.70;
+
+/* ---- Mapa embutido de técnico -> gestor (camada de segurança, caso o arquivo/Sheets falhe) ----
+   Prioridade: 1) ajuste manual no site  2) este mapa embutido  3) aba LÍDER do arquivo  4) Google Sheets */
+const EMBEDDED_LIDER_MAP = {
+  "rafael-gielinski": "CRISTIANO",
+  "adilson-dos-santos-marques": "CRISTIANO",
+  "adriano-joao-lino-rocha": "CRISTIANO",
+  "deividy-ferreira-do-amara": "CRISTIANO",
+  "diego-felizardo-de-oliveira": "CRISTIANO",
+  "erico-leandro-rosa": "CRISTIANO",
+  "jonhathan-attos-de-sousa": "CRISTIANO",
+  "jose-carlos-zacarias": "CRISTIANO",
+  "leonardo-fernandes-lucas": "CRISTIANO",
+  "anderson-fabiano-de-oliveira": "CRISTIANO",
+  "diego-felipe-gomes": "CRISTIANO",
+  "luan-neves-dos-santos": "CRISTIANO",
+  "sergio-patrick-dos-santos-nunes": "CRISTIANO",
+  "heber-de-souza-flavio": "CRISTIANO",
+  "alissom-da-silva": "CRISTIANO",
+  "cristiano-rodrigues-de-sousa": "CRISTIANO",
+  "luciano-andre-de-oliveira": "CRISTIANO",
+  "lucas-marinhak": "CRISTIANO",
+  "eduardo-de-lima-ribeiro-alegro": "CRISTIANO",
+  "adriano-cruz": "ISRAEL",
+  "gilson-riske": "ISRAEL",
+  "jhonatan-willian-porto-kocholik": "ISRAEL",
+  "mauricio-carlos-lucas": "ISRAEL",
+  "cleiton-samonek": "ISRAEL",
+  "werycles-gilberto-de-olveira-perei": "ISRAEL",
+  "marcelo-pinheiro-ferreira": "ISRAEL",
+  "carlos-danilo-de-sousa": "ISRAEL",
+  "gilberto-de-oliveira-miranda": "ISRAEL",
+  "kennedy-bispo-tofolo": "ISRAEL",
+  "ricardo-jose-gonzalez-quintero": "ISRAEL",
+  "elias-henrique-do-carmo-andrade": "ISRAEL",
+  "tiago-surek": "ISRAEL",
+  "bruno-antonio-dos-santos-wisnieski": "ISRAEL",
+  "ademir-de-melo-cezar": "KAIO",
+  "antonio-carlos-goncalves": "KAIO",
+  "aparecido-de-oliveira-lima": "KAIO",
+  "claudinei-batista-de-oliveira": "KAIO",
+  "darlan-jose-azevedo": "KAIO",
+  "elcio-de-andrade-junior": "KAIO",
+  "elison-jose-de-oliveira": "KAIO",
+  "jucimar-martins-dos-santos": "KAIO",
+  "kaua-mateus-barbosa": "KAIO",
+  "marcelo-goncalves": "KAIO",
+  "renan-de-quadros-fabian": "KAIO",
+  "domcharles-quadros-kluch": "KAIO",
+  "gabriel-vinicius-neves": "KAIO",
+  "joao-de-mello-cezar": "KAIO",
+  "joao-carlos-da-costa": "KAIO",
+  "jose-augusto-rodrigues-junior": "MARCELO",
+  "luiz-guilherme-skroch": "MARCELO",
+  "wendy-wilian-gouvea-mendes": "MARCELO",
+  "paulo-cesar-santos-nunes": "MARCELO",
+  "denilson-leme-correa": "MARCELO",
+  "ricardo-do-rozario-da-silva": "MARCELO",
+  "teliton-renan-carneiro-goncalves": "MARCELO",
+  "hyurit-andrey-magalhaes-lima": "MARCELO",
+  "jackson-forgati-teixeira": "MARCELO",
+  "paulo-anizio-de-carlos": "JEFFERSON",
+  "rogerio-alves-garcia": "JEFFERSON",
+  "gabriel-henrique-pereira": "JEFFERSON",
+  "rafael-luciano-lemos-copeti": "JEFFERSON",
+  "nilton-jose-da-silva": "JEFFERSON",
+  "leandro-garcia-felisbino": "JEFFERSON"
+};
 const DROP_SOLUCOES_SITE = [
   'Substituição de fibra em cabo existente',
   'Substituição de cabo e instalação CE',
@@ -1231,6 +1388,7 @@ function computeIndicatorsFromRaw(consolidadoRows, cqRows, liderRows){
         diasTrabalhados: new Set(),
         primeiraAtividadePorDia: {},
         revisitaAtivacaoCount:0, revisitaReparoCount:0,
+        revisitasAtivacaoDetalhes: [], revisitasReparoDetalhes: [],
         areasCount: {}
       };
     }
@@ -1288,12 +1446,13 @@ function computeIndicatorsFromRaw(consolidadoRows, cqRows, liderRows){
     const status = String(row[iStatus]||'').trim();
     const contrato = iContrato!==-1 ? String(row[iContrato]||'').trim() : '';
     const tipo = String(row[iTipoAtividade]||'').trim();
+    const solucaoFalha = iSolucaoFalha!==-1 ? String(row[iSolucaoFalha]||'').trim() : '';
     const dataProtocolo = iDataProtocolo!==-1 ? parseDateSafeSite(row[iDataProtocolo]) : null;
     const dataAgendada = iDataAgendada!==-1 ? parseDateSafeSite(row[iDataAgendada]) : null;
     const dataRef = dataProtocolo || dataAgendada;
     if(nome && isRealTecnicoSite(nome) && status==='Concluída' && contrato && dataRef){
       if(!porContratoGeral[contrato]) porContratoGeral[contrato] = [];
-      porContratoGeral[contrato].push({tecnico: nome, tipo, data: dataRef});
+      porContratoGeral[contrato].push({tecnico: nome, tipo, data: dataRef, solucaoFalha});
     }
   });
 
@@ -1301,12 +1460,34 @@ function computeIndicatorsFromRaw(consolidadoRows, cqRows, liderRows){
     const atividades = porContratoGeral[contrato].slice().sort((a,b)=>a.data-b.data);
     atividades.forEach((ativ, idx)=>{
       if(ativ.tipo==='Ativação'){
-        const teve = atividades.some((outra,j)=> j!==idx && outra.data>ativ.data && diffDaysSite(ativ.data,outra.data)<=15);
-        if(teve){ const t = porTecnico[ativ.tecnico]; if(t) t.revisitaAtivacaoCount++; }
+        const revisita = atividades.find((outra,j)=> j!==idx && outra.data>ativ.data && diffDaysSite(ativ.data,outra.data)<=15);
+        if(revisita){
+          const t = porTecnico[ativ.tecnico];
+          if(t){
+            t.revisitaAtivacaoCount++;
+            t.revisitasAtivacaoDetalhes.push({
+              contrato,
+              dataOriginal: ativ.data,
+              dataRevisita: revisita.data,
+              solucaoFalha: revisita.solucaoFalha || '(sem solução registrada)'
+            });
+          }
+        }
       }
       if(ativ.tipo==='Reparo'){
-        const teve = atividades.some((outra,j)=> j!==idx && outra.tipo==='Reparo' && outra.data>ativ.data && diffDaysSite(ativ.data,outra.data)<=30);
-        if(teve){ const t = porTecnico[ativ.tecnico]; if(t) t.revisitaReparoCount++; }
+        const revisita = atividades.find((outra,j)=> j!==idx && outra.tipo==='Reparo' && outra.data>ativ.data && diffDaysSite(ativ.data,outra.data)<=30);
+        if(revisita){
+          const t = porTecnico[ativ.tecnico];
+          if(t){
+            t.revisitaReparoCount++;
+            t.revisitasReparoDetalhes.push({
+              contrato,
+              dataOriginal: ativ.data,
+              dataRevisita: revisita.data,
+              solucaoFalha: revisita.solucaoFalha || '(sem solução registrada)'
+            });
+          }
+        }
       }
     });
   });
@@ -1356,9 +1537,10 @@ function computeIndicatorsFromRaw(consolidadoRows, cqRows, liderRows){
     const revRep = t.reparo>0 ? t.revisitaReparoCount/t.reparo : null;
 
     const totalAreas = Object.values(t.areasCount).reduce((s,v)=>s+v,0);
-    const areasTop3 = Object.entries(t.areasCount)
-      .sort((a,b)=>b[1]-a[1]).slice(0,3)
+    const areasAll = Object.entries(t.areasCount)
+      .sort((a,b)=>b[1]-a[1])
       .map(([code,qty])=>({ code, name: AREA_NAME_MAP[code]||code, qty, pct: totalAreas>0 ? (qty/totalAreas*100) : 0 }));
+    const areasTop3 = areasAll.slice(0,3);
 
     tecnicos.push({
       gestor: liderPorTecnico[nome] || '',
@@ -1380,7 +1562,10 @@ function computeIndicatorsFromRaw(consolidadoRows, cqRows, liderRows){
       drop: t.drop,
       total_geral: totalGeral,
       mesh: t.mesh,
-      areasTop3
+      areasTop3,
+      areasAll,
+      revisitasAtivacaoDetalhes: t.revisitasAtivacaoDetalhes,
+      revisitasReparoDetalhes: t.revisitasReparoDetalhes
     });
   });
 
@@ -1517,6 +1702,10 @@ loadComputedIndicators().then(tecnicos=>{
   refreshCurrentView();
 });
 refreshManualAdjustmentsCache();
+Promise.all([refreshLiderOverridesCache(), refreshExcludedTecnicosCache()]).then(()=>{
+  applyTecnicosData(ALL_TECS_RAW.length > 0 ? ALL_TECS_RAW : TECS);
+  refreshCurrentView();
+});
 
 /* ================= ATUALIZAÇÃO MANUAL E AGENDADA ================= */
 function refreshCurrentView(){
@@ -1533,7 +1722,7 @@ function refreshCurrentView(){
     renderAdminBanner();
     renderAdminGestorGrid();
     renderAdminGestorChart();
-    if(!isViewerMode) renderAccessTable();
+    if(!isViewerMode){ renderAccessTable(); renderGestorOverrideTable(); }
     renderAreasTable();
     if(document.getElementById('admin-detail-panel').style.display !== 'none' && currentAdminGestor){
       const metricWrap = document.getElementById('admin-metric-select');
@@ -2112,17 +2301,43 @@ const TABLE_COLS = [
   {key:'areas', label:'Área', sort:(t)=>(t.areasTop3 && t.areasTop3[0]) ? t.areasTop3[0].qty : 0, fmt:(t)=> (t.areasTop3 && t.areasTop3.length) ? `${AREA_NAME_SHORT[t.areasTop3[0].code]||t.areasTop3[0].name} (${t.areasTop3[0].pct.toFixed(0)}%)` : '—'},
 ];
 
+function fmtDataCurta(d){
+  if(!d) return '';
+  return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0');
+}
+function revisitaDetalhesHTML(detalhes, uniqueId){
+  if(!detalhes || detalhes.length === 0) return '';
+  const lista = detalhes.map(d=>`
+    <div style="display:flex;justify-content:space-between;gap:8px;font-size:11.5px;padding:3px 0;border-bottom:1px solid var(--border-soft);">
+      <span style="color:var(--text-soft);">Contrato <b style="color:var(--text);font-family:var(--font-mono);">${d.contrato}</b> — ${d.solucaoFalha.replace(/</g,'&lt;')}</span>
+      <span style="color:var(--text-mute);white-space:nowrap;">${fmtDataCurta(d.dataOriginal)} → ${fmtDataCurta(d.dataRevisita)}</span>
+    </div>
+  `).join('');
+  return `
+    <div style="margin:2px 0 10px;">
+      <button type="button" onclick="var el=document.getElementById('${uniqueId}'); var abrir = el.style.display==='none'; el.style.display = abrir?'block':'none'; this.textContent = abrir ? 'Ocultar contratos ▴' : 'Ver contratos (${detalhes.length}) ▾';" style="background:none;border:none;color:var(--accent);font-size:11px;cursor:pointer;padding:0;text-decoration:underline;">Ver contratos (${detalhes.length}) ▾</button>
+      <div id="${uniqueId}" style="display:none;margin-top:6px;padding:8px 10px;background:var(--bg-elev);border-radius:8px;">
+        ${lista}
+      </div>
+    </div>
+  `;
+}
+
 function adminTechDetailHTML(t){
   const indHTML = IND_DEFS.map(d=>{
     const val = t[d.key];
     const s = indStatus(val, d);
     const ratio = indRatio(val, d);
+    let detalhesHTML = '';
+    if(d.key === 'revisita_ativacao') detalhesHTML = revisitaDetalhesHTML(t.revisitasAtivacaoDetalhes, 'revisita-ativ-'+t.slug);
+    if(d.key === 'revisita_reparo') detalhesHTML = revisitaDetalhesHTML(t.revisitasReparoDetalhes, 'revisita-rep-'+t.slug);
     return `
       <div class="ind-row">
         <span class="iname">${d.label}</span>
         <span class="ival">${d.fmt(val)} <span class="meta-note">/ meta ${metaLabel(d)}</span>${s?`<span class="status-dot ${s}"></span>`:''}</span>
       </div>
       <div class="ind-bar-track"><div class="ind-bar-fill ${s||''}" style="width:${(ratio*100).toFixed(0)}%"></div></div>
+      ${detalhesHTML}
     `;
   }).join('');
   const volItems = [
@@ -2139,21 +2354,22 @@ function adminTechDetailHTML(t){
       <div class="td-block">
         <h4>Volume operacional no período</h4>
         <div class="vol-grid">${volHTML}</div>
-        ${t.areasTop3 && t.areasTop3.length ? `
+        ${t.areasAll && t.areasAll.length ? `
           <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border);">
-            <h4 style="margin:0 0 10px;">Áreas (Top 3)</h4>
-            ${t.areasTop3.map((a,i)=>{
-              const barColors = ['var(--accent)','#9089f2','#f2a93b'];
+            <h4 style="margin:0 0 10px;">Áreas (todas · ${t.areasAll.length})</h4>
+            ${t.areasAll.map((a,i)=>{
+              const barColors = ['var(--accent)','#9089f2','#f2a93b','#4fa8f5','#f0576b','#5fd15e','#e879c0','#63b3ed'];
+              const cor = barColors[i % barColors.length];
               return `
                 <div style="margin-bottom:10px;">
                   <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px;">
                     <span style="font-size:13px;color:var(--text);display:flex;align-items:center;gap:8px;">
-                      <span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:5px;background:${barColors[i]||'var(--text-mute)'}22;color:${barColors[i]||'var(--text-mute)'};font-family:var(--font-mono);font-size:11px;font-weight:700;flex-shrink:0;">${i+1}</span>
+                      <span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:5px;background:${cor}22;color:${cor};font-family:var(--font-mono);font-size:11px;font-weight:700;flex-shrink:0;">${i+1}</span>
                       ${a.name}
                     </span>
                     <span style="font-family:var(--font-mono);font-size:12.5px;color:var(--text-soft);">${a.qty} <span style="color:var(--text-mute);">(${a.pct.toFixed(0)}%)</span></span>
                   </div>
-                  <div class="ind-bar-track"><div class="ind-bar-fill" style="width:${a.pct.toFixed(0)}%;background:${barColors[i]||'var(--text-mute)'};"></div></div>
+                  <div class="ind-bar-track"><div class="ind-bar-fill" style="width:${a.pct.toFixed(0)}%;background:${cor};"></div></div>
                 </div>
               `;
             }).join('')}
@@ -2451,6 +2667,198 @@ document.getElementById('areas-panel-toggle').addEventListener('click', ()=>{
   body.style.display = isOpen ? 'none' : 'block';
   arrow.textContent = isOpen ? 'Expandir ▾' : 'Recolher ▴';
 });
+
+/* ================= AJUSTE PONTUAL DE GESTOR POR TÉCNICO ================= */
+let gestorOverrideSearchTerm = '';
+
+function renderGestorOverrideTable(){
+  const tbody = document.getElementById('gestor-override-tbody');
+  if(!tbody) return;
+  const term = gestorOverrideSearchTerm.trim().toLowerCase();
+  const list = [...TECS]
+    .filter(t=> !term || t.display.toLowerCase().includes(term))
+    .sort((a,b)=>{
+      const aSemGestor = !a.gestor, bSemGestor = !b.gestor;
+      if(aSemGestor !== bSemGestor) return aSemGestor ? -1 : 1; // sem gestor primeiro
+      return a.display.localeCompare(b.display);
+    });
+
+  const semGestorCount = TECS.filter(t=>!t.gestor).length;
+  const alertaEl = document.getElementById('gestor-override-alerta');
+  if(alertaEl){
+    alertaEl.innerHTML = semGestorCount > 0
+      ? `<div class="msg err" style="margin-bottom:14px;">⚠️ ${semGestorCount} técnico${semGestorCount>1?'s':''} novo${semGestorCount>1?'s':''} sem gestor definido — provavelmente ${semGestorCount>1?'apareceram':'apareceu'} agora no Consolidado. Atribua um gestor abaixo pra liberar o acesso completo.</div>`
+      : '';
+  }
+  const arrowEl = document.getElementById('gestor-override-arrow');
+  const toggleTitleEl = document.querySelector('#gestor-override-toggle h2');
+  if(toggleTitleEl){
+    toggleTitleEl.textContent = semGestorCount > 0
+      ? `Ajustar Gestor dos Técnicos (${semGestorCount} pendente${semGestorCount>1?'s':''})`
+      : 'Ajustar Gestor dos Técnicos';
+  }
+
+  if(list.length === 0){
+    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:var(--text-mute);font-family:var(--font-body);padding:18px;">Nenhum técnico encontrado.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = list.map(t=>{
+    const temOverride = !!liderOverridesCache[t.slug];
+    const opcoes = GESTOR_LIST.map(g=>{
+      const label = g.charAt(0)+g.slice(1).toLowerCase();
+      const selecionado = t.gestor === g ? 'selected' : '';
+      return `<div class="msel-option ${selecionado}" data-value="${g}">${label}</div>`;
+    }).join('');
+    const labelAtual = t.gestor ? (t.gestor.charAt(0)+t.gestor.slice(1).toLowerCase()) : 'Selecionar...';
+    const badgeNovo = !t.gestor ? ' <span class="badge" style="background:var(--crit-dim);color:var(--crit);font-size:10px;">🆕 novo · sem gestor</span>' : '';
+    return `<tr>
+      <td style="text-align:left;font-family:var(--font-body);color:var(--text);">${t.display}${badgeNovo}</td>
+      <td>${t.gestor ? (t.gestor.charAt(0)+t.gestor.slice(1).toLowerCase()) : '—'}${temOverride ? ' <span class="badge" style="background:var(--accent-dim);color:var(--accent);font-size:10px;">ajustado</span>' : ''}</td>
+      <td>
+        <div class="msel gestor-override-msel" data-slug="${t.slug}" style="min-width:150px;">
+          <button type="button" class="msel-btn" style="min-width:150px;font-size:12.5px;padding:6px 10px;">
+            <span class="msel-label">${labelAtual}</span>
+            <span class="msel-arrow">▾</span>
+          </button>
+          <div class="msel-panel">${opcoes}</div>
+        </div>
+      </td>
+      <td>${temOverride ? `<button class="back-btn gestor-override-clear" data-slug="${t.slug}" style="padding:5px 10px;font-size:12px;">Remover ajuste</button>` : ''}</td>
+      <td><button class="back-btn tecnico-excluir-btn" data-slug="${t.slug}" data-nome="${t.display.replace(/"/g,'&quot;')}" style="padding:5px 10px;font-size:12px;color:var(--crit);">Excluir</button></td>
+    </tr>`;
+  }).join('');
+
+  tbody.querySelectorAll('.gestor-override-msel').forEach(wrap=>{
+    const btn = wrap.querySelector('.msel-btn');
+    const panel = wrap.querySelector('.msel-panel');
+    btn.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      document.querySelectorAll('.msel.open').forEach(el=>{ if(el!==wrap) el.classList.remove('open'); });
+      wrap.classList.toggle('open');
+    });
+    panel.querySelectorAll('.msel-option').forEach(opt=>{
+      opt.addEventListener('click', async ()=>{
+        const slug = wrap.dataset.slug;
+        const novoGestor = opt.dataset.value;
+        wrap.classList.remove('open');
+        btn.disabled = true;
+        try{
+          await setLiderOverride(slug, novoGestor);
+          applyTecnicosData(TECS);
+          renderGestorOverrideTable();
+          refreshCurrentView();
+        }catch(e){
+          console.warn(e);
+          btn.disabled = false;
+        }
+      });
+    });
+  });
+  tbody.querySelectorAll('.gestor-override-clear').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      const slug = btn.dataset.slug;
+      btn.disabled = true;
+      try{
+        await clearLiderOverride(slug);
+        applyTecnicosData(TECS);
+        renderGestorOverrideTable();
+        refreshCurrentView();
+      }catch(e){
+        console.warn(e);
+      }
+      btn.disabled = false;
+    });
+  });
+
+  tbody.querySelectorAll('.tecnico-excluir-btn').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      if(btn.dataset.confirming !== '1'){
+        btn.dataset.confirming = '1';
+        btn.textContent = 'Confirmar?';
+        setTimeout(()=>{
+          if(btn.dataset.confirming === '1'){
+            btn.dataset.confirming = '0';
+            btn.textContent = 'Excluir';
+          }
+        }, 4000);
+        return;
+      }
+      const slug = btn.dataset.slug;
+      const nome = btn.dataset.nome;
+      btn.disabled = true;
+      btn.textContent = 'Excluindo...';
+      try{
+        await excluirTecnico(slug, nome);
+        applyTecnicosData(ALL_TECS_RAW);
+        renderGestorOverrideTable();
+        renderExcluidosList();
+        refreshCurrentView();
+      }catch(e){
+        console.warn(e);
+        btn.disabled = false;
+        btn.dataset.confirming = '0';
+        btn.textContent = 'Excluir';
+      }
+    });
+  });
+}
+
+function renderExcluidosList(){
+  const body = document.getElementById('excluidos-body');
+  if(!body) return;
+  const slugs = Object.keys(excludedTecnicosCache);
+  if(slugs.length === 0){
+    body.innerHTML = '<p style="font-size:12px;color:var(--text-mute);">Nenhum técnico excluído no momento.</p>';
+    return;
+  }
+  body.innerHTML = slugs.map(slug=>{
+    const info = excludedTecnicosCache[slug];
+    return `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px solid var(--border-soft);">
+      <span style="font-size:13px;color:var(--text);">${info.nome || slug}</span>
+      <button class="back-btn tecnico-restaurar-btn" data-slug="${slug}" style="padding:5px 10px;font-size:12px;color:var(--good);">Restaurar</button>
+    </div>`;
+  }).join('');
+  body.querySelectorAll('.tecnico-restaurar-btn').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      const slug = btn.dataset.slug;
+      btn.disabled = true;
+      btn.textContent = 'Restaurando...';
+      try{
+        await restaurarTecnico(slug);
+        applyTecnicosData(ALL_TECS_RAW);
+        renderGestorOverrideTable();
+        renderExcluidosList();
+        refreshCurrentView();
+      }catch(e){
+        console.warn(e);
+        btn.disabled = false;
+        btn.textContent = 'Restaurar';
+      }
+    });
+  });
+}
+
+document.getElementById('excluidos-toggle').addEventListener('click', ()=>{
+  const body = document.getElementById('excluidos-body');
+  const isOpen = body.style.display !== 'none';
+  body.style.display = isOpen ? 'none' : 'block';
+  if(!isOpen) renderExcluidosList();
+});
+
+document.getElementById('gestor-override-toggle').addEventListener('click', ()=>{
+  const body = document.getElementById('gestor-override-body');
+  const arrow = document.getElementById('gestor-override-arrow');
+  const isOpen = body.style.display !== 'none';
+  body.style.display = isOpen ? 'none' : 'block';
+  arrow.textContent = isOpen ? 'Expandir ▾' : 'Recolher ▴';
+  if(!isOpen) renderGestorOverrideTable();
+});
+document.getElementById('gestor-override-search').addEventListener('input', (e)=>{
+  gestorOverrideSearchTerm = e.target.value;
+  renderGestorOverrideTable();
+});
+
 document.getElementById('areas-search').addEventListener('input', (e)=>{
   areasSearchTerm = e.target.value;
   renderAreasTable();
@@ -2477,7 +2885,7 @@ async function parseUploadedConsolidadoFile(file){
   const isCsv = /\.csv$/i.test(file.name);
   if(isCsv){
     const text = await file.text();
-    return parseCSV(text);
+    return { consolidadoRows: parseCSV(text), liderRowsFromFile: null };
   }
   const buffer = await file.arrayBuffer();
   const workbook = XLSX.read(buffer, {type:'array', cellDates:false});
@@ -2487,7 +2895,9 @@ async function parseUploadedConsolidadoFile(file){
     const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
     rows = XLSX.utils.sheet_to_json(firstSheet, {header:1, raw:false, defval:''});
   }
-  return rows;
+  // Procura também uma aba de Líder (LÍDER, LIDER, LÍDERES...) dentro do MESMO arquivo
+  const liderRowsFromFile = findSheetRowsByNamePattern(workbook, /L[IÍ]DER/i);
+  return { consolidadoRows: rows, liderRowsFromFile };
 }
 
 async function fetchCsvRows(url){
@@ -2501,6 +2911,15 @@ async function fetchCsvRows(url){
   }
 }
 
+async function fetchCsvRowsComRetry(url, tentativas=2){
+  for(let i=0; i<tentativas; i++){
+    const rows = await fetchCsvRows(url);
+    if(rows && rows.length > 0) return rows;
+    if(i < tentativas-1){ await new Promise(r=>setTimeout(r, 1000)); } // espera 1s antes de tentar de novo
+  }
+  return [];
+}
+
 async function handleImportConsolidado(file){
   const statusEl = document.getElementById('admin-import-status');
   const btn = document.getElementById('admin-import-btn');
@@ -2508,23 +2927,29 @@ async function handleImportConsolidado(file){
   btn.textContent = '📥 Lendo arquivo...';
   if(statusEl) statusEl.textContent = '';
   try{
-    const consolidadoRows = await parseUploadedConsolidadoFile(file);
+    const { consolidadoRows, liderRowsFromFile } = await parseUploadedConsolidadoFile(file);
     if(!consolidadoRows || consolidadoRows.length < 2){
       throw new Error('Não encontrei dados reconhecíveis nesse arquivo.');
     }
 
-    btn.textContent = '📥 Buscando CQ e Líder...';
-    const [cqRows, liderRowsAll] = await Promise.all([
-      fetchCsvRows(RAW_CQ_URL),
-      fetchCsvRows(RAW_LIDER_URL)
-    ]);
-    let liderRows = liderRowsAll;
-    if(liderRows.length > 0){
+    btn.textContent = '📥 Buscando CQ...';
+    const cqRows = await fetchCsvRowsComRetry(RAW_CQ_URL);
+
+    let liderRows = liderRowsFromFile;
+    let liderVeioDoArquivo = !!(liderRows && liderRows.length > 0);
+    if(!liderVeioDoArquivo){
+      btn.textContent = '📥 Buscando Líder...';
+      liderRows = await fetchCsvRowsComRetry(RAW_LIDER_URL);
+    }
+    if(liderRows && liderRows.length > 0){
       const maybeHeader = liderRows[0].map(c=>String(c).trim().toUpperCase());
-      if(maybeHeader[0] && (maybeHeader[0].includes('TÉCNICO') || maybeHeader[0].includes('TECNICO') || maybeHeader[0]==='NOME')){
+      if(maybeHeader[0] && (maybeHeader[0].includes('TÉCNICO') || maybeHeader[0].includes('TECNICO') || maybeHeader[0]==='NOME' || maybeHeader[0].includes('RECURSO'))){
         liderRows = liderRows.slice(1);
       }
     }
+
+    const avisos = [];
+    if(cqRows.length === 0) avisos.push('não consegui buscar os dados de CQ (CQ pode ficar zerado) — tente importar de novo em alguns instantes');
 
     btn.textContent = '📥 Calculando indicadores...';
     const tecnicosCalculados = computeIndicatorsFromRaw(consolidadoRows, cqRows, liderRows);
@@ -2537,7 +2962,18 @@ async function handleImportConsolidado(file){
     applyTecnicosData(tecnicosCalculados);
     refreshCurrentView();
 
-    if(statusEl) statusEl.innerHTML = `<span style="color:var(--good);">✅ Importado com sucesso! ${tecnicosCalculados.length} técnicos processados e salvos.</span>`;
+    const semGestorAposCalculo = TECS.filter(t=>!t.gestor).length;
+    if(semGestorAposCalculo > 0){
+      avisos.push(`${semGestorAposCalculo} técnico${semGestorAposCalculo>1?'s':''} sem gestor definido — confira o painel "Ajustar Gestor dos Técnicos" abaixo`);
+    }
+
+    if(statusEl){
+      if(avisos.length > 0){
+        statusEl.innerHTML = `<span style="color:var(--warn);">⚠️ Importado com ressalvas: ${avisos.join('; ')}.</span>`;
+      } else {
+        statusEl.innerHTML = `<span style="color:var(--good);">✅ Importado com sucesso! ${tecnicosCalculados.length} técnicos processados e salvos.</span>`;
+      }
+    }
   }catch(e){
     console.warn(e);
     if(statusEl) statusEl.innerHTML = `<span style="color:var(--crit);">❌ Erro ao importar: ${e.message}</span>`;
@@ -2564,11 +3000,14 @@ function enterAdmin(){
   if(toggleBtn) toggleBtn.style.display = '';
   const importBtn = document.getElementById('admin-import-btn');
   if(importBtn) importBtn.style.display = '';
+  const gestorOverridePanel = document.getElementById('gestor-override-panel');
+  if(gestorOverridePanel) gestorOverridePanel.style.display = '';
   renderAdminBanner();
   renderAdminGestorGrid();
   renderAdminGestorChart();
   renderAdminTableHead();
   renderAccessTable();
+  renderGestorOverrideTable();
   refreshValoresToggleButton('admin-toggle-valores-btn');
   renderAreasTableHead();
   renderAreasTable();
@@ -2583,6 +3022,8 @@ function enterViewer(name){
   if(toggleBtn) toggleBtn.style.display = 'none';
   const importBtn = document.getElementById('admin-import-btn');
   if(importBtn) importBtn.style.display = 'none';
+  const gestorOverridePanel = document.getElementById('gestor-override-panel');
+  if(gestorOverridePanel) gestorOverridePanel.style.display = 'none';
   renderAdminBanner();
   renderAdminGestorGrid();
   renderAdminGestorChart();
@@ -2966,12 +3407,16 @@ function enterDashboard(t){
     const val = t[d.key];
     const s = indStatus(val, d);
     const ratio = indRatio(val, d);
+    let detalhesHTML = '';
+    if(d.key === 'revisita_ativacao') detalhesHTML = revisitaDetalhesHTML(t.revisitasAtivacaoDetalhes, 'revisita-ativ-'+t.slug);
+    if(d.key === 'revisita_reparo') detalhesHTML = revisitaDetalhesHTML(t.revisitasReparoDetalhes, 'revisita-rep-'+t.slug);
     return `
       <div class="ind-row">
         <span class="iname">${d.label}</span>
         <span class="ival">${d.fmt(val)} <span class="meta-note">/ meta ${metaLabel(d)}</span>${s?`<span class="status-dot ${s}"></span>`:''}</span>
       </div>
       <div class="ind-bar-track"><div class="ind-bar-fill ${s||''}" style="width:${(ratio*100).toFixed(0)}%"></div></div>
+      ${detalhesHTML}
     `;
   }).join('');
   document.getElementById('ind-block').innerHTML = indHTML;
