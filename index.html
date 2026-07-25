@@ -375,12 +375,15 @@
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
         <button class="logout-btn" id="admin-import-btn" title="Importar Consolidado direto do computador" style="color:var(--accent);border-color:var(--accent);">📥 Importar Consolidado</button>
         <input type="file" id="admin-import-file-input" accept=".csv,.xlsx,.xls" style="display:none;">
+        <button class="logout-btn" id="admin-seed-historico-btn" title="Alimenta o histórico de revisitas com um mês anterior, sem mexer nos indicadores atuais">📅 Alimentar Histórico (mês anterior)</button>
+        <input type="file" id="admin-seed-historico-file-input" accept=".csv,.xlsx,.xls" style="display:none;">
         <button class="logout-btn" id="admin-refresh-btn" title="Buscar dados mais recentes">↻ Atualizar</button>
         <button class="logout-btn" id="admin-toggle-valores-btn" title="Liberar/bloquear o card de valores para os técnicos">💰 Valores: carregando...</button>
         <button class="logout-btn" id="admin-logout-btn">Sair</button>
       </div>
     </header>
     <p id="admin-import-status" style="font-size:11px;color:var(--text-mute);margin:-14px 0 8px;text-align:right;"></p>
+    <p id="admin-seed-historico-status" style="font-size:11px;color:var(--text-mute);margin:-4px 0 8px;text-align:right;"></p>
     <p id="admin-refresh-status" style="font-size:11px;color:var(--text-mute);margin:0 0 18px;text-align:right;"></p>
 
     <div class="banner" id="admin-banner"></div>
@@ -945,6 +948,23 @@ async function loadComputedIndicators(){
   }
 }
 
+/* ---- Histórico rolante de atividades (só contrato/técnico/tipo/data — nada sensível),
+   usado pra pegar revisitas que atravessam a virada do mês ---- */
+const REVISITA_HISTORICO_DIAS = 40; // cobre a janela de 30 dias da revisita de reparo, com folga
+async function loadRevisitaHistorico(){
+  try{
+    await authReady;
+    const snap = await getDoc(doc(db, 'config', 'revisita_historico'));
+    return snap.exists() ? (snap.data().atividades || []) : [];
+  }catch(e){
+    return [];
+  }
+}
+async function saveRevisitaHistorico(atividades){
+  await authReady;
+  await setDoc(doc(db, 'config', 'revisita_historico'), {atividades, updatedAt: Date.now()});
+}
+
 /* ================= DATA (embutida no build — atualizar recriando este arquivo) ================= */
 let RAW = {"metas": {"nps": 0.7, "eficiencia": 0.8, "wo_min": 510, "revisita_ativacao": 0.05, "revisita_reparo": 0.1, "produtividade": 3.5}, "tecnicos": [{"gestor": "CRISTIANO", "nome": "CIP _ RAFAEL GIELINSKI", "nps": 0.7, "eficiencia": 0.6962025316455697, "wo_min": 509, "revisita_ativacao": 0.0, "revisita_reparo": 0.02564102564102564, "produtividade": 4.230769230769231, "dias_trab_pct": 0.6842105263157895, "dias_trab": 13.0, "cq": 0, "ativacao": 6.0, "ativacao_corp": 0.0, "rem_ext": 7.0, "rem_int": 0.0, "reparo": 42.0, "total_geral": 55.0, "mesh": null}, {"gestor": "CRISTIANO", "nome": "CIP _ ADILSON DOS SANTOS MARQUES", "nps": 0.7, "eficiencia": 0.7333333333333333, "wo_min": 497, "revisita_ativacao": 0.041666666666666664, "revisita_reparo": 0.0, "produtividade": 3.5833333333333335, "dias_trab_pct": 0.631578947368421, "dias_trab": 12.0, "cq": 2, "ativacao": 21.0, "ativacao_corp": 2.0, "rem_ext": 1.0, "rem_int": 1.0, "reparo": 18.0, "total_geral": 43.0, "mesh": 1.0}, {"gestor": "CRISTIANO", "nome": "CIP _ ADRIANO JOAO LINO ROCHA", "nps": 0.7, "eficiencia": 0.8194444444444444, "wo_min": 531, "revisita_ativacao": 0.3, "revisita_reparo": 0.05555555555555555, "produtividade": 3.2941176470588234, "dias_trab_pct": 0.8947368421052632, "dias_trab": 17.0, "cq": 0, "ativacao": 16.0, "ativacao_corp": 10.0, "rem_ext": 6.0, "rem_int": 0.0, "reparo": 24.0, "total_geral": 56.0, "mesh": 2.0}, {"gestor": "CRISTIANO", "nome": "CIP _ DEIVIDY FERREIRA DO AMARA", "nps": 0.7, "eficiencia": 0.8461538461538461, "wo_min": 567, "revisita_ativacao": 0.07692307692307693, "revisita_reparo": 0.1111111111111111, "produtividade": 2.9285714285714284, "dias_trab_pct": 0.7368421052631579, "dias_trab": 14.0, "cq": 0, "ativacao": 7.0, "ativacao_corp": 21.0, "rem_ext": 2.0, "rem_int": 0.0, "reparo": 11.0, "total_geral": 41.0, "mesh": 1.0}, {"gestor": "CRISTIANO", "nome": "CIP _ DIEGO FELIZARDO DE OLIVEIRA", "nps": 0.7, "eficiencia": 0.8518518518518519, "wo_min": 526, "revisita_ativacao": 0.11538461538461539, "revisita_reparo": 0.06060606060606061, "produtividade": 3.823529411764706, "dias_trab_pct": 0.8947368421052632, "dias_trab": 17.0, "cq": 0, "ativacao": 26.0, "ativacao_corp": 1.0, "rem_ext": 2.0, "rem_int": 1.0, "reparo": 35.0, "total_geral": 65.0, "mesh": 4.0}, {"gestor": "CRISTIANO", "nome": "CIP _ ERICO LEANDRO ROSA", "nps": 0.7, "eficiencia": 0.819672131147541, "wo_min": 532, "revisita_ativacao": 0.45454545454545453, "revisita_reparo": 0.2222222222222222, "produtividade": 3.6923076923076925, "dias_trab_pct": 0.6842105263157895, "dias_trab": 13.0, "cq": 0, "ativacao": 25.0, "ativacao_corp": 0.0, "rem_ext": 1.0, "rem_int": 0.0, "reparo": 22.0, "total_geral": 48.0, "mesh": 2.0}, {"gestor": "CRISTIANO", "nome": "CIP _ JONHATHAN ATTOS DE SOUSA", "nps": 0.7, "eficiencia": 0.8481012658227848, "wo_min": 511, "revisita_ativacao": 0.14285714285714285, "revisita_reparo": 0.0, "produtividade": 4.0, "dias_trab_pct": 0.8421052631578947, "dias_trab": 16.0, "cq": 8, "ativacao": 22.0, "ativacao_corp": 1.0, "rem_ext": 9.0, "rem_int": 0.0, "reparo": 32.0, "total_geral": 64.0, "mesh": 1.0}, {"gestor": "CRISTIANO", "nome": "CIP _ JOSE CARLOS ZACARIAS", "nps": 0.7, "eficiencia": 0.8082191780821918, "wo_min": 509, "revisita_ativacao": 0.0, "revisita_reparo": 0.1, "produtividade": 3.8666666666666667, "dias_trab_pct": 0.7894736842105263, "dias_trab": 15.0, "cq": 2, "ativacao": 21.0, "ativacao_corp": 4.0, "rem_ext": 8.0, "rem_int": 1.0, "reparo": 24.0, "total_geral": 58.0, "mesh": 1.0}, {"gestor": "CRISTIANO", "nome": "CIP _ LEONARDO FERNANDES LUCAS", "nps": 0.7, "eficiencia": 0.8571428571428571, "wo_min": 562, "revisita_ativacao": 0.037037037037037035, "revisita_reparo": 0.15789473684210525, "produtividade": 3.4375, "dias_trab_pct": 0.8421052631578947, "dias_trab": 16.0, "cq": 2, "ativacao": 25.0, "ativacao_corp": 3.0, "rem_ext": 5.0, "rem_int": 0.0, "reparo": 22.0, "total_geral": 55.0, "mesh": 5.0}, {"gestor": "CRISTIANO", "nome": "CIP_ ANDERSON FABIANO DE OLIVEIRA", "nps": 0.7, "eficiencia": 0.9122807017543859, "wo_min": 537, "revisita_ativacao": 0.06896551724137931, "revisita_reparo": 0.0, "produtividade": 3.2666666666666666, "dias_trab_pct": 0.7894736842105263, "dias_trab": 15.0, "cq": 0, "ativacao": 24.0, "ativacao_corp": 6.0, "rem_ext": 2.0, "rem_int": 1.0, "reparo": 16.0, "total_geral": 49.0, "mesh": 3.0}, {"gestor": "CRISTIANO", "nome": "CIP _ DIEGO FELIPE GOMES", "nps": 0.7, "eficiencia": 0.75, "wo_min": 534, "revisita_ativacao": 0.0, "revisita_reparo": 0.05263157894736842, "produtividade": 3.4, "dias_trab_pct": 0.7894736842105263, "dias_trab": 15.0, "cq": 2, "ativacao": 26.0, "ativacao_corp": 1.0, "rem_ext": 3.0, "rem_int": 0.0, "reparo": 21.0, "total_geral": 51.0, "mesh": null}, {"gestor": "CRISTIANO", "nome": "CIP _ LUAN NEVES DOS SANTOS", "nps": 0.7, "eficiencia": 0.8163265306122449, "wo_min": 525, "revisita_ativacao": 0.0, "revisita_reparo": 0.0, "produtividade": 3.0, "dias_trab_pct": 0.6842105263157895, "dias_trab": 13.0, "cq": 1, "ativacao": 15.0, "ativacao_corp": 1.0, "rem_ext": 2.0, "rem_int": 0.0, "reparo": 21.0, "total_geral": 39.0, "mesh": 1.0}, {"gestor": "CRISTIANO", "nome": "CIP _ SERGIO PATRICK DOS SANTOS NUNES", "nps": 0.7, "eficiencia": 0.6721311475409836, "wo_min": 544, "revisita_ativacao": 0.1, "revisita_reparo": 0.08, "produtividade": 3.1538461538461537, "dias_trab_pct": 0.6842105263157895, "dias_trab": 13.0, "cq": 0, "ativacao": 14.0, "ativacao_corp": 0.0, "rem_ext": 1.0, "rem_int": 0.0, "reparo": 26.0, "total_geral": 41.0, "mesh": null}, {"gestor": "CRISTIANO", "nome": "CIP _ HEBER DE SOUZA FLÁVIO", "nps": 0.7, "eficiencia": 0.8311688311688312, "wo_min": 501, "revisita_ativacao": 0.1111111111111111, "revisita_reparo": 0.0, "produtividade": 3.875, "dias_trab_pct": 0.8421052631578947, "dias_trab": 16.0, "cq": 3, "ativacao": 23.0, "ativacao_corp": 1.0, "rem_ext": 4.0, "rem_int": 0.0, "reparo": 34.0, "total_geral": 62.0, "mesh": null}, {"gestor": "CRISTIANO", "nome": "CIP _ ALISSOM DA SILVA", "nps": 0.7, "eficiencia": 0.8194444444444444, "wo_min": 562, "revisita_ativacao": 0.0, "revisita_reparo": 0.0, "produtividade": 3.625, "dias_trab_pct": 0.8421052631578947, "dias_trab": 16.0, "cq": 0, "ativacao": 31.0, "ativacao_corp": 0.0, "rem_ext": 10.0, "rem_int": 0.0, "reparo": 17.0, "total_geral": 58.0, "mesh": 1.0}, {"gestor": "CRISTIANO", "nome": "CIP _ CRISTIANO RODRIGUES DE SOUSA", "nps": 0.7, "eficiencia": 0.8840579710144928, "wo_min": 582, "revisita_ativacao": 0.045454545454545456, "revisita_reparo": 0.07692307692307693, "produtividade": 3.4705882352941178, "dias_trab_pct": 0.8947368421052632, "dias_trab": 17.0, "cq": 0, "ativacao": 17.0, "ativacao_corp": 8.0, "rem_ext": 3.0, "rem_int": 0.0, "reparo": 31.0, "total_geral": 59.0, "mesh": 1.0}, {"gestor": "CRISTIANO", "nome": "CIP _ LUCIANO ANDRÉ DE OLIVEIRA", "nps": 0.7, "eficiencia": 0.8275862068965517, "wo_min": 551, "revisita_ativacao": 0.11538461538461539, "revisita_reparo": 0.07692307692307693, "produtividade": 3.357142857142857, "dias_trab_pct": 0.7368421052631579, "dias_trab": 14.0, "cq": 2, "ativacao": 14.0, "ativacao_corp": 13.0, "rem_ext": 4.0, "rem_int": 0.0, "reparo": 16.0, "total_geral": 47.0, "mesh": 1.0}, {"gestor": "CRISTIANO", "nome": "CIP _ LUCAS MARINHAK", "nps": 0.7, "eficiencia": 0.7205882352941176, "wo_min": 518, "revisita_ativacao": 0.0, "revisita_reparo": 0.0, "produtividade": 3.2857142857142856, "dias_trab_pct": 0.7368421052631579, "dias_trab": 14.0, "cq": 0, "ativacao": 19.0, "ativacao_corp": 1.0, "rem_ext": 1.0, "rem_int": 0.0, "reparo": 25.0, "total_geral": 46.0, "mesh": 2.0}, {"gestor": "CRISTIANO", "nome": "CIP _ EDUARDO DE LIMA RIBEIRO ALEGRO", "nps": 0.7, "eficiencia": 0.8311688311688312, "wo_min": 556, "revisita_ativacao": 0.05714285714285714, "revisita_reparo": 0.0, "produtividade": 3.764705882352941, "dias_trab_pct": 0.8947368421052632, "dias_trab": 17.0, "cq": 0, "ativacao": 25.0, "ativacao_corp": 16.0, "rem_ext": 2.0, "rem_int": 0.0, "reparo": 21.0, "total_geral": 64.0, "mesh": null}, {"gestor": "ISRAEL", "nome": "CIP _ ADRIANO CRUZ", "nps": 0.7, "eficiencia": 0.6888888888888889, "wo_min": 484, "revisita_ativacao": 0.0, "revisita_reparo": 0.03225806451612903, "produtividade": 3.6875, "dias_trab_pct": 0.8421052631578947, "dias_trab": 16.0, "cq": 0, "ativacao": 19.0, "ativacao_corp": 0.0, "rem_ext": 3.0, "rem_int": 0.0, "reparo": 37.0, "total_geral": 59.0, "mesh": 2.0}, {"gestor": "ISRAEL", "nome": "CIP _ GILSON RISKE", "nps": 0.7, "eficiencia": 0.8421052631578947, "wo_min": 541, "revisita_ativacao": 0.0, "revisita_reparo": 0.1111111111111111, "produtividade": 3.0, "dias_trab_pct": 0.8421052631578947, "dias_trab": 16.0, "cq": 0, "ativacao": 17.0, "ativacao_corp": 19.0, "rem_ext": 3.0, "rem_int": 0.0, "reparo": 9.0, "total_geral": 48.0, "mesh": null}, {"gestor": "ISRAEL", "nome": "CIP _ JHONATAN WILLIAN PORTO KOCHOLIK", "nps": 0.7, "eficiencia": 0.7413793103448276, "wo_min": 567, "revisita_ativacao": 0.0, "revisita_reparo": 0.08695652173913043, "produtividade": 2.8666666666666667, "dias_trab_pct": 0.7894736842105263, "dias_trab": 15.0, "cq": 0, "ativacao": 16.0, "ativacao_corp": 0.0, "rem_ext": 2.0, "rem_int": 1.0, "reparo": 24.0, "total_geral": 43.0, "mesh": null}, {"gestor": "ISRAEL", "nome": "CIP _ MAURICIO CARLOS LUCAS", "nps": 0.7, "eficiencia": 0.6410256410256411, "wo_min": 515, "revisita_ativacao": 0.0, "revisita_reparo": 0.07692307692307693, "produtividade": 1.9166666666666667, "dias_trab_pct": 0.631578947368421, "dias_trab": 12.0, "cq": 0, "ativacao": 8.0, "ativacao_corp": 0.0, "rem_ext": 1.0, "rem_int": 1.0, "reparo": 13.0, "total_geral": 23.0, "mesh": 2.0}, {"gestor": "ISRAEL", "nome": "CIP _ CLEITON SAMONEK", "nps": 0.7, "eficiencia": 0.6708860759493671, "wo_min": 510, "revisita_ativacao": 0.1, "revisita_reparo": 0.047619047619047616, "produtividade": 3.466666666666667, "dias_trab_pct": 0.7894736842105263, "dias_trab": 15.0, "cq": 0, "ativacao": 25.0, "ativacao_corp": 0.0, "rem_ext": 3.0, "rem_int": 0.0, "reparo": 24.0, "total_geral": 52.0, "mesh": 1.0}, {"gestor": "ISRAEL", "nome": "CIP _ WERYCLES GILBERTO DE OLVEIRA PEREI", "nps": 0.7, "eficiencia": 0.6511627906976745, "wo_min": 563, "revisita_ativacao": 0.0, "revisita_reparo": 0.08333333333333333, "produtividade": 2.1666666666666665, "dias_trab_pct": 0.631578947368421, "dias_trab": 12.0, "cq": 0, "ativacao": 8.0, "ativacao_corp": 0.0, "rem_ext": 1.0, "rem_int": 0.0, "reparo": 17.0, "total_geral": 26.0, "mesh": 1.0}, {"gestor": "ISRAEL", "nome": "CIP _ MARCELO PINHEIRO FERREIRA", "nps": 0.7, "eficiencia": 0.6964285714285714, "wo_min": 521, "revisita_ativacao": 0.0, "revisita_reparo": 0.0625, "produtividade": 2.923076923076923, "dias_trab_pct": 0.6842105263157895, "dias_trab": 13.0, "cq": 0, "ativacao": 15.0, "ativacao_corp": 1.0, "rem_ext": 4.0, "rem_int": 0.0, "reparo": 18.0, "total_geral": 38.0, "mesh": 1.0}, {"gestor": "ISRAEL", "nome": "CIP _ CARLOS DANILO DE SOUSA", "nps": 0.7, "eficiencia": 0.7258064516129032, "wo_min": 536, "revisita_ativacao": 0.047619047619047616, "revisita_reparo": 0.058823529411764705, "produtividade": 2.5625, "dias_trab_pct": 0.8421052631578947, "dias_trab": 16.0, "cq": 4, "ativacao": 20.0, "ativacao_corp": 2.0, "rem_ext": 4.0, "rem_int": 0.0, "reparo": 15.0, "total_geral": 41.0, "mesh": 2.0}, {"gestor": "ISRAEL", "nome": "CIP _ GILBERTO DE OLIVEIRA MIRANDA", "nps": 0.7, "eficiencia": 0.76, "wo_min": 557, "revisita_ativacao": 0.09090909090909091, "revisita_reparo": 0.03225806451612903, "produtividade": 3.6, "dias_trab_pct": 0.7894736842105263, "dias_trab": 15.0, "cq": 0, "ativacao": 15.0, "ativacao_corp": 1.0, "rem_ext": 3.0, "rem_int": 1.0, "reparo": 34.0, "total_geral": 54.0, "mesh": 1.0}, {"gestor": "ISRAEL", "nome": "CIP _ KENNEDY BISPO TOFOLO", "nps": 0.7, "eficiencia": 0.6506024096385542, "wo_min": 517, "revisita_ativacao": 0.0, "revisita_reparo": 0.0, "produtividade": 3.1875, "dias_trab_pct": 0.8421052631578947, "dias_trab": 16.0, "cq": 0, "ativacao": 15.0, "ativacao_corp": 4.0, "rem_ext": 5.0, "rem_int": 1.0, "reparo": 26.0, "total_geral": 51.0, "mesh": 1.0}, {"gestor": "ISRAEL", "nome": "CIP _ RICARDO JOSÉ GONZÁLEZ QUINTERO", "nps": 0.7, "eficiencia": 0.8636363636363636, "wo_min": 527, "revisita_ativacao": 0.0, "revisita_reparo": 0.0, "produtividade": 3.1666666666666665, "dias_trab_pct": 0.631578947368421, "dias_trab": 12.0, "cq": 0, "ativacao": 15.0, "ativacao_corp": 4.0, "rem_ext": 1.0, "rem_int": 1.0, "reparo": 17.0, "total_geral": 38.0, "mesh": null}, {"gestor": "ISRAEL", "nome": "CIP _ ELIAS HENRIQUE DO CARMO ANDRADE", "nps": 0.7, "eficiencia": 0.7125, "wo_min": 531, "revisita_ativacao": 0.0, "revisita_reparo": 0.041666666666666664, "produtividade": 3.6666666666666665, "dias_trab_pct": 0.7894736842105263, "dias_trab": 15.0, "cq": 0, "ativacao": 25.0, "ativacao_corp": 0.0, "rem_ext": 3.0, "rem_int": 0.0, "reparo": 27.0, "total_geral": 55.0, "mesh": 2.0}, {"gestor": "ISRAEL", "nome": "CIP _ TIAGO SUREK", "nps": 0.7, "eficiencia": 0.8412698412698413, "wo_min": 530, "revisita_ativacao": 0.0, "revisita_reparo": 0.0, "produtividade": 3.3333333333333335, "dias_trab_pct": 0.7894736842105263, "dias_trab": 15.0, "cq": 0, "ativacao": 19.0, "ativacao_corp": 0.0, "rem_ext": 4.0, "rem_int": 1.0, "reparo": 26.0, "total_geral": 50.0, "mesh": 2.0}, {"gestor": "ISRAEL", "nome": "CIP _ BRUNO ANTONIO DOS SANTOS WISNIESKI", "nps": 0.7, "eficiencia": 0.7164179104477612, "wo_min": 517, "revisita_ativacao": 0.0, "revisita_reparo": 0.0, "produtividade": 3.4285714285714284, "dias_trab_pct": 0.7368421052631579, "dias_trab": 14.0, "cq": 2, "ativacao": 18.0, "ativacao_corp": 2.0, "rem_ext": 5.0, "rem_int": 0.0, "reparo": 23.0, "total_geral": 48.0, "mesh": null}, {"gestor": "KAIO", "nome": "CIP _ ADEMIR DE MELO CEZAR", "nps": 0.7, "eficiencia": 0.8333333333333334, "wo_min": 783, "revisita_ativacao": 0.0, "revisita_reparo": 0.0, "produtividade": 1.25, "dias_trab_pct": 0.21052631578947367, "dias_trab": 4.0, "cq": 0, "ativacao": 4.0, "ativacao_corp": 0.0, "rem_ext": 0.0, "rem_int": 0.0, "reparo": 1.0, "total_geral": 5.0, "mesh": null}, {"gestor": "KAIO", "nome": "CIP _ ANTONIO CARLOS GONÇALVES", "nps": 0.7, "eficiencia": 0.9393939393939394, "wo_min": 580, "revisita_ativacao": 0.0, "revisita_reparo": 0.0, "produtividade": 2.142857142857143, "dias_trab_pct": 0.7368421052631579, "dias_trab": 14.0, "cq": 0, "ativacao": 10.0, "ativacao_corp": 0.0, "rem_ext": 2.0, "rem_int": 0.0, "reparo": 18.0, "total_geral": 30.0, "mesh": 1.0}, {"gestor": "KAIO", "nome": "CIP _ APARECIDO DE OLIVEIRA LIMA", "nps": 0.7, "eficiencia": 0.9354838709677419, "wo_min": 560, "revisita_ativacao": 0.0, "revisita_reparo": 0.0, "produtividade": 2.0, "dias_trab_pct": 0.7368421052631579, "dias_trab": 14.0, "cq": 0, "ativacao": 11.0, "ativacao_corp": 0.0, "rem_ext": 2.0, "rem_int": 0.0, "reparo": 15.0, "total_geral": 28.0, "mesh": 1.0}, {"gestor": "KAIO", "nome": "CIP _ CLAUDINEI BATISTA DE OLIVEIRA", "nps": 0.7, "eficiencia": 0.9130434782608695, "wo_min": 552, "revisita_ativacao": 0.0, "revisita_reparo": 0.0, "produtividade": 2.9285714285714284, "dias_trab_pct": 0.7368421052631579, "dias_trab": 14.0, "cq": 0, "ativacao": 7.0, "ativacao_corp": 0.0, "rem_ext": 5.0, "rem_int": 2.0, "reparo": 27.0, "total_geral": 41.0, "mesh": 1.0}, {"gestor": "KAIO", "nome": "CIP _ DARLAN JOSE AZEVEDO", "nps": 0.7, "eficiencia": 0.9318181818181818, "wo_min": 591, "revisita_ativacao": 0.0, "revisita_reparo": 0.058823529411764705, "produtividade": 2.5625, "dias_trab_pct": 0.8421052631578947, "dias_trab": 16.0, "cq": 0, "ativacao": 8.0, "ativacao_corp": 0.0, "rem_ext": 4.0, "rem_int": 1.0, "reparo": 28.0, "total_geral": 41.0, "mesh": null}, {"gestor": "KAIO", "nome": "CIP _ ELCIO DE ANDRADE JUNIOR", "nps": 0.7, "eficiencia": 1.0, "wo_min": 853, "revisita_ativacao": 0.0, "revisita_reparo": 0.0, "produtividade": 2.0, "dias_trab_pct": 0.3157894736842105, "dias_trab": 6.0, "cq": 0, "ativacao": 3.0, "ativacao_corp": 0.0, "rem_ext": 0.0, "rem_int": 0.0, "reparo": 9.0, "total_geral": 12.0, "mesh": null}, {"gestor": "KAIO", "nome": "CIP _ ELISON JOSE DE OLIVEIRA", "nps": 0.7, "eficiencia": 0.9387755102040817, "wo_min": 525, "revisita_ativacao": 0.0, "revisita_reparo": 0.0, "produtividade": 2.875, "dias_trab_pct": 0.8421052631578947, "dias_trab": 16.0, "cq": 0, "ativacao": 24.0, "ativacao_corp": 0.0, "rem_ext": 4.0, "rem_int": 2.0, "reparo": 16.0, "total_geral": 46.0, "mesh": null}, {"gestor": "KAIO", "nome": "CIP _ JUCIMAR MARTINS DOS SANTOS", "nps": 0.7, "eficiencia": 0.9655172413793104, "wo_min": 621, "revisita_ativacao": 0.0, "revisita_reparo": 0.0, "produtividade": 1.75, "dias_trab_pct": 0.8421052631578947, "dias_trab": 16.0, "cq": 0, "ativacao": 2.0, "ativacao_corp": 0.0, "rem_ext": 2.0, "rem_int": 1.0, "reparo": 23.0, "total_geral": 28.0, "mesh": null}, {"gestor": "KAIO", "nome": "CIP _ KAUA MATEUS BARBOSA", "nps": 0.7, "eficiencia": 0.9, "wo_min": 572, "revisita_ativacao": 0.0, "revisita_reparo": 0.06666666666666667, "produtividade": 3.2142857142857144, "dias_trab_pct": 0.7368421052631579, "dias_trab": 14.0, "cq": 0, "ativacao": 20.0, "ativacao_corp": 0.0, "rem_ext": 1.0, "rem_int": 0.0, "reparo": 24.0, "total_geral": 45.0, "mesh": null}, {"gestor": "KAIO", "nome": "CIP _ MARCELO GONCALVES", "nps": 0.7, "eficiencia": 0.9, "wo_min": 535, "revisita_ativacao": 0.0, "revisita_reparo": 0.0, "produtividade": 3.6, "dias_trab_pct": 0.2631578947368421, "dias_trab": 5.0, "cq": 0, "ativacao": 6.0, "ativacao_corp": 0.0, "rem_ext": 0.0, "rem_int": 0.0, "reparo": 12.0, "total_geral": 18.0, "mesh": null}, {"gestor": "KAIO", "nome": "CIP _ RENAN DE QUADROS FABIAN", "nps": 0.7, "eficiencia": 0.9622641509433962, "wo_min": 528, "revisita_ativacao": 0.2, "revisita_reparo": 0.04, "produtividade": 3.4, "dias_trab_pct": 0.7894736842105263, "dias_trab": 15.0, "cq": 0, "ativacao": 13.0, "ativacao_corp": 0.0, "rem_ext": 7.0, "rem_int": 0.0, "reparo": 31.0, "total_geral": 51.0, "mesh": null}, {"gestor": "KAIO", "nome": "CIP _ DOMCHARLES QUADROS KLUCH", "nps": 0.7, "eficiencia": null, "wo_min": null, "revisita_ativacao": null, "revisita_reparo": null, "produtividade": null, "dias_trab_pct": null, "dias_trab": null, "cq": 0, "ativacao": null, "ativacao_corp": null, "rem_ext": null, "rem_int": null, "reparo": null, "total_geral": null, "mesh": null}, {"gestor": "KAIO", "nome": "CIP _ GABRIEL VINICIUS NEVES", "nps": 0.7, "eficiencia": 0.9310344827586207, "wo_min": 543, "revisita_ativacao": 0.0, "revisita_reparo": 0.04, "produtividade": 3.6, "dias_trab_pct": 0.7894736842105263, "dias_trab": 15.0, "cq": 0, "ativacao": 14.0, "ativacao_corp": 0.0, "rem_ext": 5.0, "rem_int": 0.0, "reparo": 35.0, "total_geral": 54.0, "mesh": null}, {"gestor": "KAIO", "nome": "CIP _ JOÃO CARLOS DA COSTA", "nps": 0.7, "eficiencia": 0.8767123287671232, "wo_min": 547, "revisita_ativacao": 0.0, "revisita_reparo": 0.12, "produtividade": 3.5555555555555554, "dias_trab_pct": 0.9473684210526315, "dias_trab": 18.0, "cq": 0, "ativacao": 31.0, "ativacao_corp": 0.0, "rem_ext": 3.0, "rem_int": 1.0, "reparo": 29.0, "total_geral": 64.0, "mesh": null}, {"gestor": "MARCELO", "nome": "CIP _ José Augusto Rodrigues Junior", "nps": 0.7, "eficiencia": 0.6440677966101694, "wo_min": 520, "revisita_ativacao": 0.0, "revisita_reparo": 0.14285714285714285, "produtividade": 2.923076923076923, "dias_trab_pct": 0.6842105263157895, "dias_trab": 13.0, "cq": 0, "ativacao": 11.0, "ativacao_corp": 0.0, "rem_ext": 3.0, "rem_int": 1.0, "reparo": 23.0, "total_geral": 38.0, "mesh": null}, {"gestor": "MARCELO", "nome": "CIP _ Luiz Guilherme Skroch", "nps": 0.7, "eficiencia": 0.8809523809523809, "wo_min": 549, "revisita_ativacao": 0.0, "revisita_reparo": 0.11538461538461539, "produtividade": 2.8461538461538463, "dias_trab_pct": 0.6842105263157895, "dias_trab": 13.0, "cq": 0, "ativacao": 8.0, "ativacao_corp": 0.0, "rem_ext": 0.0, "rem_int": 0.0, "reparo": 29.0, "total_geral": 37.0, "mesh": null}, {"gestor": "MARCELO", "nome": "CIP _ WENDY WILIAN GOUVEA MENDES", "nps": 0.7, "eficiencia": 0.6851851851851852, "wo_min": 551, "revisita_ativacao": 0.0, "revisita_reparo": 0.0, "produtividade": 2.3125, "dias_trab_pct": 0.8421052631578947, "dias_trab": 16.0, "cq": 0, "ativacao": 7.0, "ativacao_corp": 0.0, "rem_ext": 1.0, "rem_int": 0.0, "reparo": 29.0, "total_geral": 37.0, "mesh": null}, {"gestor": "MARCELO", "nome": "CIP _ PAULO CESAR SANTOS NUNES", "nps": 0.7, "eficiencia": 0.631578947368421, "wo_min": 546, "revisita_ativacao": 0.0, "revisita_reparo": 0.3333333333333333, "produtividade": 3.0, "dias_trab_pct": 0.21052631578947367, "dias_trab": 4.0, "cq": 16, "ativacao": 2.0, "ativacao_corp": 0.0, "rem_ext": 1.0, "rem_int": 0.0, "reparo": 9.0, "total_geral": 12.0, "mesh": null}, {"gestor": "MARCELO", "nome": "CIP _ DENILSON LEME CORREA", "nps": 0.7, "eficiencia": 0.6491228070175439, "wo_min": 567, "revisita_ativacao": 0.1, "revisita_reparo": 0.1111111111111111, "produtividade": 2.466666666666667, "dias_trab_pct": 0.7894736842105263, "dias_trab": 15.0, "cq": 0, "ativacao": 13.0, "ativacao_corp": 0.0, "rem_ext": 3.0, "rem_int": 0.0, "reparo": 21.0, "total_geral": 37.0, "mesh": null}, {"gestor": "MARCELO", "nome": "CIP _ RICARDO DO ROZARIO DA SILVA", "nps": 0.7, "eficiencia": 0.7702702702702703, "wo_min": 494, "revisita_ativacao": 0.2727272727272727, "revisita_reparo": 0.0, "produtividade": 3.6666666666666665, "dias_trab_pct": 0.7894736842105263, "dias_trab": 15.0, "cq": 0, "ativacao": 11.0, "ativacao_corp": 0.0, "rem_ext": 1.0, "rem_int": 1.0, "reparo": 42.0, "total_geral": 55.0, "mesh": 2.0}, {"gestor": "MARCELO", "nome": "CIP _ TELITON RENAN CARNEIRO GONÇALVES", "nps": 0.7, "eficiencia": 0.7258064516129032, "wo_min": 523, "revisita_ativacao": 0.0, "revisita_reparo": 0.07692307692307693, "produtividade": 2.75, "dias_trab_pct": 0.8421052631578947, "dias_trab": 16.0, "cq": 0, "ativacao": 10.0, "ativacao_corp": 0.0, "rem_ext": 1.0, "rem_int": 0.0, "reparo": 33.0, "total_geral": 44.0, "mesh": 1.0}, {"gestor": "MARCELO", "nome": "CIP _ HYURIT ANDREY MAGALHAES LIMA", "nps": 0.7, "eficiencia": 0.7419354838709677, "wo_min": 537, "revisita_ativacao": 0.0, "revisita_reparo": 0.0, "produtividade": 3.2142857142857144, "dias_trab_pct": 0.7368421052631579, "dias_trab": 14.0, "cq": 0, "ativacao": 12.0, "ativacao_corp": 0.0, "rem_ext": 4.0, "rem_int": 3.0, "reparo": 26.0, "total_geral": 45.0, "mesh": 1.0}, {"gestor": "JEFFERSON", "nome": "CIP _ Paulo Anizio De Carlos", "nps": 0.7, "eficiencia": 0.675, "wo_min": 505, "revisita_ativacao": 0.0, "revisita_reparo": 0.14285714285714285, "produtividade": 2.7, "dias_trab_pct": 0.5263157894736842, "dias_trab": 10.0, "cq": 2, "ativacao": 7.0, "ativacao_corp": 0.0, "rem_ext": 4.0, "rem_int": 0.0, "reparo": 16.0, "total_geral": 27.0, "mesh": null}, {"gestor": "JEFFERSON", "nome": "CIP _ ROGERIO ALVES GARCIA", "nps": 0.7, "eficiencia": 0.7160493827160493, "wo_min": 502, "revisita_ativacao": 0.0, "revisita_reparo": 0.05714285714285714, "produtividade": 3.625, "dias_trab_pct": 0.8421052631578947, "dias_trab": 16.0, "cq": 9, "ativacao": 19.0, "ativacao_corp": 0.0, "rem_ext": 3.0, "rem_int": 0.0, "reparo": 36.0, "total_geral": 58.0, "mesh": null}, {"gestor": "JEFFERSON", "nome": "CIP _ GABRIEL HENRIQUE PEREIRA", "nps": 0.7, "eficiencia": 0.717391304347826, "wo_min": 519, "revisita_ativacao": 0.0, "revisita_reparo": 0.0, "produtividade": 2.3846153846153846, "dias_trab_pct": 0.6842105263157895, "dias_trab": 13.0, "cq": 3, "ativacao": 7.0, "ativacao_corp": 0.0, "rem_ext": 4.0, "rem_int": 0.0, "reparo": 20.0, "total_geral": 31.0, "mesh": 2.0}, {"gestor": "JEFFERSON", "nome": "CIP _ RAFAEL LUCIANO LEMOS COPETI", "nps": 0.7, "eficiencia": 0.7101449275362319, "wo_min": 507, "revisita_ativacao": 0.0, "revisita_reparo": 0.06666666666666667, "produtividade": 3.0625, "dias_trab_pct": 0.8421052631578947, "dias_trab": 16.0, "cq": 7, "ativacao": 16.0, "ativacao_corp": 0.0, "rem_ext": 2.0, "rem_int": 0.0, "reparo": 31.0, "total_geral": 49.0, "mesh": null}, {"gestor": "JEFFERSON", "nome": "CIP _ NILTON JOSE DA SILVA", "nps": 0.7, "eficiencia": 0.6170212765957447, "wo_min": 519, "revisita_ativacao": 0.25, "revisita_reparo": 0.14285714285714285, "produtividade": 1.9285714285714286, "dias_trab_pct": 0.7368421052631579, "dias_trab": 14.0, "cq": 7, "ativacao": 8.0, "ativacao_corp": 0.0, "rem_ext": 3.0, "rem_int": 0.0, "reparo": 16.0, "total_geral": 27.0, "mesh": null}]};
 const METAS = RAW.metas;
@@ -1357,7 +1377,8 @@ function dayKeySite(d){
 }
 function rawColIndex(headers, name){ return headers.indexOf(name); }
 
-function computeIndicatorsFromRaw(consolidadoRows, cqRows, liderRows){
+function computeIndicatorsFromRaw(consolidadoRows, cqRows, liderRows, historicoExtra){
+  historicoExtra = historicoExtra || [];
   if(!consolidadoRows || consolidadoRows.length < 2) return null;
   const ch = consolidadoRows[0].map(h=>String(h).trim());
   const crows = consolidadoRows.slice(1);
@@ -1456,6 +1477,20 @@ function computeIndicatorsFromRaw(consolidadoRows, cqRows, liderRows){
     }
   });
 
+  // Mescla o histórico de meses anteriores (só pra enxergar revisitas que atravessam a virada do mês).
+  // Não sobrescreve nada do mês atual — só adiciona atividades de contratos/datas que ainda não estavam ali.
+  historicoExtra.forEach(h=>{
+    const dataHist = parseDateSafeSite(h.data);
+    if(!h.contrato || !h.tecnico || !h.tipo || !dataHist) return;
+    if(!porContratoGeral[h.contrato]) porContratoGeral[h.contrato] = [];
+    const jaExiste = porContratoGeral[h.contrato].some(a=>
+      a.tecnico===h.tecnico && a.tipo===h.tipo && Math.abs(a.data - dataHist) < 1000*60
+    );
+    if(!jaExiste){
+      porContratoGeral[h.contrato].push({tecnico: h.tecnico, tipo: h.tipo, data: dataHist, solucaoFalha: h.solucaoFalha || ''});
+    }
+  });
+
   Object.keys(porContratoGeral).forEach(contrato=>{
     const atividades = porContratoGeral[contrato].slice().sort((a,b)=>a.data-b.data);
     atividades.forEach((ativ, idx)=>{
@@ -1467,8 +1502,8 @@ function computeIndicatorsFromRaw(consolidadoRows, cqRows, liderRows){
             t.revisitaAtivacaoCount++;
             t.revisitasAtivacaoDetalhes.push({
               contrato,
-              dataOriginal: ativ.data,
-              dataRevisita: revisita.data,
+              dataOriginal: ativ.data.toISOString(),
+              dataRevisita: revisita.data.toISOString(),
               solucaoFalha: revisita.solucaoFalha || '(sem solução registrada)'
             });
           }
@@ -1482,8 +1517,8 @@ function computeIndicatorsFromRaw(consolidadoRows, cqRows, liderRows){
             t.revisitaReparoCount++;
             t.revisitasReparoDetalhes.push({
               contrato,
-              dataOriginal: ativ.data,
-              dataRevisita: revisita.data,
+              dataOriginal: ativ.data.toISOString(),
+              dataRevisita: revisita.data.toISOString(),
               solucaoFalha: revisita.solucaoFalha || '(sem solução registrada)'
             });
           }
@@ -1569,7 +1604,19 @@ function computeIndicatorsFromRaw(consolidadoRows, cqRows, liderRows){
     });
   });
 
-  return tecnicos;
+  // Achata o porContratoGeral (já mesclado com o histórico) numa lista simples,
+  // pra quem chamou essa função poder salvar o histórico atualizado.
+  const atividadesParaHistorico = [];
+  Object.keys(porContratoGeral).forEach(contrato=>{
+    porContratoGeral[contrato].forEach(a=>{
+      atividadesParaHistorico.push({
+        contrato, tecnico: a.tecnico, tipo: a.tipo,
+        data: a.data.toISOString(), solucaoFalha: a.solucaoFalha || ''
+      });
+    });
+  });
+
+  return { tecnicos, atividadesParaHistorico };
 }
 
 async function tryLoadRawAndCompute(){
@@ -1594,7 +1641,8 @@ async function tryLoadRawAndCompute(){
       }
     }
 
-    const tecnicosCalculados = computeIndicatorsFromRaw(consolidadoRows, cqRows, liderRows);
+    const resultado = computeIndicatorsFromRaw(consolidadoRows, cqRows, liderRows);
+    const tecnicosCalculados = resultado ? resultado.tecnicos : null;
     if(!tecnicosCalculados || tecnicosCalculados.length===0) throw new Error('Nenhum técnico processado a partir dos dados brutos.');
 
     applyTecnicosData(tecnicosCalculados);
@@ -2303,7 +2351,14 @@ const TABLE_COLS = [
 
 function fmtDataCurta(d){
   if(!d) return '';
-  return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0');
+  // Aceita string ISO (formato salvo), objeto Date, ou Timestamp do Firestore (tem .toDate())
+  let dt;
+  if(typeof d === 'string' || typeof d === 'number') dt = new Date(d);
+  else if(d instanceof Date) dt = d;
+  else if(typeof d.toDate === 'function') dt = d.toDate();
+  else return '';
+  if(isNaN(dt)) return '';
+  return String(dt.getDate()).padStart(2,'0')+'/'+String(dt.getMonth()+1).padStart(2,'0');
 }
 function revisitaDetalhesHTML(detalhes, uniqueId){
   if(!detalhes || detalhes.length === 0) return '';
@@ -2948,11 +3003,15 @@ async function handleImportConsolidado(file){
       }
     }
 
+    btn.textContent = '📥 Buscando histórico de revisitas...';
+    const historicoExtra = await loadRevisitaHistorico();
+
     const avisos = [];
     if(cqRows.length === 0) avisos.push('não consegui buscar os dados de CQ (CQ pode ficar zerado) — tente importar de novo em alguns instantes');
 
     btn.textContent = '📥 Calculando indicadores...';
-    const tecnicosCalculados = computeIndicatorsFromRaw(consolidadoRows, cqRows, liderRows);
+    const resultado = computeIndicatorsFromRaw(consolidadoRows, cqRows, liderRows, historicoExtra);
+    const tecnicosCalculados = resultado ? resultado.tecnicos : null;
     if(!tecnicosCalculados || tecnicosCalculados.length === 0){
       throw new Error('Nenhum técnico processado. Confira se o arquivo tem as colunas esperadas (Recurso, Status da Atividade, Tipo de Atividade, etc.).');
     }
@@ -2961,6 +3020,23 @@ async function handleImportConsolidado(file){
     await saveComputedIndicators(tecnicosCalculados);
     applyTecnicosData(tecnicosCalculados);
     refreshCurrentView();
+
+    // Atualiza o histórico rolante (poda pra manter só os últimos ~40 dias, cobrindo a virada do mês)
+    try{
+      const atividades = resultado.atividadesParaHistorico || [];
+      if(atividades.length > 0){
+        const datas = atividades.map(a=>new Date(a.data).getTime()).filter(t=>!isNaN(t));
+        const maisRecente = Math.max(...datas);
+        const limiteMs = maisRecente - REVISITA_HISTORICO_DIAS*24*60*60*1000;
+        const podado = atividades.filter(a=>{
+          const t = new Date(a.data).getTime();
+          return !isNaN(t) && t >= limiteMs;
+        });
+        await saveRevisitaHistorico(podado);
+      }
+    }catch(e){
+      console.warn('Não foi possível salvar o histórico de revisitas:', e);
+    }
 
     const semGestorAposCalculo = TECS.filter(t=>!t.gestor).length;
     if(semGestorAposCalculo > 0){
@@ -2991,6 +3067,97 @@ document.getElementById('admin-import-file-input').addEventListener('change', (e
   e.target.value = ''; // permite selecionar o mesmo arquivo de novo depois
 });
 
+async function handleSeedHistorico(file){
+  const statusEl = document.getElementById('admin-seed-historico-status');
+  const btn = document.getElementById('admin-seed-historico-btn');
+  btn.disabled = true;
+  btn.textContent = '📅 Lendo arquivo...';
+  if(statusEl) statusEl.textContent = '';
+  try{
+    const { consolidadoRows } = await parseUploadedConsolidadoFile(file);
+    if(!consolidadoRows || consolidadoRows.length < 2){
+      throw new Error('Não encontrei dados reconhecíveis nesse arquivo.');
+    }
+
+    const ch = consolidadoRows[0].map(h=>String(h).trim());
+    const crows = consolidadoRows.slice(1);
+    const iRecurso = rawColIndex(ch, 'Recurso');
+    const iStatus = rawColIndex(ch, 'Status da Atividade');
+    const iContrato = rawColIndex(ch, 'Contrato');
+    const iTipoAtividade = rawColIndex(ch, 'Tipo de Atividade');
+    const iDataProtocolo = rawColIndex(ch, 'Data e horário do protocolo');
+    const iDataAgendada = rawColIndex(ch, 'Data agendada');
+    const iSolucaoFalha = rawColIndex(ch, 'Solução da Falha');
+
+    if(iRecurso===-1 || iStatus===-1 || iTipoAtividade===-1){
+      throw new Error('Colunas essenciais não encontradas nesse arquivo (Recurso, Status da Atividade, Tipo de Atividade).');
+    }
+
+    btn.textContent = '📅 Extraindo atividades...';
+    const novasAtividades = [];
+    crows.forEach(row=>{
+      const nome = String(row[iRecurso]||'').trim();
+      if(!nome || !isRealTecnicoSite(nome)) return;
+      const status = String(row[iStatus]||'').trim();
+      if(status !== 'Concluída') return;
+      const tipo = String(row[iTipoAtividade]||'').trim();
+      if(tipo !== 'Ativação' && tipo !== 'Reparo') return;
+      const contrato = iContrato!==-1 ? String(row[iContrato]||'').trim() : '';
+      if(!contrato) return;
+      const solucaoFalha = iSolucaoFalha!==-1 ? String(row[iSolucaoFalha]||'').trim() : '';
+      const dataProtocolo = iDataProtocolo!==-1 ? parseDateSafeSite(row[iDataProtocolo]) : null;
+      const dataAgendada = iDataAgendada!==-1 ? parseDateSafeSite(row[iDataAgendada]) : null;
+      const dataRef = dataProtocolo || dataAgendada;
+      if(!dataRef) return;
+      novasAtividades.push({ contrato, tecnico: nome, tipo, data: dataRef.toISOString(), solucaoFalha });
+    });
+
+    if(novasAtividades.length === 0){
+      throw new Error('Nenhuma atividade de Ativação/Reparo reconhecida nesse arquivo.');
+    }
+
+    btn.textContent = '📅 Mesclando com o histórico...';
+    const existente = await loadRevisitaHistorico();
+
+    const combinado = existente.slice();
+    novasAtividades.forEach(nova=>{
+      const jaExiste = combinado.some(a=>
+        a.contrato===nova.contrato && a.tecnico===nova.tecnico && a.tipo===nova.tipo &&
+        Math.abs(new Date(a.data).getTime() - new Date(nova.data).getTime()) < 1000*60
+      );
+      if(!jaExiste) combinado.push(nova);
+    });
+
+    // Poda pra manter só os últimos ~40 dias, contando a partir de HOJE
+    // (esse é um "reforço" pontual do histórico, então a referência é o presente, não o arquivo antigo)
+    const agora = Date.now();
+    const limiteMs = agora - REVISITA_HISTORICO_DIAS*24*60*60*1000;
+    const podado = combinado.filter(a=>{
+      const t = new Date(a.data).getTime();
+      return !isNaN(t) && t >= limiteMs;
+    });
+
+    btn.textContent = '📅 Salvando...';
+    await saveRevisitaHistorico(podado);
+
+    if(statusEl) statusEl.innerHTML = `<span style="color:var(--good);">✅ Histórico alimentado! ${novasAtividades.length} atividades lidas do arquivo, ${podado.length} mantidas no histórico (últimos ${REVISITA_HISTORICO_DIAS} dias). Os indicadores atuais não foram alterados.</span>`;
+  }catch(e){
+    console.warn(e);
+    if(statusEl) statusEl.innerHTML = `<span style="color:var(--crit);">❌ Erro: ${e.message}</span>`;
+  }
+  btn.disabled = false;
+  btn.textContent = '📅 Alimentar Histórico (mês anterior)';
+}
+
+document.getElementById('admin-seed-historico-btn').addEventListener('click', ()=>{
+  document.getElementById('admin-seed-historico-file-input').click();
+});
+document.getElementById('admin-seed-historico-file-input').addEventListener('change', (e)=>{
+  const file = e.target.files[0];
+  if(file) handleSeedHistorico(file);
+  e.target.value = '';
+});
+
 function enterAdmin(){
   isViewerMode = false;
   document.getElementById('login-screen').style.display = 'none';
@@ -3000,6 +3167,8 @@ function enterAdmin(){
   if(toggleBtn) toggleBtn.style.display = '';
   const importBtn = document.getElementById('admin-import-btn');
   if(importBtn) importBtn.style.display = '';
+  const seedHistoricoBtn = document.getElementById('admin-seed-historico-btn');
+  if(seedHistoricoBtn) seedHistoricoBtn.style.display = '';
   const gestorOverridePanel = document.getElementById('gestor-override-panel');
   if(gestorOverridePanel) gestorOverridePanel.style.display = '';
   renderAdminBanner();
@@ -3022,6 +3191,8 @@ function enterViewer(name){
   if(toggleBtn) toggleBtn.style.display = 'none';
   const importBtn = document.getElementById('admin-import-btn');
   if(importBtn) importBtn.style.display = 'none';
+  const seedHistoricoBtn = document.getElementById('admin-seed-historico-btn');
+  if(seedHistoricoBtn) seedHistoricoBtn.style.display = 'none';
   const gestorOverridePanel = document.getElementById('gestor-override-panel');
   if(gestorOverridePanel) gestorOverridePanel.style.display = 'none';
   renderAdminBanner();
