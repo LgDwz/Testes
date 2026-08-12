@@ -335,10 +335,12 @@
   .my-jobs-screen{display:none;flex-direction:column;flex:1;min-height:0;}
   .my-jobs-screen.show{display:flex;}
   .my-jobs-head{padding:20px 16px 14px;}
+  .job-card{margin-bottom:10px;}
   .job-item{
     background:var(--bg-elev);border:1px solid var(--border);border-radius:10px;
-    padding:14px;display:flex;align-items:center;gap:12px;margin-bottom:10px;cursor:pointer;
+    padding:14px;display:flex;align-items:center;gap:12px;cursor:pointer;
   }
+  .job-card.open .job-item{border-radius:10px 10px 0 0;border-bottom-color:transparent;}
   .job-item-body{flex:1;min-width:0;}
   .job-item-title{font-size:14px;font-weight:600;margin-bottom:3px;}
   .job-item-sub{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-dim);}
@@ -348,6 +350,26 @@
   }
   .job-status.enviado{background:var(--success-dim);color:var(--success);}
   .job-status.rascunho{background:var(--bg-elev-2);color:var(--text-dim);}
+  .job-chevron{color:var(--text-faint);flex-shrink:0;transition:transform 0.2s ease;}
+  .job-card.open .job-chevron{transform:rotate(90deg);}
+  .job-details{
+    display:none;background:var(--bg-elev-2);border:1px solid var(--border);border-top:none;
+    border-radius:0 0 10px 10px;padding:4px 14px 12px;
+  }
+  .job-card.open .job-details{display:block;}
+  .job-service-row{display:flex;justify-content:space-between;gap:10px;padding:8px 0;
+    border-bottom:1px solid var(--border);font-size:12px;}
+  .job-service-row:last-child{border-bottom:none;}
+  .job-service-row .k{color:var(--text-dim);flex:1;}
+  .job-service-row .v{font-family:'IBM Plex Mono',monospace;color:var(--text);flex-shrink:0;}
+  .job-service-empty{padding:10px 0;font-size:12px;color:var(--text-faint);}
+  .job-edit-btn{
+    display:flex;align-items:center;gap:6px;width:100%;justify-content:center;
+    margin-top:8px;padding:9px;border-radius:8px;border:1px solid var(--border);
+    background:var(--bg-elev);color:var(--text-dim);cursor:pointer;
+    font-family:'IBM Plex Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:0.03em;
+  }
+  .job-edit-btn:hover{border-color:var(--accent);color:var(--accent);}
 
   /* LOGIN SCREEN */
   .login-screen{
@@ -468,10 +490,10 @@
   <div class="login-screen" id="loginScreen">
     <div class="login-hero">
       <div class="login-mark">FF</div>
-      <div class="login-title">FiberFlow Tech</div>
-      <div class="login-sub">Entre com sua conta técnica para começar um relatório.</div>
+      <div class="login-title" id="loginScreenTitle">FiberFlow Tech</div>
+      <div class="login-sub" id="loginScreenSub">Entre com sua conta técnica para começar um relatório.</div>
     </div>
-    <div class="login-body">
+    <div class="login-body" id="loginFormView">
       <div class="login-error" id="loginError">Preencha usuário e senha para continuar.</div>
       <div class="login-field">
         <label class="field-label">E-mail</label>
@@ -482,7 +504,7 @@
         <input class="field-input" id="loginPass" type="password" placeholder="••••••••">
       </div>
       <button class="login-btn" id="loginBtn">Entrar</button>
-      <div class="login-forgot">Esqueci minha senha</div>
+      <div class="login-forgot" id="goToSignup">Não tem conta? Criar conta</div>
 
       <div class="login-demo-label">Acesso demo (não valida senha)</div>
       <div class="login-demo-chips">
@@ -490,6 +512,29 @@
         <div class="login-demo-chip" data-demo-name="Ronaldo Daniel">Ronaldo Daniel</div>
       </div>
     </div>
+
+    <div class="login-body" id="signupFormView" style="display:none;">
+      <div class="login-error" id="signupError">Preencha todos os campos para continuar.</div>
+      <div class="login-field">
+        <label class="field-label">Nome</label>
+        <input class="field-input" id="signupNome" placeholder="Seu nome completo">
+      </div>
+      <div class="login-field">
+        <label class="field-label">E-mail</label>
+        <input class="field-input" id="signupEmail" placeholder="ex: seu.nome@fiberflow.com">
+      </div>
+      <div class="login-field">
+        <label class="field-label">Senha</label>
+        <input class="field-input" id="signupPass" type="password" placeholder="mínimo 6 caracteres">
+      </div>
+      <div class="login-field" style="margin-bottom:0;">
+        <label class="field-label">Confirmar senha</label>
+        <input class="field-input" id="signupPass2" type="password" placeholder="digite a senha de novo">
+      </div>
+      <button class="login-btn" id="signupBtn">Criar conta</button>
+      <div class="login-forgot" id="goToLogin">Já tenho conta &mdash; entrar</div>
+    </div>
+
     <div class="login-footer">FiberFlow Tech &middot; acesso restrito a técnicos autorizados</div>
   </div>
 
@@ -1453,11 +1498,16 @@
       if(error) throw error;
       sendStatus.textContent = 'Relatório enviado com sucesso.';
       showToast('Relatório enviado para o servidor');
+      const servicosFinal = valuesItems
+        .filter(v => Number(dataState.valuesQty[v.code]) > 0)
+        .map(v => ({desc: v.desc, qtd: Number(dataState.valuesQty[v.code]), preco: v.price}));
       reportsList.unshift({
         contrato: contractNumero,
         cliente: dataState.contract.empresa || 'Empresa não informada',
         status: 'enviado',
         data: new Date().toLocaleDateString('pt-BR'),
+        servicos: servicosFinal,
+        snapshot: JSON.parse(JSON.stringify(dataState)),
       });
     } catch(err){
       sendStatus.textContent = 'Erro ao enviar: ' + (err.message || err);
@@ -1560,6 +1610,90 @@
     });
   });
 
+  // ---------- Criar conta (signup) ----------
+  const loginFormView = document.getElementById('loginFormView');
+  const signupFormView = document.getElementById('signupFormView');
+  const loginScreenTitle = document.getElementById('loginScreenTitle');
+  const loginScreenSub = document.getElementById('loginScreenSub');
+  const goToSignup = document.getElementById('goToSignup');
+  const goToLogin = document.getElementById('goToLogin');
+  const signupNome = document.getElementById('signupNome');
+  const signupEmail = document.getElementById('signupEmail');
+  const signupPass = document.getElementById('signupPass');
+  const signupPass2 = document.getElementById('signupPass2');
+  const signupError = document.getElementById('signupError');
+  const signupBtn = document.getElementById('signupBtn');
+
+  goToSignup.addEventListener('click', ()=>{
+    loginFormView.style.display = 'none';
+    signupFormView.style.display = 'block';
+    loginScreenTitle.textContent = 'Criar conta';
+    loginScreenSub.textContent = 'Cadastre-se para acessar o FiberFlow Tech.';
+  });
+
+  goToLogin.addEventListener('click', ()=>{
+    signupFormView.style.display = 'none';
+    loginFormView.style.display = 'block';
+    loginScreenTitle.textContent = 'FiberFlow Tech';
+    loginScreenSub.textContent = 'Entre com sua conta técnica para começar um relatório.';
+  });
+
+  signupBtn.addEventListener('click', async ()=>{
+    const nome = signupNome.value.trim();
+    const email = signupEmail.value.trim();
+    const pass = signupPass.value;
+    const pass2 = signupPass2.value;
+
+    if(!nome || !email || !pass || !pass2){
+      signupError.textContent = 'Preencha todos os campos para continuar.';
+      signupError.classList.add('show');
+      return;
+    }
+    if(pass.length < 6){
+      signupError.textContent = 'A senha precisa ter pelo menos 6 caracteres.';
+      signupError.classList.add('show');
+      return;
+    }
+    if(pass !== pass2){
+      signupError.textContent = 'As senhas não coincidem.';
+      signupError.classList.add('show');
+      return;
+    }
+    signupError.classList.remove('show');
+
+    if(!supabaseConfigured){
+      showToast('Configure as chaves do Supabase no código antes de criar contas reais.');
+      return;
+    }
+
+    signupBtn.disabled = true;
+    signupBtn.textContent = 'Criando conta...';
+    const {data, error} = await supabaseClient.auth.signUp({
+      email: email,
+      password: pass,
+      options: { data: { nome: nome } }
+    });
+    signupBtn.disabled = false;
+    signupBtn.textContent = 'Criar conta';
+
+    if(error){
+      signupError.textContent = error.message.includes('already') || error.message.includes('registered')
+        ? 'Já existe uma conta com esse e-mail.'
+        : 'Não deu pra criar a conta: ' + error.message;
+      signupError.classList.add('show');
+      return;
+    }
+
+    if(data.session){
+      // Confirmação de e-mail desligada no projeto: já entra direto
+      doLogin(nome);
+    } else {
+      showToast('Conta criada! Verifique seu e-mail para confirmar antes de entrar.');
+      goToLogin.click();
+      loginUser.value = email;
+    }
+  });
+
   logoutLink.addEventListener('click', async ()=>{
     if(supabaseConfigured){
       try{ await supabaseClient.auth.signOut(); }catch(e){}
@@ -1582,10 +1716,25 @@
   const jobsList = document.getElementById('jobsList');
 
   const reportsList = [
-    {contrato:'2237754', cliente:'Câmara Municipal de Paranaguá', status:'enviado', data:'24/07/2026'},
-    {contrato:'2434470', cliente:'Auto Posto Alphaville Ltda', status:'enviado', data:'08/07/2026'},
-    {contrato:'2400982', cliente:'Banco Cresol (Confederação)', status:'enviado', data:'09/06/2026'},
-    {contrato:'2426119', cliente:'LBR Transportes Aéreos Ltda', status:'rascunho', data:'30/07/2026'},
+    {contrato:'2237754', cliente:'Câmara Municipal de Paranaguá', status:'enviado', data:'24/07/2026', servicos:[
+      {desc:'Instalação de cabo óptico aéreo (Metros)', qtd:404, preco:1.21},
+      {desc:'Abertura e Fechamento de conjunto emenda óptica', qtd:2, preco:30.50},
+      {desc:'Conexão/terminação de fibras ópticas', qtd:4, preco:16.32},
+    ]},
+    {contrato:'2434470', cliente:'Auto Posto Alphaville Ltda', status:'enviado', data:'08/07/2026', servicos:[
+      {desc:'Instalação de cabo óptico aéreo (Metros)', qtd:105, preco:1.21},
+      {desc:'Abertura e Fechamento de conjunto emenda óptica', qtd:1, preco:30.50},
+      {desc:'Instalação de conjunto de emenda até 36 fibras', qtd:1, preco:94.10},
+      {desc:'Abordagem de cliente com rede interna até 250m', qtd:1, preco:160.00},
+    ]},
+    {contrato:'2400982', cliente:'Banco Cresol (Confederação)', status:'enviado', data:'09/06/2026', servicos:[
+      {desc:'Instalação de cabo óptico aéreo (Metros)', qtd:100, preco:1.21},
+      {desc:'Abertura e Fechamento de conjunto emenda óptica', qtd:1, preco:30.50},
+      {desc:'Instalação de conjunto de emenda acima de 36 fibras', qtd:1, preco:106.95},
+      {desc:'Abordagem de cliente com rede interna até 250m', qtd:1, preco:160.00},
+      {desc:'Deslocamento intermunicipal', qtd:2, preco:0.80},
+    ]},
+    {contrato:'2426119', cliente:'LBR Transportes Aéreos Ltda', status:'rascunho', data:'30/07/2026', servicos:[]},
   ];
 
   function showAppView(view){
@@ -1613,22 +1762,102 @@
     renderValores();
   }
 
+  function loadJobSnapshot(job){
+    const snap = job.snapshot;
+    dataState.contract = JSON.parse(JSON.stringify(snap.contract || {}));
+    dataState.projectDocs = JSON.parse(JSON.stringify(snap.projectDocs || {}));
+    dataState.photos = JSON.parse(JSON.stringify(snap.photos || {}));
+    dataState.docsAtt = JSON.parse(JSON.stringify(snap.docsAtt || {}));
+    dataState.materialsQty = JSON.parse(JSON.stringify(snap.materialsQty || {}));
+    dataState.valuesQty = JSON.parse(JSON.stringify(snap.valuesQty || {}));
+
+    const c = dataState.contract;
+    document.getElementById('fNumero').value = c.numero || '';
+    document.getElementById('fData').value = c.data || '';
+    document.getElementById('fEndereco').value = c.endereco || '';
+    document.getElementById('fCodtcomp').value = c.codtcomp || '';
+    document.getElementById('fCidade').value = c.cidade || '';
+    document.getElementById('fCep').value = c.cep || '';
+    document.getElementById('fCoord').value = c.coordenadas || '';
+    document.getElementById('fEmpresa').value = c.empresa || '';
+
+    renderDocsProjeto();
+    renderFotos();
+    renderDocsExecutados();
+    renderMateriais();
+    renderValores();
+
+    showAppView('wizard');
+    showStep(0);
+    showToast('Editando o contrato ' + job.contrato);
+  }
+
+  function jobTotal(job){
+    return (job.servicos || []).reduce((sum, s) => sum + s.qtd * s.preco, 0);
+  }
+
   function renderJobsList(){
     jobsList.innerHTML = '';
+
+    const totalGeral = reportsList.reduce((sum, job) => sum + jobTotal(job), 0);
+    const summary = document.createElement('div');
+    summary.className = 'values-total-row';
+    summary.style.marginBottom = '16px';
+    summary.innerHTML = `<span>Total (${reportsList.length} obras)</span><span>${formatBRL(totalGeral)}</span>`;
+    jobsList.appendChild(summary);
+
     reportsList.forEach(job=>{
-      const item = document.createElement('div');
-      item.className = 'job-item';
-      item.innerHTML = `
+      const total = jobTotal(job);
+      const card = document.createElement('div');
+      card.className = 'job-card';
+
+      const header = document.createElement('div');
+      header.className = 'job-item';
+      header.innerHTML = `
         <div class="job-item-body">
           <div class="job-item-title">Contrato ${job.contrato}</div>
           <div class="job-item-sub">${job.cliente} &middot; ${job.data}</div>
+          <div class="job-item-sub" style="color:var(--success);margin-top:2px;">${total > 0 ? formatBRL(total) : 'valor pendente'}</div>
         </div>
         <div class="job-status ${job.status}">${job.status === 'enviado' ? 'Enviado' : 'Rascunho'}</div>
+        <div class="job-chevron">&#8250;</div>
       `;
-      item.addEventListener('click', ()=>{
-        showToast(job.status === 'enviado' ? 'Relatório já enviado \u2014 consulta apenas' : 'Retomando rascunho (demo)');
+
+      const details = document.createElement('div');
+      details.className = 'job-details';
+      let servicosHtml = '';
+      if(job.servicos && job.servicos.length){
+        servicosHtml = job.servicos.map(s => `
+          <div class="job-service-row">
+            <span class="k">${s.desc} (x${s.qtd})</span>
+            <span class="v">${formatBRL(s.qtd * s.preco)}</span>
+          </div>
+        `).join('');
+      } else {
+        servicosHtml = '<div class="job-service-empty">Nenhum serviço lançado ainda neste rascunho.</div>';
+      }
+      details.innerHTML = servicosHtml + `
+        <button class="job-edit-btn" type="button">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+          Editar esta obra
+        </button>
+      `;
+      details.querySelector('.job-edit-btn').addEventListener('click', (e)=>{
+        e.stopPropagation();
+        if(job.snapshot){
+          loadJobSnapshot(job);
+        } else {
+          showToast('Exemplo de demonstração \u2014 sem dados reais salvos pra editar');
+        }
       });
-      jobsList.appendChild(item);
+
+      header.addEventListener('click', ()=>{
+        card.classList.toggle('open');
+      });
+
+      card.appendChild(header);
+      card.appendChild(details);
+      jobsList.appendChild(card);
     });
   }
 
