@@ -2626,6 +2626,13 @@
       ehRevisor() ? 'Obras da equipe' : 'Minhas obras';
   }
 
+  // Estes elementos precisam existir ANTES do painel abaixo: são const,
+  // e usar const antes da declaração derruba o script inteiro.
+  const usersScreen   = document.getElementById('usersScreen');
+  const usersCard     = document.getElementById('usersCard');
+  const usersList     = document.getElementById('usersList');
+  const backFromUsers = document.getElementById('backFromUsers');
+
   // ---------- Painel de controle de acessos (somente admin) ----------
   // A checagem aqui e de interface. Quem realmente barra e o RLS: as
   // policies de "perfis" so aceitam escrita de quem e admin de verdade.
@@ -3083,10 +3090,6 @@
   const homeLink = document.getElementById('homeLink');
   const backFromJobs = document.getElementById('backFromJobs');
   const jobsList = document.getElementById('jobsList');
-  const usersScreen = document.getElementById('usersScreen');
-  const usersCard = document.getElementById('usersCard');
-  const usersList = document.getElementById('usersList');
-  const backFromUsers = document.getElementById('backFromUsers');
 
   // Sem dados de exemplo: a lista vem do Supabase, filtrada pelo RLS.
   let reportsList = [];
