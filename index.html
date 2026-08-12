@@ -639,6 +639,10 @@
       FiberFlow Tech &middot; acesso restrito a usuários autorizados<br>
       <span id="versaoApp" style="opacity:0.6;"></span>
       &middot; <span id="limparAparelho" style="text-decoration:underline;cursor:pointer;">limpar dados deste aparelho</span>
+      &middot; <span id="testarConexao" style="text-decoration:underline;cursor:pointer;">testar conexão</span>
+      <div id="diagBox" style="display:none;text-align:left;margin-top:12px;padding:10px;
+        border:1px solid var(--border);border-radius:8px;background:var(--bg-elev);
+        font-family:'IBM Plex Mono',monospace;font-size:10.5px;line-height:1.7;color:var(--text-dim);"></div>
     </div>
   </div>
 
@@ -2815,6 +2819,12 @@
     }
     loginError.classList.remove('show');
 
+    if(supabaseConfigured && !supabaseClient){
+      loginError.textContent = 'A biblioteca do Supabase não carregou. Verifique a internet e recarregue a página.';
+      loginError.classList.add('show');
+      return;
+    }
+
     if(!supabaseConfigured){
       // Sem chaves configuradas ainda: cai no modo demo (não valida senha de verdade)
       perfilAtual = {id:'demo', nome: usernameToDisplayName(u) || u, papel:'tecnico', aprovado:true};
@@ -2824,9 +2834,15 @@
 
     loginBtn.disabled = true;
     loginBtn.textContent = 'Entrando...';
-    const {data, error} = await supabaseClient.auth.signInWithPassword({email: u, password: p});
-    loginBtn.disabled = false;
-    loginBtn.textContent = 'Entrar';
+    let data, error;
+    try{
+      ({data, error} = await supabaseClient.auth.signInWithPassword({email: u, password: p}));
+    } catch(e){
+      error = e;                    // sem isto a exceção travava o botão em "Entrando..."
+    } finally {
+      loginBtn.disabled = false;
+      loginBtn.textContent = 'Entrar';
+    }
 
     if(error){
       console.error('[login]', error);
@@ -2940,15 +2956,27 @@
       return;
     }
 
+    if(!supabaseClient){
+      signupError.textContent = 'A biblioteca do Supabase não carregou. Verifique a internet e recarregue.';
+      signupError.classList.add('show');
+      return;
+    }
+
     signupBtn.disabled = true;
     signupBtn.textContent = 'Criando conta...';
-    const {data, error} = await supabaseClient.auth.signUp({
-      email: email,
-      password: pass,
-      options: { data: { nome: nome } }
-    });
-    signupBtn.disabled = false;
-    signupBtn.textContent = 'Criar conta';
+    let data, error;
+    try{
+      ({data, error} = await supabaseClient.auth.signUp({
+        email: email,
+        password: pass,
+        options: { data: { nome: nome } }
+      }));
+    } catch(e){
+      error = e;
+    } finally {
+      signupBtn.disabled = false;
+      signupBtn.textContent = 'Criar conta';
+    }
 
     if(error){
       console.error('[cadastro]', error);
@@ -3006,6 +3034,44 @@
     if(!confirm('Isto apaga o rascunho salvo e a sessão neste aparelho.\n\nAs obras já enviadas ao servidor não são afetadas.\n\nContinuar?')) return;
     await limparDadosLocais();
     location.reload(true);
+  });
+
+  // ---------- Autoteste: diz onde a conexao esta quebrando ----------
+  document.getElementById('testarConexao').addEventListener('click', async ()=>{
+    const box = document.getElementById('diagBox');
+    box.style.display = 'block';
+    box.textContent = 'Testando...';
+    const linhas = [];
+    const ok  = t => linhas.push('&#10003; ' + t);
+    const nao = t => linhas.push('&#10007; ' + t);
+
+    linhas.push('versão ' + APP_VERSION);
+    (location.protocol === 'https:' || location.hostname === 'localhost')
+      ? ok('servido por ' + location.protocol.replace(':',''))
+      : nao('servido por HTTP — câmera e GPS não funcionam');
+
+    navigator.onLine ? ok('aparelho online') : nao('aparelho sem internet');
+
+    window.supabase ? ok('biblioteca supabase carregada')
+                    : nao('biblioteca supabase NÃO carregou (CDN bloqueado?)');
+    supabaseClient ? ok('cliente criado') : nao('cliente não criado');
+
+    if(supabaseClient){
+      try{
+        const {error} = await supabaseClient.auth.getSession();
+        error ? nao('auth respondeu erro: ' + error.message) : ok('servidor de login respondeu');
+      } catch(e){ nao('servidor de login inacessível: ' + (e.message || e)); }
+
+      try{
+        const {error} = await supabaseClient.from('perfis').select('id').limit(1);
+        if(!error) ok('tabela perfis acessível');
+        else if(/does not exist|schema cache/i.test(error.message))
+          nao('tabela perfis NÃO existe — rode o SQL de instalação');
+        else ok('tabela perfis existe (acesso restrito, normal sem login)');
+      } catch(e){ nao('erro ao consultar perfis: ' + (e.message || e)); }
+    }
+
+    box.innerHTML = linhas.join('<br>');
   });
 
   // ---------- Home / Minhas obras ----------
