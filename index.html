@@ -2558,6 +2558,24 @@
     toastTimer = setTimeout(()=>toast.classList.remove('show'), 2600);
   }
 
+  // Mostra o motivo real da falha. Antes o app dizia sempre "senha
+  // inválida", o que escondia coisas como e-mail não confirmado.
+  function traduzErroAuth(err){
+    const m = (err && (err.message || err.error_description) || '').toLowerCase();
+    if(m.includes('invalid login credentials'))       return 'E-mail ou senha incorretos.';
+    if(m.includes('email not confirmed'))             return 'E-mail ainda não confirmado. Verifique sua caixa de entrada.';
+    if(m.includes('user already registered')
+       || m.includes('already been registered'))      return 'Já existe uma conta com esse e-mail.';
+    if(m.includes('signups not allowed')
+       || m.includes('signup is disabled'))           return 'Cadastro desativado no servidor. Fale com o administrador.';
+    if(m.includes('database error'))                  return 'Erro no banco ao criar o usuário. O script SQL foi aplicado?';
+    if(m.includes('password should be'))              return 'A senha precisa ter pelo menos 6 caracteres.';
+    if(m.includes('rate limit') || m.includes('too many')) return 'Muitas tentativas. Aguarde um minuto e tente de novo.';
+    if(m.includes('failed to fetch') || m.includes('networkerror'))
+                                                      return 'Sem conexão com o servidor. Verifique a internet.';
+    return (err && err.message) ? err.message : 'Não deu pra completar. Tente de novo.';
+  }
+
   // ---------- Perfil e papeis ----------
   // O papel manda no que aparece na tela, mas quem realmente barra o
   // acesso e o RLS no Supabase (ver supabase-perfis-e-rls.sql). Sem ele,
@@ -2574,6 +2592,7 @@
     if(!supabaseConfigured) return null;
     const {data, error} = await supabaseClient
       .from('perfis').select('*').eq('id', userId).maybeSingle();
+    if(error) console.error('[perfil]', error);
     if(error || !data) return null;
     return data;
   }
@@ -2810,14 +2829,15 @@
     loginBtn.textContent = 'Entrar';
 
     if(error){
-      loginError.textContent = 'E-mail ou senha inválidos.';
+      console.error('[login]', error);
+      loginError.textContent = traduzErroAuth(error);
       loginError.classList.add('show');
       return;
     }
     perfilAtual = await carregarPerfil(data.user.id);
 
     if(!perfilAtual){
-      loginError.textContent = 'Perfil não encontrado. Fale com o administrador.';
+      loginError.textContent = 'Login ok, mas seu perfil não existe no banco. Rode o script SQL de instalação.';
       loginError.classList.add('show');
       await supabaseClient.auth.signOut();
       return;
@@ -2931,9 +2951,8 @@
     signupBtn.textContent = 'Criar conta';
 
     if(error){
-      signupError.textContent = error.message.includes('already') || error.message.includes('registered')
-        ? 'Já existe uma conta com esse e-mail.'
-        : 'Não deu pra criar a conta: ' + error.message;
+      console.error('[cadastro]', error);
+      signupError.textContent = traduzErroAuth(error);
       signupError.classList.add('show');
       return;
     }
