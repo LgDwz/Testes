@@ -421,6 +421,29 @@
     border-radius:8px;padding:6px 10px;font-size:11.5px;cursor:pointer;white-space:nowrap;
   }
   .user-bloquear:active{border-color:var(--accent);color:var(--accent);}
+  .adm-abas{display:flex;gap:6px;padding:0 16px 12px;}
+  .adm-aba{
+    flex:1;text-align:center;background:var(--bg-elev);border:1px solid var(--border);
+    color:var(--text-dim);border-radius:9px;padding:9px 6px;font-size:12px;cursor:pointer;
+    font-family:'IBM Plex Mono',monospace;letter-spacing:0.03em;
+  }
+  .adm-aba.ativo{background:var(--accent-dim);border-color:var(--accent);color:var(--accent);}
+  .obra-row{
+    display:flex;align-items:flex-start;gap:10px;padding:11px 12px;border:1px solid var(--border);
+    border-radius:10px;background:var(--bg-elev);margin-bottom:8px;
+  }
+  .obra-row.sel{border-color:var(--accent);background:var(--accent-dim);}
+  .obra-check{width:18px;height:18px;flex:0 0 auto;margin-top:2px;accent-color:var(--accent);}
+  .obra-info{flex:1;min-width:0;}
+  .obra-num{font-size:13.5px;font-weight:600;font-family:'IBM Plex Mono',monospace;}
+  .obra-meta{font-size:11px;color:var(--text-faint);margin-top:2px;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .obra-tag{font-size:9.5px;text-transform:uppercase;letter-spacing:0.06em;
+    padding:2px 6px;border-radius:4px;border:1px solid var(--border);color:var(--text-dim);}
+  .barra-acao{
+    position:sticky;bottom:0;background:var(--bg);border-top:1px solid var(--border);
+    padding:12px 16px;display:flex;gap:8px;align-items:center;
+  }
   .revisao-box{
     border:1px solid var(--warning);background:var(--warning-dim);border-radius:10px;
     padding:12px;margin-top:14px;
@@ -704,14 +727,47 @@
   <div class="users-screen" id="usersScreen">
     <div class="my-jobs-head">
       <span class="logout-link" id="backFromUsers">&#8592; Voltar</span>
-      <div class="step-title" style="margin:10px 0 0;">Controle de acessos</div>
-      <div class="step-sub" style="padding:0;">Libere cadastros, defina papéis e bloqueie quem sai da equipe.</div>
+      <div class="step-title" style="margin:10px 0 0;">Painel do administrador</div>
+      <div class="step-sub" style="padding:0;" id="admSub">Libere cadastros, defina papéis e bloqueie quem sai da equipe.</div>
     </div>
-    <div style="padding:0 16px;">
-      <input class="adm-busca" id="usersBusca" placeholder="Buscar por nome ou e-mail" autocomplete="off">
-      <div class="adm-filtros" id="usersFiltros"></div>
+
+    <div class="adm-abas">
+      <div class="adm-aba ativo" data-aba="acessos">Acessos</div>
+      <div class="adm-aba" data-aba="obras">Obras</div>
+      <div class="adm-aba" data-aba="manutencao">Manutenção</div>
     </div>
-    <div id="usersList" style="padding:0 16px 24px;"></div>
+
+    <div id="tabAcessos">
+      <div style="padding:0 16px;">
+        <input class="adm-busca" id="usersBusca" placeholder="Buscar por nome ou e-mail" autocomplete="off">
+        <div class="adm-filtros" id="usersFiltros"></div>
+      </div>
+      <div id="usersList" style="padding:0 16px 24px;"></div>
+    </div>
+
+    <div id="tabObras" style="display:none;">
+      <div style="padding:0 16px;">
+        <input class="adm-busca" id="obrasBusca" placeholder="Buscar por contrato, empresa ou técnico" autocomplete="off">
+      </div>
+      <div id="obrasList" style="padding:0 16px 8px;"></div>
+      <div class="barra-acao" id="obrasBarra" style="display:none;">
+        <span style="flex:1;font-size:12px;color:var(--text-dim);" id="obrasSelInfo"></span>
+        <button class="job-edit-btn" id="btnExcluirSel" type="button"
+                style="border-color:var(--danger,#e5484d);color:var(--danger,#e5484d);">Excluir</button>
+      </div>
+    </div>
+
+    <div id="tabManutencao" style="display:none;padding:0 16px 24px;">
+      <div class="step-sub" style="padding:0 0 8px;">
+        Fotos de obras já excluídas continuam ocupando espaço no servidor.
+        Esta varredura encontra e remove o que sobrou.
+      </div>
+      <button class="job-edit-btn" id="btnFaxina" type="button" style="width:100%;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/></svg>
+        Procurar arquivos órfãos no servidor
+      </button>
+      <div id="faxinaResultado" style="font-size:11.5px;color:var(--text-dim);margin-top:8px;line-height:1.6;"></div>
+    </div>
   </div>
 
   <div class="my-jobs-screen" id="myJobsScreen">
@@ -2334,6 +2390,76 @@
     return st;
   }
 
+  // ---------- Exclusao de obra (somente admin) ----------
+  // Apagar a linha NAO apaga as fotos: sao dois lugares distintos. Sem
+  // limpar o Storage junto, os arquivos ficam orfaos ocupando espaco pra
+  // sempre, invisiveis pelo app.
+  async function listarArquivosDaObra(row){
+    const caminhos = new Set();
+
+    // 1. o que ficou registrado no envio
+    const arq = (row.dados || {}).arquivos || {};
+    Object.values(arq).forEach(grupo=>{
+      Object.values(grupo || {}).forEach(v=>{
+        (Array.isArray(v) ? v : [v]).forEach(p => { if(p) caminhos.add(p); });
+      });
+    });
+
+    // 2. e o que estiver no bucket, pra pegar sobras de reenvios anteriores
+    const base = row.contrato + '/' + (row.tecnico_id || 'anon');
+    for(const pasta of ['fotos', 'documentos-projeto', 'documentos-executados']){
+      try{
+        const {data} = await supabaseClient.storage
+          .from(SUPABASE_BUCKET).list(base + '/' + pasta, {limit: 1000});
+        (data || []).forEach(f => caminhos.add(base + '/' + pasta + '/' + f.name));
+      } catch(e){ /* pasta inexistente: segue */ }
+    }
+    return [...caminhos];
+  }
+
+  async function excluirObra(job, btn){
+    if(!ehAdmin()){ showToast('Só o administrador pode excluir obras'); return; }
+    if(!job.row){ showToast('Esta obra não está no servidor'); return; }
+
+    const rotulo = btn ? btn.textContent : '';
+    try{
+      if(btn){ btn.disabled = true; btn.textContent = 'Verificando...'; }
+      const arquivos = await listarArquivosDaObra(job.row);
+
+      const resumo = 'Excluir a obra do contrato ' + job.contrato + '?\n\n'
+        + '\u2022 1 relatório\n'
+        + '\u2022 ' + arquivos.length + (arquivos.length === 1 ? ' arquivo' : ' arquivos') + ' no servidor\n\n'
+        + 'Isto não tem como desfazer.';
+      if(!confirm(resumo)){ return; }
+
+      // confirmacao dupla: digitar o contrato evita o clique errado
+      const digitado = prompt('Para confirmar, digite o número do contrato:\n' + job.contrato);
+      if(digitado === null) return;
+      if(digitado.trim() !== String(job.contrato).trim()){
+        showToast('Número não confere — nada foi excluído');
+        return;
+      }
+
+      if(btn) btn.textContent = 'Excluindo...';
+
+      // arquivos primeiro: se falhar, a obra continua na lista e da pra tentar de novo
+      if(arquivos.length){
+        const {error} = await supabaseClient.storage.from(SUPABASE_BUCKET).remove(arquivos);
+        if(error) throw new Error('arquivos: ' + error.message);
+      }
+      const {error} = await supabaseClient.from(SUPABASE_TABLE).delete().eq('id', job.row.id);
+      if(error) throw new Error('relatório: ' + error.message);
+
+      reportsList = reportsList.filter(j => !(j.row && j.row.id === job.row.id));
+      renderJobsList();
+      showToast('Obra ' + job.contrato + ' excluída (' + arquivos.length + ' arquivos)');
+    } catch(err){
+      showToast('Não deu pra excluir: ' + (err.message || err));
+    } finally {
+      if(btn){ btn.disabled = false; btn.textContent = rotulo; }
+    }
+  }
+
   // Monta o PDF de uma obra da lista, buscando no servidor se preciso.
   async function gerarPdfDaObra(job, btn, iconBtn){
     const rotulo = btn ? btn.textContent : '';
@@ -2778,6 +2904,211 @@
   document.getElementById('usersBusca').addEventListener('input', ()=>{
     if(usuariosCache.length) renderListaUsuarios();
   });
+
+  // Arquivos que sobraram de obras ja apagadas. Como o Storage e a tabela
+  // sao independentes, apagar a linha antes deste botao existir deixou
+  // fotos ocupando espaco sem nenhuma obra apontando pra elas.
+  async function procurarOrfaos(){
+    const cx = document.getElementById('faxinaResultado');
+    const btn = document.getElementById('btnFaxina');
+    const rotulo = btn.textContent;
+    btn.disabled = true; btn.textContent = 'Procurando...';
+    cx.textContent = 'Lendo o servidor...';
+
+    try{
+      // contratos que ainda existem
+      const {data: obras, error} = await supabaseClient.from(SUPABASE_TABLE).select('contrato, tecnico_id');
+      if(error) throw error;
+      const vivos = new Set((obras || []).map(o => o.contrato + '/' + (o.tecnico_id || 'anon')));
+
+      // pastas de contrato no bucket
+      const {data: raiz} = await supabaseClient.storage.from(SUPABASE_BUCKET).list('', {limit:1000});
+      const orfaos = [];
+      let bytes = 0;
+
+      for(const contrato of (raiz || [])){
+        if(contrato.id) continue;                       // arquivo solto na raiz, nao pasta
+        const {data: donos} = await supabaseClient.storage
+          .from(SUPABASE_BUCKET).list(contrato.name, {limit:1000});
+        for(const dono of (donos || [])){
+          const chave = contrato.name + '/' + dono.name;
+          if(vivos.has(chave)) continue;                // obra existe: deixa quieto
+          for(const pasta of ['fotos','documentos-projeto','documentos-executados']){
+            const {data: arqs} = await supabaseClient.storage
+              .from(SUPABASE_BUCKET).list(chave + '/' + pasta, {limit:1000});
+            (arqs || []).forEach(a=>{
+              orfaos.push(chave + '/' + pasta + '/' + a.name);
+              bytes += (a.metadata && a.metadata.size) || 0;
+            });
+          }
+        }
+      }
+
+      if(!orfaos.length){
+        cx.textContent = 'Nada órfão — o servidor está limpo.';
+        return;
+      }
+
+      const mb = (bytes/1024/1024).toFixed(1);
+      cx.innerHTML = '<strong style="color:var(--warning);">' + orfaos.length
+        + ' arquivo(s) órfão(s), ' + mb + ' MB</strong><br>'
+        + orfaos.slice(0,5).map(esc).join('<br>')
+        + (orfaos.length > 5 ? '<br>… e mais ' + (orfaos.length - 5) : '');
+
+      if(!confirm('Encontrei ' + orfaos.length + ' arquivo(s) sem obra correspondente, somando '
+                  + mb + ' MB.\n\nApagar tudo? Não tem como desfazer.')) return;
+
+      const {error: errRm} = await supabaseClient.storage.from(SUPABASE_BUCKET).remove(orfaos);
+      if(errRm) throw errRm;
+      cx.innerHTML = '<strong style="color:var(--success);">' + orfaos.length
+        + ' arquivo(s) apagados, ' + mb + ' MB liberados.</strong>';
+    } catch(e){
+      cx.textContent = 'Erro: ' + (e.message || e);
+    } finally {
+      btn.disabled = false; btn.textContent = rotulo;
+    }
+  }
+
+  // ---------- Aba Obras: gestao e exclusao em lote ----------
+  let obrasAdmin = [];
+  const selecionadas = new Set();
+
+  async function renderObrasAdmin(){
+    const cx = document.getElementById('obrasList');
+    cx.innerHTML = '<div class="job-service-empty" style="padding:20px 4px;">Carregando...</div>';
+    selecionadas.clear();
+    atualizarBarraObras();
+
+    const {data, error} = await supabaseClient
+      .from(SUPABASE_TABLE).select('*').order('id', {ascending:false}).limit(500);
+    if(error){
+      cx.innerHTML = '<div class="job-service-empty" style="padding:20px 4px;">Não deu pra carregar: '
+        + esc(error.message) + '</div>';
+      return;
+    }
+    obrasAdmin = data || [];
+    pintarObras();
+  }
+
+  function pintarObras(){
+    const cx = document.getElementById('obrasList');
+    const termo = (document.getElementById('obrasBusca').value || '').trim().toLowerCase();
+
+    const lista = obrasAdmin.filter(o=>{
+      if(!termo) return true;
+      const d = o.dados || {}, c = d.contract || {};
+      return [o.contrato, c.empresa, d.tecnico, o.status]
+        .some(v => String(v || '').toLowerCase().includes(termo));
+    });
+
+    if(!lista.length){
+      cx.innerHTML = '<div class="job-service-empty" style="padding:20px 4px;">'
+        + (obrasAdmin.length ? 'Nada encontrado com esse termo.' : 'Nenhuma obra no servidor.') + '</div>';
+      return;
+    }
+
+    cx.innerHTML = '';
+    lista.forEach(o=>{
+      const d = o.dados || {}, c = d.contract || {};
+      const nFotos = Object.keys((d.arquivos || {}).photos || {}).length;
+      const row = document.createElement('div');
+      row.className = 'obra-row' + (selecionadas.has(o.id) ? ' sel' : '');
+      row.innerHTML = `
+        <input type="checkbox" class="obra-check"${selecionadas.has(o.id) ? ' checked' : ''}>
+        <div class="obra-info">
+          <div class="obra-num">Contrato ${esc(o.contrato)}</div>
+          <div class="obra-meta">${esc(c.empresa || 'sem empresa')} · ${esc(d.tecnico || 'sem técnico')}</div>
+          <div class="obra-meta">${c.data ? esc(toDateBR(c.data)) : 'sem data'} · ${nFotos} ${nFotos === 1 ? 'item' : 'itens'} com foto</div>
+        </div>
+        <span class="obra-tag">${esc(o.status || '—')}</span>
+      `;
+      const chk = row.querySelector('.obra-check');
+      chk.addEventListener('change', ()=>{
+        chk.checked ? selecionadas.add(o.id) : selecionadas.delete(o.id);
+        row.classList.toggle('sel', chk.checked);
+        atualizarBarraObras();
+      });
+      cx.appendChild(row);
+    });
+  }
+
+  function atualizarBarraObras(){
+    const barra = document.getElementById('obrasBarra');
+    const info  = document.getElementById('obrasSelInfo');
+    barra.style.display = selecionadas.size ? 'flex' : 'none';
+    info.textContent = selecionadas.size + (selecionadas.size === 1 ? ' obra selecionada' : ' obras selecionadas');
+  }
+
+  async function excluirSelecionadas(){
+    if(!ehAdmin() || !selecionadas.size) return;
+    const alvos = obrasAdmin.filter(o => selecionadas.has(o.id));
+    const btn = document.getElementById('btnExcluirSel');
+    const rotulo = btn.textContent;
+
+    try{
+      btn.disabled = true; btn.textContent = 'Verificando...';
+
+      // conta os arquivos antes de perguntar, pra decisao ser informada
+      let todos = [];
+      for(const o of alvos) todos = todos.concat(await listarArquivosDaObra(o));
+      todos = [...new Set(todos)];
+
+      const nums = alvos.map(o => o.contrato).join(', ');
+      if(!confirm('Excluir ' + alvos.length + (alvos.length === 1 ? ' obra' : ' obras') + '?\n\n'
+                  + nums + '\n\n'
+                  + '\u2022 ' + alvos.length + ' relatório(s)\n'
+                  + '\u2022 ' + todos.length + ' arquivo(s) no servidor\n\n'
+                  + 'Isto não tem como desfazer.')) return;
+
+      if(prompt('Para confirmar, digite:  EXCLUIR') !== 'EXCLUIR'){
+        showToast('Nada foi excluído');
+        return;
+      }
+
+      btn.textContent = 'Excluindo...';
+      if(todos.length){
+        const {error} = await supabaseClient.storage.from(SUPABASE_BUCKET).remove(todos);
+        if(error) throw new Error('arquivos: ' + error.message);
+      }
+      const {error} = await supabaseClient.from(SUPABASE_TABLE)
+        .delete().in('id', alvos.map(o => o.id));
+      if(error) throw new Error('relatórios: ' + error.message);
+
+      showToast(alvos.length + ' obra(s) e ' + todos.length + ' arquivo(s) excluídos');
+      reportsList = [];
+      await renderObrasAdmin();
+    } catch(err){
+      showToast('Não deu pra excluir: ' + (err.message || err));
+    } finally {
+      btn.disabled = false; btn.textContent = rotulo;
+    }
+  }
+
+  document.getElementById('obrasBusca').addEventListener('input', ()=>{
+    if(obrasAdmin.length) pintarObras();
+  });
+  document.getElementById('btnExcluirSel').addEventListener('click', excluirSelecionadas);
+
+  // ---------- troca de aba ----------
+  const SUBTITULOS = {
+    acessos:    'Libere cadastros, defina papéis e bloqueie quem sai da equipe.',
+    obras:      'Todas as obras do servidor. Selecione para excluir em lote.',
+    manutencao: 'Limpeza de arquivos que ficaram para trás.',
+  };
+
+  document.querySelectorAll('.adm-aba').forEach(aba=>{
+    aba.addEventListener('click', ()=>{
+      const alvo = aba.dataset.aba;
+      document.querySelectorAll('.adm-aba').forEach(a => a.classList.toggle('ativo', a === aba));
+      document.getElementById('tabAcessos').style.display    = alvo === 'acessos' ? 'block' : 'none';
+      document.getElementById('tabObras').style.display      = alvo === 'obras' ? 'block' : 'none';
+      document.getElementById('tabManutencao').style.display = alvo === 'manutencao' ? 'block' : 'none';
+      document.getElementById('admSub').textContent = SUBTITULOS[alvo];
+      if(alvo === 'obras' && !obrasAdmin.length) renderObrasAdmin();
+    });
+  });
+
+  document.getElementById('btnFaxina').addEventListener('click', procurarOrfaos);
 
   usersCard.addEventListener('click', ()=>{
     if(!ehAdmin()){ showToast('Só o administrador acessa o controle de acessos'); return; }
@@ -3233,6 +3564,12 @@
             Baixar PDF
           </button>
         </div>
+        ${ehAdmin() && job.row ? `
+        <button class="job-edit-btn" type="button" data-acao="excluir"
+                style="width:100%;margin-top:8px;border-color:var(--danger,#e5484d);color:var(--danger,#e5484d);">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/></svg>
+          Excluir obra
+        </button>` : ''}
         ${ehRevisor() && job.row ? `
         <div class="revisao-box">
           <textarea placeholder="Observação da revisão (obrigatória para reprovar)">${esc((job.row.revisao||{}).observacao || '')}</textarea>
@@ -3256,6 +3593,14 @@
         e.stopPropagation();
         gerarPdfDaObra(job, e.currentTarget);
       });
+
+      const btnExcluir = details.querySelector('[data-acao="excluir"]');
+      if(btnExcluir){
+        btnExcluir.addEventListener('click', (e)=>{
+          e.stopPropagation();
+          excluirObra(job, e.currentTarget);
+        });
+      }
 
       const caixaRevisao = details.querySelector('.revisao-box');
       if(caixaRevisao){
