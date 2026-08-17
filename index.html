@@ -444,6 +444,21 @@
     position:sticky;bottom:0;background:var(--bg);border-top:1px solid var(--border);
     padding:12px 16px;display:flex;gap:8px;align-items:center;
   }
+  .conv-form{
+    border:1px solid var(--accent);background:var(--accent-dim);border-radius:10px;
+    padding:12px;margin-bottom:12px;
+  }
+  .conv-form input,.conv-form select{
+    width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);
+    border-radius:8px;padding:9px 10px;font-family:inherit;font-size:13px;margin-bottom:8px;
+  }
+  .conv-form input:focus,.conv-form select:focus{outline:none;border-color:var(--accent);}
+  .user-excluir{
+    border:1px solid var(--border);color:var(--text-faint);background:transparent;
+    border-radius:8px;padding:6px 9px;font-size:11.5px;cursor:pointer;
+  }
+  .user-excluir:active{border-color:var(--danger,#e5484d);color:var(--danger,#e5484d);}
+  .user-row.convite{border-style:dashed;opacity:0.85;}
   .revisao-box{
     border:1px solid var(--warning);background:var(--warning-dim);border-radius:10px;
     padding:12px;margin-top:14px;
@@ -739,6 +754,25 @@
 
     <div id="tabAcessos">
       <div style="padding:0 16px;">
+        <button class="job-edit-btn" id="btnNovoConvite" type="button" style="width:100%;margin-bottom:12px;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+          Adicionar pessoa
+        </button>
+
+        <div class="conv-form" id="conviteForm" style="display:none;">
+          <input id="convEmail" type="email" inputmode="email" autocomplete="off" placeholder="E-mail da pessoa">
+          <input id="convNome" placeholder="Nome (opcional)">
+          <select id="convPapel">
+            <option value="tecnico">Técnico</option>
+            <option value="monitor">Monitor</option>
+            <option value="admin">Administrador</option>
+          </select>
+          <div style="display:flex;gap:8px;">
+            <button class="job-edit-btn" id="convCancelar" type="button" style="flex:1;">Cancelar</button>
+            <button class="job-edit-btn" id="convSalvar" type="button" style="flex:1;border-color:var(--accent);color:var(--accent);">Convidar</button>
+          </div>
+        </div>
+
         <input class="adm-busca" id="usersBusca" placeholder="Buscar por nome ou e-mail" autocomplete="off">
         <div class="adm-filtros" id="usersFiltros"></div>
       </div>
@@ -1093,6 +1127,7 @@
 
   function showStep(i){
     currentStep = i;
+    if(typeof empilhar === 'function') empilhar({tela:'wizard', passo:i});
     Object.values(sections).forEach(s=>s.classList.remove('show'));
     sections[steps[i]].classList.add('show');
     backBtn.style.visibility = 'visible';
@@ -1188,6 +1223,7 @@
           docViewerTitle.textContent = projectDocItems.find(d=>d.id===e.target.dataset.ref).title;
           docViewerImg.src = refDoc.imgSrc;
           docViewerOverlay.classList.add('show');
+          if(typeof empilhar === 'function') empilhar({overlay:'documento'});
         }
         return;
       }
@@ -1625,6 +1661,7 @@
       showChoiceState();
     }
     overlay.classList.add('show');
+    if(typeof empilhar === 'function') empilhar({overlay:'captura'});
   }
 
   function ehPdf(rec){
@@ -2780,13 +2817,17 @@
     return new Date(iso).toLocaleDateString('pt-BR');
   }
 
+  let convitesCache = [];
+
   async function carregarUsuarios(){
-    const [perfis, obras] = await Promise.all([
+    const [perfis, obras, convites] = await Promise.all([
       supabaseClient.from('perfis').select('*').order('criado_em', {ascending:false}),
       supabaseClient.from(SUPABASE_TABLE).select('tecnico_id'),
+      supabaseClient.from('convites').select('*').eq('usado', false).order('criado_em', {ascending:false}),
     ]);
     if(perfis.error) throw perfis.error;
     usuariosCache = perfis.data || [];
+    convitesCache = convites.error ? [] : (convites.data || []);
     obrasPorUsuario = {};
     (obras.data || []).forEach(r=>{
       if(r.tecnico_id) obrasPorUsuario[r.tecnico_id] = (obrasPorUsuario[r.tecnico_id] || 0) + 1;
@@ -2830,8 +2871,37 @@
     lista.sort((a, b) => (a.aprovado === b.aprovado) ? 0 : (a.aprovado ? 1 : -1));
 
     usersList.innerHTML = '';
+
+    // convites ainda não aceitos: a pessoa foi autorizada mas não se cadastrou
+    if((filtroUsuarios === 'todos' || filtroUsuarios === 'pendentes') && !termo){
+      convitesCache.forEach(cv=>{
+        const row = document.createElement('div');
+        row.className = 'user-row convite';
+        row.innerHTML = `
+          <div class="user-row-body">
+            <div class="user-row-nome">${esc(cv.nome || '(convite)')}</div>
+            <div class="user-row-mail">${esc(cv.email)}</div>
+            <div class="user-row-meta">convidado como ${esc(cv.papel)} · aguardando cadastro</div>
+          </div>
+          <div class="user-acoes">
+            <button class="user-excluir" type="button">Cancelar</button>
+          </div>
+        `;
+        row.querySelector('button').addEventListener('click', async ()=>{
+          if(!confirm('Cancelar o convite de ' + cv.email + '?')) return;
+          const {error} = await supabaseClient.from('convites').delete().eq('email', cv.email);
+          if(error){ showToast('Não deu pra cancelar: ' + error.message); return; }
+          showToast('Convite cancelado');
+          renderUsuarios();
+        });
+        usersList.appendChild(row);
+      });
+    }
+
     if(!lista.length){
-      usersList.innerHTML = '<div class="job-service-empty" style="padding:20px 4px;">Ninguém encontrado com esse filtro.</div>';
+      if(!usersList.children.length){
+        usersList.innerHTML = '<div class="job-service-empty" style="padding:20px 4px;">Ninguém encontrado com esse filtro.</div>';
+      }
       return;
     }
 
@@ -2850,12 +2920,34 @@
           <select class="user-papel">${
             PAPEIS.map(p => `<option value="${p}"${p === u.papel ? ' selected' : ''}>${p}</option>`).join('')
           }</select>
-          <button class="${u.aprovado ? 'user-bloquear' : 'user-aprovar'}" type="button">${u.aprovado ? 'Bloquear' : 'Liberar'}</button>
+          <button class="${u.aprovado ? 'user-bloquear' : 'user-aprovar'}" type="button" data-acao="liberar">${u.aprovado ? 'Bloquear' : 'Liberar'}</button>
+          ${souEu ? '' : '<button class="user-excluir" type="button" data-acao="excluir">Excluir</button>'}
         </div>
       `;
 
       const sel = row.querySelector('.user-papel');
-      const btn = row.querySelector('button');
+      const btn = row.querySelector('[data-acao="liberar"]');
+      const btnDel = row.querySelector('[data-acao="excluir"]');
+
+      if(btnDel){
+        btnDel.addEventListener('click', async ()=>{
+          const aviso = 'Excluir ' + (u.nome || u.email) + ' definitivamente?\n\n'
+            + (nObras ? 'As ' + nObras + ' obra(s) dele continuam no servidor, mas ficam sem dono '
+                        + '(só monitor e admin vão enxergá-las).\n\n' : '')
+            + 'Para apenas tirar o acesso sem apagar a conta, use Bloquear.';
+          if(!confirm(aviso)) return;
+          if(prompt('Para confirmar, digite o e-mail:\n' + u.email) !== u.email){
+            showToast('E-mail não confere — nada foi excluído');
+            return;
+          }
+          btnDel.disabled = true; btnDel.textContent = '...';
+          const {error} = await supabaseClient.rpc('excluir_usuario', {alvo: u.id});
+          btnDel.disabled = false; btnDel.textContent = 'Excluir';
+          if(error){ showToast('Não deu pra excluir: ' + error.message); return; }
+          showToast('Usuário excluído');
+          renderUsuarios();
+        });
+      }
 
       async function salvar(campos){
         // trava contra o admin se trancar pra fora do proprio painel
@@ -2900,6 +2992,51 @@
         + esc(e.message || e) + '</div>';
     }
   }
+
+  // ---------- Convidar alguém ----------
+  const conviteForm = document.getElementById('conviteForm');
+
+  document.getElementById('btnNovoConvite').addEventListener('click', ()=>{
+    const abrindo = conviteForm.style.display === 'none';
+    conviteForm.style.display = abrindo ? 'block' : 'none';
+    if(abrindo) document.getElementById('convEmail').focus();
+  });
+
+  document.getElementById('convCancelar').addEventListener('click', ()=>{
+    conviteForm.style.display = 'none';
+    document.getElementById('convEmail').value = '';
+    document.getElementById('convNome').value = '';
+  });
+
+  document.getElementById('convSalvar').addEventListener('click', async ()=>{
+    const email = (document.getElementById('convEmail').value || '').trim().toLowerCase();
+    const nome  = (document.getElementById('convNome').value || '').trim();
+    const papel = document.getElementById('convPapel').value;
+    const btn   = document.getElementById('convSalvar');
+
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
+      showToast('Digite um e-mail válido');
+      return;
+    }
+    if(usuariosCache.some(u => (u.email || '').toLowerCase() === email)){
+      showToast('Essa pessoa já tem conta — use o seletor de papel na lista');
+      return;
+    }
+
+    btn.disabled = true; btn.textContent = 'Salvando...';
+    const {error} = await supabaseClient.from('convites')
+      .upsert({email, nome: nome || null, papel, criado_por: perfilAtual.id, usado: false},
+              {onConflict: 'email'});
+    btn.disabled = false; btn.textContent = 'Convidar';
+
+    if(error){ showToast('Não deu pra convidar: ' + error.message); return; }
+
+    conviteForm.style.display = 'none';
+    document.getElementById('convEmail').value = '';
+    document.getElementById('convNome').value = '';
+    showToast('Convite criado \u2014 peça pra ' + email + ' criar a conta no app');
+    renderUsuarios();
+  });
 
   document.getElementById('usersBusca').addEventListener('input', ()=>{
     if(usuariosCache.length) renderListaUsuarios();
@@ -3425,12 +3562,76 @@
   // Sem dados de exemplo: a lista vem do Supabase, filtrada pelo RLS.
   let reportsList = [];
 
+  // ---------- Botao voltar do navegador / do Android ----------
+  // Sem isto, "voltar" saía do app e o técnico perdia a tela em que
+  // estava. Agora cada tela e cada overlay vira uma entrada de histórico.
+  let restaurandoHistorico = false;
+  let podeSair = false;
+
+  function empilhar(estado){
+    if(restaurandoHistorico) return;
+    const atual = history.state;
+    if(atual && JSON.stringify(atual) === JSON.stringify(estado)) return;  // evita duplicar
+    history.pushState(estado, '');
+    podeSair = false;
+  }
+
+  window.addEventListener('popstate', (ev)=>{
+    // 1. overlay aberto: voltar fecha o overlay, não muda de tela
+    if(overlay.classList.contains('show')){
+      stopCamera();
+      overlay.classList.remove('show');
+      return;
+    }
+    if(docViewerOverlay.classList.contains('show')){
+      docViewerOverlay.classList.remove('show');
+      return;
+    }
+
+    const st = ev.state;
+
+    // 2. na home, exige dois toques pra sair (padrão do Android)
+    const naHome = !st || st.tela === 'login' || st.tela === 'home';
+    if(naHome && appMain.style.display !== 'none'){
+      if(podeSair) return;                       // segundo toque: deixa sair
+      podeSair = true;
+      setTimeout(()=>{ podeSair = false; }, 2500);
+      history.pushState({tela:'home'}, '');
+      showToast('Toque em voltar de novo para sair');
+      return;
+    }
+
+    // 3. navegação normal entre telas
+    restaurandoHistorico = true;
+    try{
+      if(st && st.tela === 'wizard'){
+        showAppView('wizard');
+        showStep(typeof st.passo === 'number' ? st.passo : 0);
+      } else if(st && st.tela){
+        showAppView(st.tela);
+      } else {
+        showAppView('home');
+      }
+    } finally {
+      restaurandoHistorico = false;
+    }
+  });
+
+  // avisa antes de fechar a aba com obra em andamento não enviada
+  window.addEventListener('beforeunload', (e)=>{
+    const c = dataState.contract || {};
+    const temConteudo = Object.keys(dataState.photos || {}).length
+      || Object.keys(c).some(k => c[k]);
+    if(temConteudo){ e.preventDefault(); e.returnValue = ''; }
+  });
+
   function showAppView(view){
     homeScreen.classList.toggle('show', view === 'home');
     myJobsScreen.classList.toggle('show', view === 'myjobs');
     usersScreen.classList.toggle('show', view === 'usuarios');
     wizardScreen.classList.toggle('show', view === 'wizard');
     bottomBar.style.display = (view === 'wizard' && steps[currentStep] !== 'review') ? 'flex' : 'none';
+    if(view !== 'wizard') empilhar({tela: view});   // o wizard empilha por passo, no showStep
   }
 
   function resetDataState(){
@@ -3763,6 +3964,7 @@
   renderMateriais();
   renderValores();
   showStep(0);
+  history.replaceState({tela:'login'}, '');
   aplicarEstadoConexao();
   restaurarRascunho();
   console.log('FiberFlow Tech ' + APP_VERSION);
