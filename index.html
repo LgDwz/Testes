@@ -846,8 +846,10 @@
           <select id="convPapel">
             <option value="tecnico">Técnico</option>
             <option value="monitor">Monitor</option>
+            <option value="analista">Analista</option>
             <option value="admin">Administrador</option>
           </select>
+          <select id="convEquipe"><option value="">Sem equipe</option></select>
           <div style="display:flex;gap:8px;">
             <button class="job-edit-btn" id="convCancelar" type="button" style="flex:1;">Cancelar</button>
             <button class="job-edit-btn" id="convSalvar" type="button" style="flex:1;border-color:var(--accent);color:var(--accent);">Convidar</button>
@@ -1029,10 +1031,10 @@
 
       <div class="review-actions" style="margin-top:18px;">
         <button class="review-btn edit" id="reviewEditBtn">Editar</button>
-        <button class="review-btn pdf" id="reviewPdfBtn">Baixar PDF</button>
+        <button class="review-btn pdf" id="reviewPdfBtn">Gerar relatório e enviar</button>
       </div>
       <button class="review-btn edit" id="reviewPdfInternoBtn" style="width:100%;margin-top:10px;">Baixar PDF + anexo interno (materiais e valores)</button>
-      <button class="review-btn pdf" id="reviewSendBtn" style="width:100%;margin-top:10px;background:var(--success);color:#0a1f14;">Enviar relatório para o servidor</button>
+      <button class="review-btn edit" id="reviewSendBtn" style="width:100%;margin-top:10px;">Enviar sem baixar o PDF</button>
       <div id="sendStatus" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-faint);text-align:center;margin-top:10px;"></div>
     </section>
 
@@ -1105,7 +1107,7 @@
 (function(){
   // Marque aqui a cada build enviado ao campo. O testador informa esta
   // string ao relatar um problema, senao nao da pra saber o que ele rodou.
-  const APP_VERSION = 'alpha-3.1 · multi-empresa · 18/08/2026';
+  const APP_VERSION = 'alpha-3.4 · gerar e enviar · 18/08/2026';
 
   // ---------- Supabase config ----------
   // Troque pelos valores reais do seu projeto (Project Settings -> API no Supabase).
@@ -2345,13 +2347,36 @@
 
   document.getElementById('reviewEditBtn').addEventListener('click', ()=> showStep(0));
 
-  document.getElementById('reviewPdfBtn').addEventListener('click', ()=>{
+  document.getElementById('reviewPdfBtn').addEventListener('click', async ()=>{
     try{
       generatePDF();
-      showToast('PDF gerado \u2014 confira os downloads do seu navegador');
     } catch(err){
       showToast('Erro ao gerar PDF: ' + (err.message || err));
+      return;
     }
+
+    // Gerar o relatório é o sinal de que o serviço acabou: o envio vai
+    // junto. Sem conexão, entra na fila e sobe sozinho depois.
+    const jaFechada = ['enviado','aprovado'].includes(statusObraAtual);
+    if(jaFechada){
+      showToast('PDF gerado \u2014 esta obra já está no servidor');
+      return;
+    }
+
+    if(!supabaseConfigured){
+      showToast('PDF gerado \u2014 envio não configurado');
+      return;
+    }
+
+    if(!online){
+      await enfileirarObra();
+      sendStatus.textContent = 'PDF gerado. Sem conexão \u2014 obra na fila, sobe sozinha quando o sinal voltar.';
+      showToast('PDF gerado \u2014 obra na fila de envio');
+      return;
+    }
+
+    showToast('PDF gerado \u2014 enviando para o servidor...');
+    await enviarObra();
   });
 
   const reviewPdfInternoBtn = document.getElementById('reviewPdfInternoBtn');
@@ -2634,7 +2659,10 @@
   const reviewSendBtn = document.getElementById('reviewSendBtn');
   const sendStatus = document.getElementById('sendStatus');
 
-  reviewSendBtn.addEventListener('click', async ()=>{
+  // Enviar virou função para que "Gerar relatório" possa chamá-la também.
+  // Antes, gerar o PDF e esquecer de apertar Enviar deixava a obra parada
+  // no aparelho — o escritório não via nada.
+  async function enviarObra(){
     if(!supabaseConfigured){
       sendStatus.textContent = 'Configure SUPABASE_URL e SUPABASE_ANON_KEY no código para habilitar o envio real.';
       showToast('Chaves do Supabase ainda não configuradas');
@@ -2674,6 +2702,7 @@
         : await supabaseClient.from(SUPABASE_TABLE).insert(payload);
       if(resp.error) throw resp.error;
       sendStatus.textContent = 'Relatório enviado com sucesso.';
+      statusObraAtual = 'enviado';
       idbApagar('atual');
       showToast('Relatório enviado para o servidor');
       const servicosFinal = valuesItems
@@ -2702,7 +2731,9 @@
       reviewSendBtn.disabled = false;
       reviewSendBtn.textContent = 'Enviar relatório para o servidor';
     }
-  });
+  }
+
+  reviewSendBtn.addEventListener('click', enviarObra);
 
   // ---------- Rascunho salvo no aparelho (IndexedDB) ----------
   // Antes o dataState so existia em memoria: se o Android matasse a aba
@@ -2713,6 +2744,12 @@
 
   function abrirIdb(){
     if(idbPromise) return idbPromise;
+    // navegador em modo privado pode não ter IndexedDB: sem rascunho,
+    // mas o app continua funcionando em vez de quebrar
+    if(typeof indexedDB === 'undefined' || !indexedDB){
+      idbPromise = Promise.resolve(null);       // sem banco local: as funções abaixo saem quietas
+      return idbPromise;
+    }
     idbPromise = new Promise((res, rej)=>{
       const req = indexedDB.open(IDB_NOME, 1);
       req.onupgradeneeded = ()=>{
@@ -2727,6 +2764,7 @@
 
   async function idbGravar(chave, valor){
     const db = await abrirIdb();
+    if(!db) return;
     return new Promise((res, rej)=>{
       const tx = db.transaction(IDB_STORE, 'readwrite');
       tx.objectStore(IDB_STORE).put(valor, chave);
@@ -2737,6 +2775,7 @@
 
   async function idbLer(chave){
     const db = await abrirIdb();
+    if(!db) return null;
     return new Promise((res, rej)=>{
       const tx = db.transaction(IDB_STORE, 'readonly');
       const req = tx.objectStore(IDB_STORE).get(chave);
@@ -2747,6 +2786,7 @@
 
   async function idbApagar(chave){
     const db = await abrirIdb();
+    if(!db) return;
     return new Promise((res)=>{
       const tx = db.transaction(IDB_STORE, 'readwrite');
       tx.objectStore(IDB_STORE).delete(chave);
@@ -2854,6 +2894,24 @@
     return (err && err.message) ? err.message : 'Não deu pra completar. Tente de novo.';
   }
 
+  // Zera tudo que pertence a quem estava logado. Sem isto, o próximo a
+  // entrar no mesmo aparelho via as obras do anterior na tela enquanto o
+  // servidor não respondia — o banco nunca entregaria, mas a tela mostrava.
+  function limparDadosDaSessao(){
+    perfilAtual = null;
+    obraEditandoId = null;
+    obraDonoId = null;
+    obraEmpresaId = null;
+    statusObraAtual = null;
+    if(typeof reportsList !== 'undefined') reportsList = [];
+    if(typeof usuariosCache !== 'undefined') usuariosCache = [];
+    if(typeof obrasAdmin !== 'undefined') obrasAdmin = [];
+    if(typeof tecnicosCache !== 'undefined') tecnicosCache = [];
+    if(typeof jobsList !== 'undefined' && jobsList) jobsList.innerHTML = '';
+    try{ idbApagar('perfil'); }catch(e){}
+    resetDataState();
+  }
+
   // ---------- Perfil e papeis ----------
   // O papel manda no que aparece na tela, mas quem realmente barra o
   // acesso e o RLS no Supabase (ver supabase-perfis-e-rls.sql). Sem ele,
@@ -2862,6 +2920,7 @@
   let obraEditandoId = null;              // id da linha quando esta corrigindo obra existente
   let obraDonoId = null;                  // dono original: o revisor grava na pasta dele
   let obraEmpresaId = null;               // empresa da obra aberta
+  let statusObraAtual = null;             // evita reenviar obra já fechada
 
   const papelAtual  = ()=> perfilAtual ? perfilAtual.papel : 'tecnico';
   const ehTecnico   = ()=> papelAtual() === 'tecnico';
@@ -2930,6 +2989,51 @@
     }
     document.querySelector('#myJobsScreen .step-title').textContent =
       ehRevisor() ? 'Todas as obras' : 'Minhas obras';
+    atualizarHome();
+  }
+
+  // ---------- Home: contagens reais em vez de texto fixo ----------
+  // O card deixa de perguntar "o que você quer fazer" e passa a informar
+  // o que existe pra fazer. O técnico não escolhe: ele executa o que veio.
+  async function atualizarHome(){
+    const sub    = document.querySelector('#myJobsCard .action-card-sub');
+    const subHome = document.querySelector('.home-sub');
+    if(!perfilAtual || !supabaseConfigured || !online) return;
+
+    try{
+      const {data, error} = await supabaseClient
+        .from(SUPABASE_TABLE).select('status, tecnico_id');
+      if(error || !data) return;
+
+      const meu = ehTecnico() ? data.filter(o => o.tecnico_id === perfilAtual.id) : data;
+      const n = s => meu.filter(o => o.status === s).length;
+      const aFazer    = n('despachada') + n('em_execucao');
+      const reprovada = n('reprovado');
+      const aRevisar  = n('enviado');
+
+      if(ehTecnico()){
+        const partes = [];
+        if(aFazer)    partes.push(aFazer + (aFazer === 1 ? ' obra para executar' : ' obras para executar'));
+        if(reprovada) partes.push(reprovada + (reprovada === 1 ? ' devolvida' : ' devolvidas'));
+        sub.textContent = partes.length ? partes.join(' · ') : 'Nenhuma obra despachada no momento.';
+        subHome.textContent = partes.length
+          ? 'Você tem ' + partes[0] + '.'
+          : 'Nada pendente por aqui.';
+      } else {
+        const partes = [];
+        if(aFazer)   partes.push(aFazer + ' em campo');
+        if(aRevisar) partes.push(aRevisar + ' aguardando revisão');
+        if(reprovada) partes.push(reprovada + ' devolvida(s)');
+        sub.textContent = partes.length ? partes.join(' · ') : 'Nenhuma obra no momento.';
+        subHome.textContent = aRevisar
+          ? aRevisar + (aRevisar === 1 ? ' obra aguardando sua revisão.' : ' obras aguardando sua revisão.')
+          : 'Tudo em dia por aqui.';
+      }
+
+      // destaca quando há algo devolvido, que é o que trava faturamento
+      const card = document.getElementById('myJobsCard');
+      card.style.borderColor = reprovada ? 'var(--accent)' : '';
+    } catch(e){ /* offline: mantém o texto padrão */ }
   }
 
   // ---------- Empresas (só o dono do produto) ----------
@@ -3034,6 +3138,7 @@
       obraEditandoId = job.row ? job.row.id : null;
       obraDonoId     = job.row ? (job.row.tecnico_id || null) : null;
       obraEmpresaId  = job.row ? (job.row.empresa_id || null) : null;
+      statusObraAtual = job.row ? job.row.status : null;
 
       preencherCamposContrato();
       aplicarModoLeitura();
@@ -3479,7 +3584,11 @@
   document.getElementById('btnNovoConvite').addEventListener('click', ()=>{
     const abrindo = conviteForm.style.display === 'none';
     conviteForm.style.display = abrindo ? 'block' : 'none';
-    if(abrindo) document.getElementById('convEmail').focus();
+    if(abrindo){
+      document.getElementById('convEquipe').innerHTML = '<option value="">Sem equipe</option>'
+        + equipesCache.map(e => `<option value="${e.id}">${esc(e.nome)}</option>`).join('');
+      document.getElementById('convEmail').focus();
+    }
   });
 
   document.getElementById('convCancelar').addEventListener('click', ()=>{
@@ -3504,8 +3613,10 @@
     }
 
     btn.disabled = true; btn.textContent = 'Salvando...';
+    const eq = document.getElementById('convEquipe').value;
     const {error} = await supabaseClient.from('convites')
       .upsert({email, nome: nome || null, papel, empresa_id: minhaEmpresa(),
+               equipe_id: eq ? Number(eq) : null,
                criado_por: perfilAtual.id, usado: false},
               {onConflict: 'email'});
     btn.disabled = false; btn.textContent = 'Convidar';
@@ -3767,6 +3878,7 @@
     appMain.style.display = 'flex';
     aplicarPermissoes();
     showAppView('home');
+    atualizarHome();
   }
 
   loginBtn.addEventListener('click', async ()=>{
@@ -3810,6 +3922,7 @@
       loginError.classList.add('show');
       return;
     }
+    reportsList = [];                    // nada do usuário anterior sobrevive ao login
     perfilAtual = await carregarPerfil(data.user.id);
 
     if(!perfilAtual){
@@ -3963,11 +4076,7 @@
   });
 
   logoutLink.addEventListener('click', async ()=>{
-    perfilAtual = null;
-    idbApagar('perfil');
-    obraEditandoId = null;
-    obraDonoId = null;
-    obraEmpresaId = null;
+    limparDadosDaSessao();
     if(supabaseConfigured){
       try{ await supabaseClient.auth.signOut(); }catch(e){}
     }
@@ -4298,6 +4407,7 @@
   });
 
   function showAppView(view){
+    if(view === 'home' && !homeScreen.classList.contains('show')) setTimeout(atualizarHome, 100);
     homeScreen.classList.toggle('show', view === 'home');
     myJobsScreen.classList.toggle('show', view === 'myjobs');
     usersScreen.classList.toggle('show', view === 'usuarios');
