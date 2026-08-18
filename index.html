@@ -4,10 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#10151c">
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Expires" content="0">
+
 <title>FiberFlow Tech</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icones/favicon.png">
+<link rel="apple-touch-icon" href="icones/icone-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="FiberFlow">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
 
@@ -351,8 +355,8 @@
   .action-card-sub{font-size:12.5px;color:var(--text-dim);}
 
   /* MY JOBS SCREEN */
-  .my-jobs-screen,.users-screen{display:none;flex-direction:column;flex:1;min-height:0;}
-  .my-jobs-screen.show,.users-screen.show{display:flex;}
+  .my-jobs-screen,.users-screen,#despachoScreen{display:none;flex-direction:column;flex:1;min-height:0;}
+  .my-jobs-screen.show,.users-screen.show,#despachoScreen.show{display:flex;}
   .my-jobs-head{padding:20px 16px 14px;}
   .job-card{margin-bottom:10px;}
   .job-item{
@@ -376,6 +380,8 @@
   }
   .papel-badge.monitor{color:var(--warning);border-color:var(--warning);}
   .papel-badge.admin{color:var(--accent);border-color:var(--accent);}
+  .papel-badge.analista{color:#5DCAA5;border-color:#5DCAA5;}
+  .papel-badge.superadmin{color:#AFA9EC;border-color:#AFA9EC;}
   .pendente-box{
     padding:24px 20px;text-align:center;color:var(--text-dim);font-size:13.5px;line-height:1.6;
   }
@@ -697,7 +703,7 @@
   <div class="tech-bar">
     <div class="tech-badge">
       <div class="tech-avatar" id="techAvatar">--</div>
-      <span class="tech-name" id="techNameDisplay">—</span><span class="papel-badge" id="papelBadge" style="display:none;"></span>
+      <span class="tech-name" id="techNameDisplay">—</span><span class="papel-badge" id="papelBadge" style="display:none;"></span><span id="empresaNome" style="font-size:11px;color:var(--text-faint);margin-left:8px;"></span>
     </div>
     <div style="display:flex;align-items:center;gap:14px;">
       <span class="logout-link" id="homeLink">Início</span>
@@ -722,6 +728,22 @@
       <div class="action-card-sub">Iniciar um novo relatório de ativação, do zero.</div>
     </div>
 
+    <div class="action-card" id="despacharCard" style="display:none;">
+      <div class="action-card-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+      </div>
+      <div class="action-card-title">Despachar obra</div>
+      <div class="action-card-sub">Anexar OS, projeto e diagrama e enviar ao técnico.</div>
+    </div>
+
+    <div class="action-card" id="equipeCard" style="display:none;">
+      <div class="action-card-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3.2"/><path d="M3 20a6 6 0 0112 0"/><path d="M16 11a3 3 0 100-6"/><path d="M18.5 20a5.5 5.5 0 00-3-4.9"/></svg>
+      </div>
+      <div class="action-card-title">Equipe</div>
+      <div class="action-card-sub">Convidar, liberar e definir papéis.</div>
+    </div>
+
     <div class="action-card" id="usersCard" style="display:none;">
       <div class="action-card-icon">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3.2"/><path d="M3 20a6 6 0 0112 0"/><path d="M16 11a3 3 0 100-6"/><path d="M18.5 20a5.5 5.5 0 00-3-4.9"/></svg>
@@ -739,6 +761,64 @@
     </div>
   </div>
 
+  <div class="users-screen" id="despachoScreen">
+    <div class="my-jobs-head">
+      <span class="logout-link" id="backFromDespacho">&#8592; Voltar</span>
+      <div class="step-title" style="margin:10px 0 0;">Despachar obra</div>
+      <div class="step-sub" style="padding:0;">Os dados vão preenchidos para o técnico. Ele só executa.</div>
+    </div>
+
+    <div style="padding:0 16px 24px;">
+      <div class="field-label" style="margin-top:4px;">Contrato *</div>
+      <input class="field-input" id="dNumero" inputmode="numeric" placeholder="Ex: 2438766" autocomplete="off">
+      <div id="dLookup" style="font-size:11.5px;color:var(--text-faint);margin:4px 0 12px;"></div>
+
+      <div style="display:flex;gap:10px;">
+        <div style="flex:1;">
+          <div class="field-label">Data *</div>
+          <input class="field-input" id="dData" type="date">
+        </div>
+        <div style="flex:1;">
+          <div class="field-label">CODTCOMP</div>
+          <input class="field-input" id="dCodtcomp" placeholder="COTPS130/2025">
+        </div>
+      </div>
+
+      <div class="field-label" style="margin-top:12px;">Empresa contratada</div>
+      <input class="field-input" id="dEmpresa" placeholder="Nome do cliente">
+
+      <div class="field-label" style="margin-top:12px;">Endereço</div>
+      <input class="field-input" id="dEndereco" placeholder="R IZAIR LAGO, 88">
+
+      <div style="display:flex;gap:10px;margin-top:12px;">
+        <div style="flex:1.4;">
+          <div class="field-label">Cidade</div>
+          <input class="field-input" id="dCidade" placeholder="QUATRO BARRAS">
+        </div>
+        <div style="flex:1;">
+          <div class="field-label">CEP</div>
+          <input class="field-input" id="dCep" inputmode="numeric" placeholder="83420000">
+        </div>
+      </div>
+
+      <div class="field-label" style="margin-top:12px;">Coordenadas</div>
+      <input class="field-input" id="dCoord" placeholder="-25.409977, -49.238526">
+
+      <div class="field-label" style="margin-top:12px;">Observação para o técnico</div>
+      <textarea class="field-input" id="dObs" rows="2" placeholder="Opcional — o que ele precisa saber antes de ir"></textarea>
+
+      <div class="step-sub" style="padding:16px 0 8px;">Documentos do projeto</div>
+      <div id="dDocs"></div>
+
+      <div class="step-sub" style="padding:16px 0 8px;">Técnico responsável *</div>
+      <select class="field-input" id="dTecnico"><option value="">Carregando...</option></select>
+      <div id="dCarga" style="font-size:11.5px;color:var(--text-faint);margin-top:6px;"></div>
+
+      <button class="review-btn pdf" id="btnDespachar" style="width:100%;margin-top:20px;">Despachar</button>
+      <div id="dStatus" style="font-size:12px;color:var(--text-dim);margin-top:10px;text-align:center;min-height:16px;"></div>
+    </div>
+  </div>
+
   <div class="users-screen" id="usersScreen">
     <div class="my-jobs-head">
       <span class="logout-link" id="backFromUsers">&#8592; Voltar</span>
@@ -750,6 +830,7 @@
       <div class="adm-aba ativo" data-aba="acessos">Acessos</div>
       <div class="adm-aba" data-aba="obras">Obras</div>
       <div class="adm-aba" data-aba="manutencao">Manutenção</div>
+      <div class="adm-aba" data-aba="empresas" id="abaEmpresas" style="display:none;">Empresas</div>
     </div>
 
     <div id="tabAcessos">
@@ -789,6 +870,19 @@
         <button class="job-edit-btn" id="btnExcluirSel" type="button"
                 style="border-color:var(--danger,#e5484d);color:var(--danger,#e5484d);">Excluir</button>
       </div>
+    </div>
+
+    <div id="tabEmpresas" style="display:none;padding:0 16px 24px;">
+      <div class="step-sub" style="padding:0 0 10px;">
+        Cada empresa é um mundo separado: usuários, obras e arquivos não se cruzam.
+      </div>
+      <div class="conv-form" style="background:transparent;border-color:var(--border);">
+        <input id="eNome" placeholder="Nome da empreiteira">
+        <input id="eEmail" type="email" inputmode="email" placeholder="E-mail do administrador dela">
+        <input id="eResp" placeholder="Nome do responsável (opcional)">
+        <button class="job-edit-btn" id="btnCriarEmpresa" type="button" style="width:100%;border-color:var(--accent);color:var(--accent);">Criar empresa</button>
+      </div>
+      <div id="listaEmpresas"></div>
     </div>
 
     <div id="tabManutencao" style="display:none;padding:0 16px 24px;">
@@ -1005,13 +1099,13 @@
   </div>
 </div>
 
-<script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="lib/supabase.js"></script>
+<script src="lib/jspdf.umd.min.js"></script>
 <script>
 (function(){
   // Marque aqui a cada build enviado ao campo. O testador informa esta
   // string ao relatar um problema, senao nao da pra saber o que ele rodou.
-  const APP_VERSION = 'alpha-1 · 12/08/2026';
+  const APP_VERSION = 'alpha-3 · multi-empresa · 17/08/2026';
 
   // ---------- Supabase config ----------
   // Troque pelos valores reais do seu projeto (Project Settings -> API no Supabase).
@@ -2287,19 +2381,27 @@
     return 'jpg';
   }
 
-  async function uploadAllFiles(contractNumero){
+  function uploadAllFiles(contractNumero){
+    return uploadAllFilesDe(dataState, contractNumero, obraDonoId, obraEmpresaId);
+  }
+
+  async function uploadAllFilesDe(estado, contractNumero, donoId, empresaDaObra){
     const uploaded = {photos:{}, projectDocs:{}, docsAtt:{}};
     // sem isto, dois tecnicos na mesma obra sobrescrevem as fotos um do outro
-    let dono = obraDonoId || 'anon';
-    if(!obraDonoId){
+    let dono = donoId || 'anon';
+    if(!donoId){
       try{
         const {data:{user}} = await supabaseClient.auth.getUser();
         if(user && user.id) dono = user.id;
       } catch(e){}
     }
-    contractNumero = contractNumero + '/' + dono;
+    // {empresa}/{contrato}/{tecnico}/... — sem a empresa na frente, duas
+    // empreiteiras com o mesmo número de contrato dividiriam a pasta
+    const emp = empresaDaObra || minhaEmpresa();
+    if(!emp) throw new Error('Sua conta não está vinculada a uma empresa');
+    contractNumero = emp + '/' + contractNumero + '/' + dono;
     for(const item of photoItems){
-      const s = dataState.photos[item.id];
+      const s = estado.photos[item.id];
       if(!s) continue;
       if(item.multiple){
         uploaded.photos[item.id] = [];
@@ -2319,7 +2421,7 @@
       }
     }
     for(const item of projectDocItems){
-      const s = dataState.projectDocs[item.id];
+      const s = estado.projectDocs[item.id];
       if(!s) continue;
       const blob = dataUrlToBlob(s.imgSrc);
       const path = `${contractNumero}/documentos-projeto/${item.id}.${extFromMime(blob.type)}`;
@@ -2328,7 +2430,7 @@
       uploaded.projectDocs[item.id] = path;
     }
     for(const item of docExecItems){
-      const s = dataState.docsAtt[item.id];
+      const s = estado.docsAtt[item.id];
       if(!s) continue;
       const blob = dataUrlToBlob(s.imgSrc);
       const path = `${contractNumero}/documentos-executados/${item.id}.${extFromMime(blob.type)}`;
@@ -2443,7 +2545,7 @@
     });
 
     // 2. e o que estiver no bucket, pra pegar sobras de reenvios anteriores
-    const base = row.contrato + '/' + (row.tecnico_id || 'anon');
+    const base = (row.empresa_id || minhaEmpresa()) + '/' + row.contrato + '/' + (row.tecnico_id || 'anon');
     for(const pasta of ['fotos', 'documentos-projeto', 'documentos-executados']){
       try{
         const {data} = await supabaseClient.storage
@@ -2552,6 +2654,7 @@
       const payload = {
         contrato: contractNumero,
         status: 'enviado',
+        empresa_id: obraEmpresaId || minhaEmpresa(),
         tecnico_id: obraDonoId || (perfilAtual && perfilAtual.id !== 'demo' ? perfilAtual.id : undefined),
         dados: {
           contract: dataState.contract,
@@ -2563,7 +2666,7 @@
         }
       };
       // corrigindo uma obra que ja existe: atualiza a linha em vez de duplicar
-      const {tecnico_id, ...semDono} = payload;   // correcao nao troca o dono da obra
+      const {tecnico_id, empresa_id, ...semDono} = payload;   // correção não troca dono nem empresa
       const resp = obraEditandoId
         ? await supabaseClient.from(SUPABASE_TABLE)
             .update({...semDono, atualizado_em: new Date().toISOString()})
@@ -2585,8 +2688,16 @@
         snapshot: JSON.parse(JSON.stringify(dataState)),
       });
     } catch(err){
-      sendStatus.textContent = 'Erro ao enviar: ' + (err.message || err);
-      showToast('Falha no envio \u2014 tente novamente');
+      // conexão que cai no meio do envio também vai pra fila
+      const semRede = /fetch|network|timeout|Failed to fetch|NetworkError/i.test(String(err.message || err));
+      if(semRede){
+        await enfileirarObra();
+        sendStatus.textContent = 'Conexão caiu no meio \u2014 obra na fila, sobe sozinha depois.';
+        showToast('Obra guardada na fila de envio');
+      } else {
+        sendStatus.textContent = 'Erro ao enviar: ' + (err.message || err);
+        showToast('Falha no envio \u2014 tente novamente');
+      }
     } finally {
       reviewSendBtn.disabled = false;
       reviewSendBtn.textContent = 'Enviar relatório para o servidor';
@@ -2750,44 +2861,401 @@
   let perfilAtual = null;                 // {id, nome, papel, aprovado}
   let obraEditandoId = null;              // id da linha quando esta corrigindo obra existente
   let obraDonoId = null;                  // dono original: o revisor grava na pasta dele
+  let obraEmpresaId = null;               // empresa da obra aberta
 
-  const ehTecnico = ()=> !perfilAtual || perfilAtual.papel === 'tecnico';
-  const ehRevisor = ()=> !!perfilAtual && (perfilAtual.papel === 'monitor' || perfilAtual.papel === 'admin');
-  const ehAdmin   = ()=> !!perfilAtual && perfilAtual.papel === 'admin';
+  const papelAtual  = ()=> perfilAtual ? perfilAtual.papel : 'tecnico';
+  const ehTecnico   = ()=> papelAtual() === 'tecnico';
+  // ve todas as obras da empresa
+  const ehRevisor   = ()=> ['monitor','analista','admin','superadmin'].includes(papelAtual());
+  // despacha, corrige e administra usuarios
+  const ehOperador  = ()=> ['analista','admin','superadmin'].includes(papelAtual());
+  const ehAdmin     = ()=> ['admin','superadmin'].includes(papelAtual());
+  // dono do produto: cria empresas e atravessa todas
+  const ehSuper     = ()=> papelAtual() === 'superadmin';
+  // eixo do isolamento: tudo que grava precisa carregar isto
+  const minhaEmpresa = ()=> perfilAtual ? perfilAtual.empresa_id : null;
 
   async function carregarPerfil(userId){
     if(!supabaseConfigured) return null;
     const {data, error} = await supabaseClient
-      .from('perfis').select('*').eq('id', userId).maybeSingle();
+      .from('perfis').select('*, empresas(nome)').eq('id', userId).maybeSingle();
     if(error) console.error('[perfil]', error);
     if(error || !data) return null;
+    data.empresa_nome = data.empresas ? data.empresas.nome : null;
+    // sem empresa e sem ser dono do produto, não há o que mostrar
+    if(!data.empresa_id && data.papel !== 'superadmin') data.sem_empresa = true;
     return data;
   }
 
   function aplicarPermissoes(){
     const badge = document.getElementById('papelBadge');
-    const papel = perfilAtual ? perfilAtual.papel : 'tecnico';
+    const papel = papelAtual();
 
     badge.textContent = papel;
     badge.className = 'papel-badge ' + papel;
     badge.style.display = perfilAtual ? 'inline-block' : 'none';
 
-    // monitor nao abre obra do zero; ele corrige o que ja foi enviado
-    newJobCard.style.display = (papel === 'monitor') ? 'none' : 'block';
-    usersCard.style.display  = ehAdmin() ? 'block' : 'none';
+    document.getElementById('abaEmpresas').style.display = ehSuper() ? 'block' : 'none';
+    document.getElementById('empresaNome').textContent =
+      ehSuper() ? 'dono do produto' : (perfilAtual && perfilAtual.empresa_nome ? perfilAtual.empresa_nome : '');
+
+    // a obra nasce no escritório, nunca no celular
+    newJobCard.style.display    = 'none';
+    despacharCard.style.display = ehOperador() ? 'block' : 'none';
+    usersCard.style.display     = ehAdmin() ? 'block' : 'none';
+    equipeCard.style.display    = (ehOperador() && !ehAdmin()) ? 'block' : 'none';
 
     const titulo = document.querySelector('#myJobsCard .action-card-title');
     const sub    = document.querySelector('#myJobsCard .action-card-sub');
     if(ehRevisor()){
-      titulo.textContent = 'Obras da equipe';
-      sub.textContent = 'Revisar, corrigir e aprovar os relatórios enviados.';
+      titulo.textContent = 'Todas as obras';
+      sub.textContent = ehOperador()
+        ? 'Acompanhar, corrigir e aprovar os relatórios.'
+        : 'Revisar e aprovar os relatórios enviados.';
     } else {
       titulo.textContent = 'Minhas obras';
-      sub.textContent = 'Ver relatórios já enviados e em andamento.';
+      sub.textContent = 'Obras despachadas para você.';
     }
     document.querySelector('#myJobsScreen .step-title').textContent =
-      ehRevisor() ? 'Obras da equipe' : 'Minhas obras';
+      ehRevisor() ? 'Todas as obras' : 'Minhas obras';
   }
+
+  // ---------- Empresas (só o dono do produto) ----------
+  async function renderEmpresas(){
+    const cx = document.getElementById('listaEmpresas');
+    cx.innerHTML = '<div class="job-service-empty" style="padding:16px 4px;">Carregando...</div>';
+    try{
+      const [{data:emps, error}, {data:perfis}, {data:obras}] = await Promise.all([
+        supabaseClient.from('empresas').select('*').order('id'),
+        supabaseClient.from('perfis').select('empresa_id'),
+        supabaseClient.from(SUPABASE_TABLE).select('empresa_id'),
+      ]);
+      if(error) throw error;
+      const nUsers = {}, nObras = {};
+      (perfis||[]).forEach(p => { if(p.empresa_id) nUsers[p.empresa_id] = (nUsers[p.empresa_id]||0)+1; });
+      (obras||[]).forEach(o => { if(o.empresa_id) nObras[o.empresa_id] = (nObras[o.empresa_id]||0)+1; });
+
+      cx.innerHTML = '';
+      (emps||[]).forEach(e=>{
+        const row = document.createElement('div');
+        row.className = 'user-row';
+        row.innerHTML = `
+          <div class="user-row-body">
+            <div class="user-row-nome">${esc(e.nome)}</div>
+            <div class="user-row-meta">${nUsers[e.id]||0} usuário(s) · ${nObras[e.id]||0} obra(s)</div>
+          </div>
+          <span class="obra-tag">${e.ativa ? 'ativa' : 'inativa'}</span>
+        `;
+        cx.appendChild(row);
+      });
+      if(!(emps||[]).length){
+        cx.innerHTML = '<div class="job-service-empty" style="padding:16px 4px;">Nenhuma empresa ainda.</div>';
+      }
+    } catch(e){
+      cx.innerHTML = '<div class="job-service-empty" style="padding:16px 4px;">Não deu pra carregar: ' + esc(e.message||e) + '</div>';
+    }
+  }
+
+  document.getElementById('btnCriarEmpresa').addEventListener('click', async ()=>{
+    const btn   = document.getElementById('btnCriarEmpresa');
+    const nome  = document.getElementById('eNome').value.trim();
+    const email = document.getElementById('eEmail').value.trim().toLowerCase();
+    const resp  = document.getElementById('eResp').value.trim();
+
+    if(!nome){ showToast('Informe o nome da empresa'); return; }
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ showToast('Informe um e-mail válido para o administrador'); return; }
+
+    btn.disabled = true; btn.textContent = 'Criando...';
+    const {error} = await supabaseClient.rpc('criar_empresa', {
+      nome_empresa: nome, email_admin: email, nome_admin: resp || null
+    });
+    btn.disabled = false; btn.textContent = 'Criar empresa';
+
+    if(error){ showToast('Não deu pra criar: ' + error.message); return; }
+    document.getElementById('eNome').value = '';
+    document.getElementById('eEmail').value = '';
+    document.getElementById('eResp').value = '';
+    showToast('Empresa criada — peça a ' + email + ' para criar a conta no app');
+    renderEmpresas();
+  });
+
+  // ---------- Abrir uma obra despachada ----------
+  // Passos 1 e 2 viram leitura pro técnico: os dados vieram do escritório
+  // e são justamente os que ele errava digitando no poste.
+  function aplicarModoLeitura(){
+    const soLeitura = ehTecnico();
+    ['fNumero','fData','fEndereco','fCodtcomp','fCidade','fCep','fCoord','fEmpresa'].forEach(id=>{
+      const el = document.getElementById(id);
+      if(!el) return;
+      el.readOnly = soLeitura;
+      el.style.opacity = soLeitura ? '0.7' : '';
+    });
+    let aviso = document.getElementById('avisoLeitura');
+    if(soLeitura && !aviso){
+      aviso = document.createElement('div');
+      aviso.id = 'avisoLeitura';
+      aviso.style.cssText = 'font-size:12px;color:var(--text-faint);padding:0 0 12px;line-height:1.5;';
+      aviso.textContent = 'Dados enviados pelo escritório. Se algo estiver errado, avise antes de executar.';
+      const alvo = document.getElementById('fNumero');
+      if(alvo && alvo.parentElement && alvo.parentElement.parentElement){
+        alvo.parentElement.parentElement.insertBefore(aviso, alvo.parentElement);
+      }
+    } else if(!soLeitura && aviso){
+      aviso.remove();
+    }
+  }
+
+  async function abrirObraDespachada(job, btn){
+    const rotulo = btn ? btn.textContent : '';
+    try{
+      if(btn){ btn.disabled = true; btn.textContent = 'Abrindo...'; }
+      if(!job.state){
+        if(!job.row){ showToast('Obra sem dados no servidor'); return; }
+        if(!online){ showToast('Sem conexão — os documentos precisam ser baixados'); return; }
+        showToast('Baixando documentos da obra...');
+        job.state = await buildStateFromRow(job.row);
+      }
+
+      Object.keys(dataState).forEach(k=>{
+        dataState[k] = job.state[k] || (Array.isArray(dataState[k]) ? [] : {});
+      });
+      obraEditandoId = job.row ? job.row.id : null;
+      obraDonoId     = job.row ? (job.row.tecnico_id || null) : null;
+      obraEmpresaId  = job.row ? (job.row.empresa_id || null) : null;
+
+      preencherCamposContrato();
+      aplicarModoLeitura();
+      renderDocsProjeto(); renderFotos(); renderDocsExecutados();
+      renderMateriais(); renderValores();
+      salvarRascunho();
+
+      // marca que o técnico pegou a obra
+      if(job.row && job.row.status === 'despachada' && ehTecnico() && online){
+        supabaseClient.from(SUPABASE_TABLE)
+          .update({status:'em_execucao', atualizado_em:new Date().toISOString()})
+          .eq('id', job.row.id).then(()=>{}, ()=>{});
+        job.row.status = 'em_execucao';
+      }
+
+      showAppView('wizard');
+      showStep(ehTecnico() ? 2 : 0);   // técnico cai direto nas fotos
+    } catch(err){
+      showToast('Não deu pra abrir: ' + (err.message || err));
+    } finally {
+      if(btn){ btn.disabled = false; btn.textContent = rotulo; }
+    }
+  }
+
+  // ---------- Despacho de obra (analista e admin) ----------
+  const despachoScreen  = document.getElementById('despachoScreen');
+  const despacharCard   = document.getElementById('despacharCard');
+  const equipeCard      = document.getElementById('equipeCard');
+
+  // documentos que o escritorio anexa antes de mandar pro campo
+  const docsDespacho = [
+    {id:'os_doc',       titulo:'Ordem de Serviço',  obrig:true},
+    {id:'projeto_doc',  titulo:'Projeto / rota',    obrig:true},
+    {id:'diagrama_doc', titulo:'Diagrama unifilar', obrig:false},
+  ];
+  let arquivosDespacho = {};       // {id: {dataUrl, nome, mime}}
+  let tecnicosCache = [];
+
+  function renderDocsDespacho(){
+    const cx = document.getElementById('dDocs');
+    cx.innerHTML = '';
+    docsDespacho.forEach(d=>{
+      const anexo = arquivosDespacho[d.id];
+      const row = document.createElement('div');
+      row.className = 'user-row';
+      row.style.marginBottom = '8px';
+      row.innerHTML = `
+        <div class="user-row-body">
+          <div class="user-row-nome">${esc(d.titulo)}${d.obrig ? ' *' : ''}</div>
+          <div class="user-row-meta">${anexo ? esc(anexo.nome) : 'nenhum arquivo'}</div>
+        </div>
+        <button class="${anexo ? 'user-bloquear' : 'user-aprovar'}" type="button">${anexo ? 'Trocar' : 'Anexar'}</button>
+      `;
+      row.querySelector('button').addEventListener('click', ()=>{
+        const inp = document.createElement('input');
+        inp.type = 'file';
+        inp.accept = 'application/pdf,image/*';
+        inp.addEventListener('change', ()=>{
+          const f = inp.files && inp.files[0];
+          if(!f) return;
+          const r = new FileReader();
+          r.onload = async (e)=>{
+            const ehPdfArq = f.type === 'application/pdf' || /\.pdf$/i.test(f.name);
+            arquivosDespacho[d.id] = {
+              dataUrl: ehPdfArq ? e.target.result : await reduzirImagem(e.target.result),
+              nome: f.name,
+              mime: ehPdfArq ? 'application/pdf' : 'image/jpeg',
+            };
+            renderDocsDespacho();
+          };
+          r.readAsDataURL(f);
+        });
+        inp.click();
+      });
+      cx.appendChild(row);
+    });
+  }
+
+  // busca contrato ja cadastrado e preenche o resto
+  document.getElementById('dNumero').addEventListener('blur', async ()=>{
+    const num = document.getElementById('dNumero').value.trim();
+    const aviso = document.getElementById('dLookup');
+    if(!num || !supabaseConfigured || !online){ aviso.textContent = ''; return; }
+    aviso.textContent = 'Procurando contrato...';
+    try{
+      const {data} = await supabaseClient.from('contratos').select('*').eq('numero', num).maybeSingle();
+      if(!data){ aviso.textContent = 'Contrato novo — preencha os dados abaixo.'; return; }
+      const map = {dEmpresa:'empresa', dEndereco:'endereco', dCidade:'cidade',
+                   dCep:'cep', dCoord:'coordenadas', dCodtcomp:'codtcomp'};
+      Object.keys(map).forEach(id=>{
+        const el = document.getElementById(id);
+        if(el && data[map[id]]) el.value = data[map[id]];
+      });
+      aviso.textContent = 'Dados preenchidos do cadastro.';
+    } catch(e){ aviso.textContent = ''; }
+  });
+
+  // lista de tecnicos, com a carga de cada um
+  async function carregarTecnicos(){
+    const sel = document.getElementById('dTecnico');
+    try{
+      const [{data:perfis}, {data:obras}] = await Promise.all([
+        supabaseClient.from('perfis').select('id,nome,email,equipe_id').eq('papel','tecnico').eq('aprovado', true),
+        supabaseClient.from(SUPABASE_TABLE).select('tecnico_id,status').in('status', ['despachada','em_execucao','reprovado']),
+      ]);
+      const {data:equipes} = await supabaseClient.from('equipes').select('id,nome');
+      const nomeEq = {};
+      (equipes||[]).forEach(e => nomeEq[e.id] = e.nome);
+
+      const carga = {};
+      (obras||[]).forEach(o => { if(o.tecnico_id) carga[o.tecnico_id] = (carga[o.tecnico_id]||0)+1; });
+
+      tecnicosCache = (perfis||[]).map(p => ({...p, carga: carga[p.id]||0, equipe: nomeEq[p.equipe_id] || 'sem equipe'}))
+        .sort((a,b)=> a.carga - b.carga || String(a.nome||'').localeCompare(String(b.nome||'')));
+
+      if(!tecnicosCache.length){
+        sel.innerHTML = '<option value="">Nenhum técnico liberado ainda</option>';
+        return;
+      }
+      sel.innerHTML = '<option value="">Escolha o técnico</option>' + tecnicosCache.map(t=>
+        `<option value="${esc(t.id)}">${esc(t.nome || t.email)} — ${t.carga} em aberto (${esc(t.equipe)})</option>`
+      ).join('');
+    } catch(e){
+      sel.innerHTML = '<option value="">Não deu pra carregar</option>';
+    }
+  }
+
+  document.getElementById('dTecnico').addEventListener('change', (e)=>{
+    const t = tecnicosCache.find(x => x.id === e.target.value);
+    document.getElementById('dCarga').textContent = t
+      ? (t.carga === 0 ? 'Está livre no momento.' : 'Já tem ' + t.carga + ' obra(s) em aberto.')
+      : '';
+  });
+
+  despacharCard.addEventListener('click', ()=>{
+    if(!ehOperador()){ showToast('Só analista e admin despacham obras'); return; }
+    arquivosDespacho = {};
+    ['dNumero','dData','dCodtcomp','dEmpresa','dEndereco','dCidade','dCep','dCoord','dObs']
+      .forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
+    document.getElementById('dData').value = new Date().toISOString().slice(0,10);
+    document.getElementById('dLookup').textContent = '';
+    document.getElementById('dCarga').textContent = '';
+    document.getElementById('dStatus').textContent = '';
+    renderDocsDespacho();
+    showAppView('despacho');
+    carregarTecnicos();
+  });
+
+  document.getElementById('backFromDespacho').addEventListener('click', ()=> showAppView('home'));
+  equipeCard.addEventListener('click', ()=>{ showAppView('usuarios'); renderUsuarios(); });
+
+  // ---------- executar o despacho ----------
+  document.getElementById('btnDespachar').addEventListener('click', async ()=>{
+    const btn = document.getElementById('btnDespachar');
+    const st  = document.getElementById('dStatus');
+    const numero  = document.getElementById('dNumero').value.trim();
+    const data    = document.getElementById('dData').value;
+    const tecnico = document.getElementById('dTecnico').value;
+
+    if(!numero){ showToast('Informe o número do contrato'); return; }
+    if(!data){ showToast('Informe a data'); return; }
+    if(!tecnico){ showToast('Escolha o técnico'); return; }
+    const faltando = docsDespacho.filter(d => d.obrig && !arquivosDespacho[d.id]);
+    if(faltando.length){
+      showToast('Anexe ' + faltando.map(f => f.titulo).join(' e '));
+      return;
+    }
+    if(!online){ showToast('Despachar precisa de conexão'); return; }
+
+    btn.disabled = true; btn.textContent = 'Despachando...';
+    try{
+      const contrato = {
+        numero, data,
+        codtcomp: document.getElementById('dCodtcomp').value.trim(),
+        empresa:  document.getElementById('dEmpresa').value.trim(),
+        endereco: document.getElementById('dEndereco').value.trim(),
+        cidade:   document.getElementById('dCidade').value.trim(),
+        cep:      document.getElementById('dCep').value.trim(),
+        coordenadas: document.getElementById('dCoord').value.trim(),
+      };
+
+      // arquivos vao pra pasta do tecnico, senao ele nao consegue abrir
+      st.textContent = 'Enviando documentos...';
+      const emp = minhaEmpresa();
+      if(!emp){ throw new Error('Sua conta não está vinculada a uma empresa'); }
+      const base = emp + '/' + numero + '/' + tecnico + '/documentos-projeto';
+      const paths = {};
+      for(const d of docsDespacho){
+        const a = arquivosDespacho[d.id];
+        if(!a) continue;
+        const blob = dataUrlToBlob(a.dataUrl);
+        const path = base + '/' + d.id + '.' + extFromMime(blob.type);
+        const {error} = await supabaseClient.storage.from(SUPABASE_BUCKET).upload(path, blob, {upsert:true});
+        if(error) throw error;
+        paths[d.id] = path;
+      }
+
+      st.textContent = 'Criando a obra...';
+      const {error} = await supabaseClient.from(SUPABASE_TABLE).insert({
+        contrato: numero,
+        status: 'despachada',
+        empresa_id: emp,
+        tecnico_id: tecnico,
+        despachado_por: perfilAtual.id,
+        despachado_em: new Date().toISOString(),
+        observacao_os: document.getElementById('dObs').value.trim() || null,
+        dados: {
+          contract: contrato,
+          arquivos: {photos:{}, projectDocs: paths, docsAtt:{}},
+          meta: {photos:{}, projectDocs:{}, docsAtt:{}},
+          materialsQty: {}, valuesQty: {},
+          tecnico: (tecnicosCache.find(t => t.id === tecnico) || {}).nome || '',
+        }
+      });
+      if(error) throw error;
+
+      // guarda o contrato pra proxima obra no mesmo endereço já vir preenchida
+      supabaseClient.from('contratos').upsert({
+        numero, empresa_id: emp,
+        empresa: contrato.empresa, endereco: contrato.endereco,
+        cidade: contrato.cidade, cep: contrato.cep,
+        coordenadas: contrato.coordenadas, codtcomp: contrato.codtcomp
+      }, {onConflict:'empresa_id,numero'}).then(()=>{}, ()=>{});
+
+      const nome = (tecnicosCache.find(t => t.id === tecnico) || {}).nome || 'o técnico';
+      showToast('Obra ' + numero + ' despachada para ' + nome);
+      showAppView('home');
+    } catch(err){
+      st.textContent = 'Não deu pra despachar: ' + (err.message || err);
+      showToast('Falha no despacho');
+    } finally {
+      btn.disabled = false; btn.textContent = 'Despachar';
+    }
+  });
 
   // Estes elementos precisam existir ANTES do painel abaixo: são const,
   // e usar const antes da declaração derruba o script inteiro.
@@ -3025,7 +3493,8 @@
 
     btn.disabled = true; btn.textContent = 'Salvando...';
     const {error} = await supabaseClient.from('convites')
-      .upsert({email, nome: nome || null, papel, criado_por: perfilAtual.id, usado: false},
+      .upsert({email, nome: nome || null, papel, empresa_id: minhaEmpresa(),
+               criado_por: perfilAtual.id, usado: false},
               {onConflict: 'email'});
     btn.disabled = false; btn.textContent = 'Convidar';
 
@@ -3056,25 +3525,26 @@
       // contratos que ainda existem
       const {data: obras, error} = await supabaseClient.from(SUPABASE_TABLE).select('contrato, tecnico_id');
       if(error) throw error;
+      const emp = minhaEmpresa();
       const vivos = new Set((obras || []).map(o => o.contrato + '/' + (o.tecnico_id || 'anon')));
 
-      // pastas de contrato no bucket
-      const {data: raiz} = await supabaseClient.storage.from(SUPABASE_BUCKET).list('', {limit:1000});
+      // pastas de contrato dentro da empresa
+      const {data: raiz} = await supabaseClient.storage.from(SUPABASE_BUCKET).list(String(emp), {limit:1000});
       const orfaos = [];
       let bytes = 0;
 
       for(const contrato of (raiz || [])){
         if(contrato.id) continue;                       // arquivo solto na raiz, nao pasta
         const {data: donos} = await supabaseClient.storage
-          .from(SUPABASE_BUCKET).list(contrato.name, {limit:1000});
+          .from(SUPABASE_BUCKET).list(emp + '/' + contrato.name, {limit:1000});
         for(const dono of (donos || [])){
           const chave = contrato.name + '/' + dono.name;
           if(vivos.has(chave)) continue;                // obra existe: deixa quieto
           for(const pasta of ['fotos','documentos-projeto','documentos-executados']){
             const {data: arqs} = await supabaseClient.storage
-              .from(SUPABASE_BUCKET).list(chave + '/' + pasta, {limit:1000});
+              .from(SUPABASE_BUCKET).list(emp + '/' + chave + '/' + pasta, {limit:1000});
             (arqs || []).forEach(a=>{
-              orfaos.push(chave + '/' + pasta + '/' + a.name);
+              orfaos.push(emp + '/' + chave + '/' + pasta + '/' + a.name);
               bytes += (a.metadata && a.metadata.size) || 0;
             });
           }
@@ -3231,6 +3701,7 @@
     acessos:    'Libere cadastros, defina papéis e bloqueie quem sai da equipe.',
     obras:      'Todas as obras do servidor. Selecione para excluir em lote.',
     manutencao: 'Limpeza de arquivos que ficaram para trás.',
+    empresas:   'Cada empreiteira que usa a ferramenta.',
   };
 
   document.querySelectorAll('.adm-aba').forEach(aba=>{
@@ -3240,6 +3711,8 @@
       document.getElementById('tabAcessos').style.display    = alvo === 'acessos' ? 'block' : 'none';
       document.getElementById('tabObras').style.display      = alvo === 'obras' ? 'block' : 'none';
       document.getElementById('tabManutencao').style.display = alvo === 'manutencao' ? 'block' : 'none';
+      document.getElementById('tabEmpresas').style.display   = alvo === 'empresas' ? 'block' : 'none';
+      if(alvo === 'empresas') renderEmpresas();
       document.getElementById('admSub').textContent = SUBTITULOS[alvo];
       if(alvo === 'obras' && !obrasAdmin.length) renderObrasAdmin();
     });
@@ -3333,6 +3806,12 @@
       await supabaseClient.auth.signOut();
       return;
     }
+    if(perfilAtual.sem_empresa){
+      loginError.textContent = 'Sua conta não está vinculada a nenhuma empresa. Peça um convite ao administrador.';
+      loginError.classList.add('show');
+      await supabaseClient.auth.signOut();
+      return;
+    }
     if(!perfilAtual.aprovado){
       loginFormView.style.display = 'none';
       pendenteView.style.display = 'block';
@@ -3346,6 +3825,7 @@
       .update({ultimo_acesso: new Date().toISOString()})
       .eq('id', data.user.id)
       .then(()=>{}, ()=>{});
+    guardarPerfilLocal(perfilAtual);
 
     const displayName = perfilAtual.nome
       || (data.user.user_metadata && data.user.user_metadata.nome)
@@ -3472,8 +3952,10 @@
 
   logoutLink.addEventListener('click', async ()=>{
     perfilAtual = null;
+    idbApagar('perfil');
     obraEditandoId = null;
     obraDonoId = null;
+    obraEmpresaId = null;
     if(supabaseConfigured){
       try{ await supabaseClient.auth.signOut(); }catch(e){}
     }
@@ -3483,6 +3965,184 @@
     loginPass.value = '';
     loginError.classList.remove('show');
   });
+
+  // ---------- Fila de envio ----------
+  // Sem sinal, a obra vai pra fila no IndexedDB e sobe sozinha quando a
+  // conexao voltar. Antes o tecnico tinha que lembrar de apertar Enviar
+  // de novo, e obra pronta ficava parada no aparelho.
+  async function enfileirarObra(){
+    const fila = (await idbLer('fila')) || [];
+    const jaTem = fila.findIndex(o => o.contrato === (dataState.contract.numero || ''));
+    const item = {
+      id: Date.now(),
+      contrato: dataState.contract.numero || ('sem-numero-' + Date.now()),
+      dados: JSON.parse(JSON.stringify(dataState)),
+      meta: buildMetaSnapshot(),
+      tecnico: (techNameDisplay.textContent || '').trim(),
+      donoId: obraDonoId,
+      empresaId: obraEmpresaId || minhaEmpresa(),
+      editandoId: obraEditandoId,
+      tentativas: 0,
+    };
+    if(jaTem >= 0) fila[jaTem] = item; else fila.push(item);
+    await idbGravar('fila', fila);
+    atualizarAvisoFila();
+  }
+
+  async function tamanhoFila(){
+    const fila = (await idbLer('fila')) || [];
+    return fila.length;
+  }
+
+  async function atualizarAvisoFila(){
+    const n = await tamanhoFila();
+    queueBanner.classList.toggle('show', n > 0 || !online);
+    const txt = queueBanner.querySelector('.queue-text') || queueBanner;
+    if(n > 0){
+      txt.textContent = n === 1
+        ? '1 obra aguardando envio \u2014 sobe sozinha quando houver sinal'
+        : n + ' obras aguardando envio \u2014 sobem sozinhas quando houver sinal';
+    }
+  }
+
+  let processandoFila = false;
+
+  async function processarFila(){
+    if(processandoFila || !online || !supabaseConfigured || !perfilAtual) return;
+    const fila = (await idbLer('fila')) || [];
+    if(!fila.length) return;
+
+    processandoFila = true;
+    let enviadas = 0;
+    const restantes = [];
+
+    for(const item of fila){
+      try{
+        const guardado = dataState;
+        // usa o estado salvo do item, sem mexer no que esta na tela
+        const uploaded = await uploadAllFilesDe(item.dados, item.contrato, item.donoId, item.empresaId);
+        const payload = {
+          contrato: item.contrato,
+          status: 'enviado',
+          empresa_id: item.empresaId,
+          tecnico_id: item.donoId || (perfilAtual.id !== 'demo' ? perfilAtual.id : undefined),
+          dados: {
+            contract: item.dados.contract,
+            materialsQty: item.dados.materialsQty,
+            valuesQty: item.dados.valuesQty,
+            arquivos: uploaded,
+            meta: item.meta,
+            tecnico: item.tecnico,
+          }
+        };
+        const {tecnico_id, empresa_id, ...semDono} = payload;
+        const resp = item.editandoId
+          ? await supabaseClient.from(SUPABASE_TABLE)
+              .update({...semDono, atualizado_em: new Date().toISOString()}).eq('id', item.editandoId)
+          : await supabaseClient.from(SUPABASE_TABLE).insert(payload);
+        if(resp.error) throw resp.error;
+        enviadas++;
+      } catch(e){
+        item.tentativas = (item.tentativas || 0) + 1;
+        item.ultimoErro = String(e.message || e);
+        if(item.tentativas < 8) restantes.push(item);   // desiste depois de 8 falhas
+        else console.error('obra descartada da fila apos 8 tentativas', item.contrato, e);
+      }
+    }
+
+    await idbGravar('fila', restantes);
+    processandoFila = false;
+    atualizarAvisoFila();
+
+    if(enviadas){
+      showToast(enviadas === 1 ? 'Obra enviada automaticamente'
+                               : enviadas + ' obras enviadas automaticamente');
+      if(typeof refreshJobsList === 'function' && myJobsScreen.classList.contains('show')) refreshJobsList();
+    }
+  }
+
+  window.addEventListener('online', ()=> setTimeout(processarFila, 1500));
+
+  // ---------- Service worker: o app abre sem internet ----------
+  let swAguardando = null;
+
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.register('sw.js').then(reg=>{
+      // avisa quando houver versao nova, em vez de trocar no meio do trabalho
+      reg.addEventListener('updatefound', ()=>{
+        const novo = reg.installing;
+        novo.addEventListener('statechange', ()=>{
+          if(novo.state === 'installed' && navigator.serviceWorker.controller){
+            swAguardando = novo;
+            mostrarAvisoAtualizacao();
+          }
+        });
+      });
+    }).catch(e => console.warn('service worker não registrou:', e));
+
+    let recarregando = false;
+    navigator.serviceWorker.addEventListener('controllerchange', ()=>{
+      if(recarregando) return;
+      recarregando = true;
+      location.reload();
+    });
+  }
+
+  function mostrarAvisoAtualizacao(){
+    if(document.getElementById('avisoAtualiza')) return;
+    const bar = document.createElement('div');
+    bar.id = 'avisoAtualiza';
+    bar.style.cssText = 'position:fixed;left:12px;right:12px;bottom:12px;z-index:9999;'
+      + 'background:var(--accent);color:#1a0f06;border-radius:10px;padding:12px 14px;'
+      + 'display:flex;align-items:center;gap:10px;font-size:13px;font-weight:600;'
+      + 'box-shadow:0 6px 24px rgba(0,0,0,.4);';
+    bar.innerHTML = '<span style="flex:1;">Nova versão disponível</span>'
+      + '<button style="background:#1a0f06;color:var(--accent);border:0;border-radius:7px;'
+      + 'padding:7px 12px;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;">Atualizar</button>';
+    bar.querySelector('button').addEventListener('click', ()=>{
+      if(swAguardando) swAguardando.postMessage ? swAguardando.postMessage('atualizar-agora')
+                                                : navigator.serviceWorker.controller.postMessage('atualizar-agora');
+      if(navigator.serviceWorker.waiting) navigator.serviceWorker.waiting.postMessage('atualizar-agora');
+      location.reload();
+    });
+    document.body.appendChild(bar);
+  }
+
+  // ---------- Entrar sem internet ----------
+  // O Supabase guarda a sessao no proprio aparelho, mas carregarPerfil()
+  // precisa de rede. Sem isto, o tecnico sem sinal nao conseguia nem abrir
+  // o app pra continuar a obra que ja estava no rascunho.
+  async function guardarPerfilLocal(p){
+    try{ await idbGravar('perfil', {quando: Date.now(), perfil: p}); } catch(e){}
+  }
+
+  async function lerPerfilLocal(){
+    try{
+      const g = await idbLer('perfil');
+      return g && g.perfil ? g.perfil : null;
+    } catch(e){ return null; }
+  }
+
+  async function tentarSessaoExistente(){
+    if(!supabaseConfigured || !supabaseClient) return false;
+    try{
+      const {data} = await supabaseClient.auth.getSession();
+      if(!data || !data.session) return false;
+
+      let p = null;
+      if(navigator.onLine){
+        p = await carregarPerfil(data.session.user.id);
+        if(p) guardarPerfilLocal(p);
+      }
+      if(!p) p = await lerPerfilLocal();          // offline: usa o último conhecido
+      if(!p || !p.aprovado) return false;
+
+      perfilAtual = p;
+      doLogin(p.nome || data.session.user.email.split('@')[0]);
+      if(!navigator.onLine) showToast('Modo offline \u2014 sessão salva neste aparelho');
+      return true;
+    } catch(e){ return false; }
+  }
 
   // ---------- Manutencao do aparelho (util no alpha) ----------
   // Apaga rascunho, sessao e caches locais. Nao toca em nada no servidor.
@@ -3629,6 +4289,7 @@
     homeScreen.classList.toggle('show', view === 'home');
     myJobsScreen.classList.toggle('show', view === 'myjobs');
     usersScreen.classList.toggle('show', view === 'usuarios');
+    despachoScreen.classList.toggle('show', view === 'despacho');
     wizardScreen.classList.toggle('show', view === 'wizard');
     bottomBar.style.display = (view === 'wizard' && steps[currentStep] !== 'review') ? 'flex' : 'none';
     if(view !== 'wizard') empilhar({tela: view});   // o wizard empilha por passo, no showStep
@@ -3729,7 +4390,8 @@
           <div class="job-item-sub" style="color:var(--success);margin-top:2px;">${total > 0 ? formatBRL(total) : 'valor pendente'}</div>
         </div>
         <div class="job-status ${job.status}" style="${job.status === 'aprovado' ? 'color:var(--success);border-color:var(--success);' : job.status === 'reprovado' ? 'color:var(--accent);border-color:var(--accent);' : ''}">${
-          {enviado:'Enviado', rascunho:'Rascunho', aprovado:'Aprovado', reprovado:'Reprovado'}[job.status] || esc(job.status)
+          {despachada:'Despachada', em_execucao:'Em execução', enviado:'Enviado',
+           rascunho:'Rascunho', aprovado:'Aprovado', reprovado:'Reprovado'}[job.status] || esc(job.status)
         }</div>
         <button class="job-pdf-quick" type="button" title="Baixar PDF" aria-label="Baixar PDF do contrato ${job.contrato}">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 21h16"/></svg>
@@ -3758,7 +4420,7 @@
         <div style="display:flex;gap:8px;">
           <button class="job-edit-btn" type="button" data-acao="editar" style="flex:1;">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-            Editar
+            ${ehTecnico() ? 'Executar' : 'Abrir'}
           </button>
           <button class="job-edit-btn" type="button" data-acao="pdf" style="flex:1;">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 21h16"/></svg>
@@ -3782,13 +4444,7 @@
       `;
       details.querySelector('[data-acao="editar"]').addEventListener('click', (e)=>{
         e.stopPropagation();
-        obraEditandoId = job.row ? job.row.id : null;
-        obraDonoId = job.row ? (job.row.tecnico_id || null) : null;
-        if(job.snapshot || job.state){
-          loadJobSnapshot({...job, snapshot: job.snapshot || job.state});
-        } else {
-          showToast('Abra pelo PDF primeiro \u2014 os dados ainda não foram baixados');
-        }
+        abrirObraDespachada(job, e.currentTarget);
       });
       details.querySelector('[data-acao="pdf"]').addEventListener('click', (e)=>{
         e.stopPropagation();
@@ -3966,7 +4622,7 @@
   showStep(0);
   history.replaceState({tela:'login'}, '');
   aplicarEstadoConexao();
-  restaurarRascunho();
+  tentarSessaoExistente().then(entrou=>{ if(entrou) restaurarRascunho(); else restaurarRascunho(); });
   console.log('FiberFlow Tech ' + APP_VERSION);
 })();
 </script>

@@ -1,0 +1,20 @@
+{
+  "name": "FiberFlow Tech",
+  "short_name": "FiberFlow",
+  "description": "Relatório de ativação convencional em campo — fotos, metragem e envio.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#10151c",
+  "theme_color": "#10151c",
+  "lang": "pt-BR",
+  "dir": "ltr",
+  "categories": ["business", "productivity", "utilities"],
+  "icons": [
+    { "src": "icones/icone-192.png",    "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icones/icone-512.png",    "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icones/maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "icones/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
