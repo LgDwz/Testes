@@ -1105,7 +1105,7 @@
 (function(){
   // Marque aqui a cada build enviado ao campo. O testador informa esta
   // string ao relatar um problema, senao nao da pra saber o que ele rodou.
-  const APP_VERSION = 'alpha-3 · multi-empresa · 17/08/2026';
+  const APP_VERSION = 'alpha-3.1 · multi-empresa · 18/08/2026';
 
   // ---------- Supabase config ----------
   // Troque pelos valores reais do seu projeto (Project Settings -> API no Supabase).
@@ -2877,11 +2877,23 @@
 
   async function carregarPerfil(userId){
     if(!supabaseConfigured) return null;
+    // Consulta simples. Antes eu buscava o nome da empresa junto, num join,
+    // e qualquer problema nele derrubava a busca do perfil inteira.
     const {data, error} = await supabaseClient
-      .from('perfis').select('*, empresas(nome)').eq('id', userId).maybeSingle();
+      .from('perfis').select('*').eq('id', userId).maybeSingle();
     if(error) console.error('[perfil]', error);
     if(error || !data) return null;
-    data.empresa_nome = data.empresas ? data.empresas.nome : null;
+
+    // o nome da empresa é enfeite: se falhar, o app continua funcionando
+    data.empresa_nome = null;
+    if(data.empresa_id){
+      try{
+        const {data: emp} = await supabaseClient
+          .from('empresas').select('nome').eq('id', data.empresa_id).maybeSingle();
+        if(emp) data.empresa_nome = emp.nome;
+      } catch(e){ console.warn('[empresa]', e); }
+    }
+
     // sem empresa e sem ser dono do produto, não há o que mostrar
     if(!data.empresa_id && data.papel !== 'superadmin') data.sem_empresa = true;
     return data;
@@ -3801,7 +3813,7 @@
     perfilAtual = await carregarPerfil(data.user.id);
 
     if(!perfilAtual){
-      loginError.textContent = 'Login ok, mas seu perfil não existe no banco. Rode o script SQL de instalação.';
+      loginError.textContent = 'Login ok, mas não encontrei seu perfil. Abra o console (F12) para ver o motivo, ou rode o SQL de instalação.';
       loginError.classList.add('show');
       await supabaseClient.auth.signOut();
       return;
