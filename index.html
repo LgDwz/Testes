@@ -640,6 +640,13 @@
   body:not(.app-on) .main{ margin-left:0 !important; }
   body:not(.app-on) .page{ padding:0 !important; }
   body:not(.app-on) .page-in{ max-width:none !important; margin:0 !important; }
+  /* .status-bar/.tech-bar são a barra de topo do desenho antigo (mobile,
+     coluna estreita) — a sidebar nova já mostra sincronismo e usuário no
+     próprio header (.hd), então essas barras só sobravam esticadas em
+     tela larga, com um vão vazio enorme no meio. O botão de "simular sem
+     sinal" que vivia lá virou um ícone no header novo (#hdSimConn). */
+  body.app-on .status-bar, body.app-on .tech-bar{ display:none !important; }
+  #hdSimConn.on{ color:var(--warning); background:var(--warning-dim); }
 
   body.app-on{ padding:0; align-items:stretch; justify-content:flex-start; }
   body.app-on .rf-app{
@@ -1022,6 +1029,25 @@
   }
   .login-input::placeholder{color:var(--text-faint);}
   .login-input:focus{outline:none;}
+  /* o Chrome/Edge pintam o campo de branco com texto preto quando
+     autopreenchem e-mail/senha salvos — força o tema de volta */
+  .login-input:-webkit-autofill,
+  .login-input:-webkit-autofill:hover,
+  .login-input:-webkit-autofill:focus,
+  .field-input:-webkit-autofill,
+  .field-input:-webkit-autofill:hover,
+  .field-input:-webkit-autofill:focus{
+    -webkit-text-fill-color:var(--text);
+    -webkit-box-shadow:0 0 0 1000px var(--bg) inset;
+    box-shadow:0 0 0 1000px var(--bg) inset;
+    caret-color:var(--text);
+    transition:background-color 9999s ease-in-out 0s;
+  }
+  .login-input:autofill,
+  .field-input:autofill{
+    -webkit-text-fill-color:var(--text);
+    caret-color:var(--text);
+  }
   .login-eye{
     flex:0 0 auto; background:transparent; border:0; color:var(--text-faint);
     cursor:pointer; padding:8px 12px; display:flex; align-items:center;
@@ -1503,6 +1529,9 @@
           <span class="hd-sync"><i></i><span id="hdSync">Sincronizado</span></span>
           <span class="hd-upd" id="hdUpd"></span>
         </div>
+        <button class="hd-ic" id="hdSimConn" aria-label="Simular sem sinal" title="Simular sem sinal">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 9a16 16 0 0 1 22 0"/><path d="M5 13a10.5 10.5 0 0 1 14 0"/><path d="M9 17a5 5 0 0 1 6 0"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+        </button>
         <button class="hd-ic" id="hdBell" aria-label="Notificações">
           <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
           <span class="dot" id="hdDot" style="display:none;"></span>
@@ -1928,7 +1957,7 @@
 (function(){
   // Marque aqui a cada build enviado ao campo. O testador informa esta
   // string ao relatar um problema, senao nao da pra saber o que ele rodou.
-  const APP_VERSION = 'Enlace Ops · alpha-10.3 · 19/08/2026';
+  const APP_VERSION = 'Enlace Ops · alpha-10.4 · 19/08/2026';
 
   // ---------- Supabase config ----------
   // Troque pelos valores reais do seu projeto (Project Settings -> API no Supabase).
@@ -3674,6 +3703,7 @@
   const statusText = document.getElementById('statusText');
   const queueBanner = document.getElementById('queueBanner');
   let overrideOffline = false;   // o botao "Simular sem sinal" force offline
+  const hdSimConn = document.getElementById('hdSimConn');
 
   function aplicarEstadoConexao(){
     online = navigator.onLine && !overrideOffline;
@@ -3683,6 +3713,10 @@
     statusText.textContent = online ? 'Sincronizado' : 'Sem conexão \u2014 modo offline';
     toggleConn.textContent = overrideOffline ? 'Simular reconexão' : 'Simular sem sinal';
     queueBanner.classList.toggle('show', !online);
+    if(hdSimConn){
+      hdSimConn.classList.toggle('on', overrideOffline);
+      hdSimConn.title = overrideOffline ? 'Simular reconexão' : 'Simular sem sinal';
+    }
   }
   window.addEventListener('online', ()=>{
     aplicarEstadoConexao();
@@ -3695,6 +3729,7 @@
     aplicarEstadoConexao();
     if(online) showToast('Conexão restabelecida');
   });
+  if(hdSimConn) hdSimConn.addEventListener('click', ()=> toggleConn.click());
 
 
   // ---------- Toast ----------
