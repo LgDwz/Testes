@@ -465,6 +465,42 @@
   }
   .user-excluir:active{border-color:var(--danger,#e5484d);color:var(--danger,#e5484d);}
   .user-row.convite{border-style:dashed;opacity:0.85;}
+  .quadro-eq{
+    font-size:11px;color:var(--text-faint);font-family:'IBM Plex Mono',monospace;
+    letter-spacing:.06em;text-transform:uppercase;padding:14px 0 7px;
+  }
+  .quadro-linha{
+    display:flex;gap:11px;align-items:flex-start;padding:11px;margin-bottom:8px;
+    border:1px solid var(--border);border-radius:11px;background:var(--bg-elev);
+  }
+  .quadro-pes{flex:0 0 118px;min-width:0;}
+  .quadro-nome{font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .quadro-carga{
+    display:inline-block;font-size:10px;padding:1px 7px;border-radius:999px;margin-top:3px;
+    font-family:'IBM Plex Mono',monospace;
+  }
+  .carga-livre{background:var(--success-dim);color:var(--success);}
+  .carga-ok{background:var(--bg-elev-2);color:var(--text-dim);}
+  .carga-cheia{background:var(--warning-dim);color:var(--warning);}
+  .quadro-obras{flex:1;display:flex;gap:6px;flex-wrap:wrap;min-width:0;}
+  .quadro-obra{
+    border-left:3px solid var(--border);border-radius:0 7px 7px 0;padding:5px 9px;
+    background:var(--bg-elev-2);min-width:118px;cursor:pointer;
+  }
+  .quadro-obra .n{font-size:11.5px;font-family:'IBM Plex Mono',monospace;}
+  .quadro-obra .d{font-size:10px;color:var(--text-faint);overflow:hidden;
+    text-overflow:ellipsis;white-space:nowrap;max-width:150px;}
+  .qo-despachada{border-left-color:#378ADD;} .qo-despachada .n{color:#7FB4E8;}
+  .qo-em_execucao{border-left-color:#BA7517;} .qo-em_execucao .n{color:#E0A458;}
+  .qo-enviado{border-left-color:#1D9E75;} .qo-enviado .n{color:#5DCAA5;}
+  .qo-reprovado{border-left-color:var(--accent);} .qo-reprovado .n{color:var(--accent);}
+  .quadro-mais{
+    border:1px dashed var(--border);border-radius:7px;padding:5px 10px;font-size:11px;
+    color:var(--text-faint);cursor:pointer;background:transparent;font-family:inherit;
+  }
+  .quadro-mais:active{border-color:var(--accent);color:var(--accent);}
+  .quadro-legenda{display:flex;gap:13px;flex-wrap:wrap;font-size:11px;color:var(--text-faint);padding:14px 0 4px;}
+  .quadro-legenda i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;}
   .revisao-box{
     border:1px solid var(--warning);background:var(--warning-dim);border-radius:10px;
     padding:12px;margin-top:14px;
@@ -744,6 +780,22 @@
       <div class="action-card-sub">Convidar, liberar e definir papéis.</div>
     </div>
 
+    <div class="action-card" id="quadroCard" style="display:none;">
+      <div class="action-card-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 5h18"/><path d="M3 10h11"/><path d="M3 15h15"/><path d="M3 20h8"/></svg>
+      </div>
+      <div class="action-card-title">Quadro de despacho</div>
+      <div class="action-card-sub">Ver a carga de cada técnico.</div>
+    </div>
+
+    <div class="action-card" id="historicoCard">
+      <div class="action-card-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 7v5l3 2"/></svg>
+      </div>
+      <div class="action-card-title">Histórico</div>
+      <div class="action-card-sub">Obras já aprovadas.</div>
+    </div>
+
     <div class="action-card" id="usersCard" style="display:none;">
       <div class="action-card-icon">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3.2"/><path d="M3 20a6 6 0 0112 0"/><path d="M16 11a3 3 0 100-6"/><path d="M18.5 20a5.5 5.5 0 00-3-4.9"/></svg>
@@ -759,6 +811,15 @@
       <div class="action-card-title">Minhas obras</div>
       <div class="action-card-sub">Ver relatórios já enviados e em andamento.</div>
     </div>
+  </div>
+
+  <div class="users-screen" id="quadroScreen">
+    <div class="my-jobs-head">
+      <span class="logout-link" id="backFromQuadro">&#8592; Voltar</span>
+      <div class="step-title" style="margin:10px 0 0;">Quadro de despacho</div>
+      <div class="step-sub" style="padding:0;" id="quadroSub">Carga de cada técnico e o que está em campo.</div>
+    </div>
+    <div id="quadroLista" style="padding:0 16px 24px;"></div>
   </div>
 
   <div class="users-screen" id="despachoScreen">
@@ -1107,7 +1168,7 @@
 (function(){
   // Marque aqui a cada build enviado ao campo. O testador informa esta
   // string ao relatar um problema, senao nao da pra saber o que ele rodou.
-  const APP_VERSION = 'alpha-3.4 · gerar e enviar · 18/08/2026';
+  const APP_VERSION = 'alpha-4.1 · gestão de empresas · 18/08/2026';
 
   // ---------- Supabase config ----------
   // Troque pelos valores reais do seu projeto (Project Settings -> API no Supabase).
@@ -2973,6 +3034,7 @@
     // a obra nasce no escritório, nunca no celular
     newJobCard.style.display    = 'none';
     despacharCard.style.display = ehOperador() ? 'block' : 'none';
+    quadroCard.style.display    = ehOperador() ? 'block' : 'none';
     usersCard.style.display     = ehAdmin() ? 'block' : 'none';
     equipeCard.style.display    = (ehOperador() && !ehAdmin()) ? 'block' : 'none';
 
@@ -3030,6 +3092,12 @@
           : 'Tudo em dia por aqui.';
       }
 
+      const aprovadas = n('aprovado');
+      const subHist = document.querySelector('#historicoCard .action-card-sub');
+      if(subHist) subHist.textContent = aprovadas
+        ? aprovadas + (aprovadas === 1 ? ' obra aprovada' : ' obras aprovadas')
+        : 'Nenhuma obra aprovada ainda.';
+
       // destaca quando há algo devolvido, que é o que trava faturamento
       const card = document.getElementById('myJobsCard');
       card.style.borderColor = reprovada ? 'var(--accent)' : '';
@@ -3053,15 +3121,89 @@
 
       cx.innerHTML = '';
       (emps||[]).forEach(e=>{
+        const nU = nUsers[e.id]||0, nO = nObras[e.id]||0;
         const row = document.createElement('div');
-        row.className = 'user-row';
+        row.className = 'user-row' + (e.ativa ? '' : ' convite');
         row.innerHTML = `
           <div class="user-row-body">
-            <div class="user-row-nome">${esc(e.nome)}</div>
-            <div class="user-row-meta">${nUsers[e.id]||0} usuário(s) · ${nObras[e.id]||0} obra(s)</div>
+            <div class="user-row-nome">${esc(e.nome)}${e.ativa ? '' : ' · inativa'}</div>
+            <div class="user-row-meta">${nU} usuário(s) · ${nO} obra(s)</div>
           </div>
-          <span class="obra-tag">${e.ativa ? 'ativa' : 'inativa'}</span>
+          <div class="user-acoes">
+            <button class="${e.ativa ? 'user-bloquear' : 'user-aprovar'}" data-acao="ativar" type="button">${e.ativa ? 'Desativar' : 'Reativar'}</button>
+            <button class="user-excluir" data-acao="excluir" type="button">Excluir</button>
+          </div>
         `;
+
+        // desativar: reversível, mantém o histórico e barra o login de todos
+        row.querySelector('[data-acao="ativar"]').addEventListener('click', async (ev)=>{
+          const btn = ev.currentTarget;
+          const novo = !e.ativa;
+          if(!novo && !confirm('Desativar ' + e.nome + '?\n\n'
+              + 'Os ' + nU + ' usuário(s) dela param de conseguir entrar imediatamente.\n'
+              + 'As obras e os arquivos ficam guardados — dá para reativar depois.')) return;
+          btn.disabled = true;
+          const {error} = await supabaseClient.from('empresas').update({ativa: novo}).eq('id', e.id);
+          btn.disabled = false;
+          if(error){ showToast('Não deu pra salvar: ' + error.message); return; }
+          showToast(novo ? 'Empresa reativada' : 'Empresa desativada — ninguém dela entra mais');
+          renderEmpresas();
+        });
+
+        // excluir: irreversível, leva arquivos e contas junto
+        row.querySelector('[data-acao="excluir"]').addEventListener('click', async (ev)=>{
+          const btn = ev.currentTarget;
+          const rotulo = btn.textContent;
+          try{
+            btn.disabled = true; btn.textContent = 'Verificando...';
+
+            // conta os arquivos antes de perguntar
+            let arquivos = [];
+            const {data: contratos} = await supabaseClient.storage
+              .from(SUPABASE_BUCKET).list(String(e.id), {limit:1000});
+            for(const c of (contratos||[])){
+              const {data: donos} = await supabaseClient.storage
+                .from(SUPABASE_BUCKET).list(e.id + '/' + c.name, {limit:1000});
+              for(const dono of (donos||[])){
+                for(const pasta of ['fotos','documentos-projeto','documentos-executados']){
+                  const base = e.id + '/' + c.name + '/' + dono.name + '/' + pasta;
+                  const {data: arqs} = await supabaseClient.storage
+                    .from(SUPABASE_BUCKET).list(base, {limit:1000});
+                  (arqs||[]).forEach(a => arquivos.push(base + '/' + a.name));
+                }
+              }
+            }
+
+            if(!confirm('EXCLUIR ' + e.nome + ' definitivamente?\n\n'
+                + '\u2022 ' + nU + ' conta(s) de usuário\n'
+                + '\u2022 ' + nO + ' obra(s)\n'
+                + '\u2022 ' + arquivos.length + ' arquivo(s) no servidor\n\n'
+                + 'Isto não tem como desfazer. Para apenas tirar o acesso, use Desativar.')) return;
+
+            if(prompt('Para confirmar, digite o nome da empresa:\n' + e.nome) !== e.nome){
+              showToast('Nome não confere — nada foi excluído');
+              return;
+            }
+
+            btn.textContent = 'Excluindo...';
+            // arquivos primeiro: se falhar, a empresa continua e dá pra repetir
+            if(arquivos.length){
+              const {error} = await supabaseClient.storage.from(SUPABASE_BUCKET).remove(arquivos);
+              if(error) throw new Error('arquivos: ' + error.message);
+            }
+            const {data: res, error} = await supabaseClient.rpc('excluir_empresa', {alvo: e.id});
+            if(error) throw error;
+
+            showToast('Empresa excluída — ' + nU + ' conta(s), ' + nO + ' obra(s), '
+                      + arquivos.length + ' arquivo(s)');
+            renderEmpresas();
+          } catch(err){
+            showToast('Não deu pra excluir: ' + (err.message || err));
+          } finally {
+            btn.disabled = false; btn.textContent = rotulo;
+          }
+        });
+
         cx.appendChild(row);
       });
       if(!(emps||[]).length){
@@ -3162,6 +3304,130 @@
       if(btn){ btn.disabled = false; btn.textContent = rotulo; }
     }
   }
+
+  // ---------- Quadro de despacho ----------
+  // Mostra carga por pessoa, não agenda por hora. As obras aqui duram
+  // dias, então "quantas cada um tem em aberto" é a informação que
+  // decide para quem vai a próxima.
+  const quadroScreen = document.getElementById('quadroScreen');
+  const quadroCard   = document.getElementById('quadroCard');
+
+  const ROTULO_STATUS = {
+    despachada:'despachada', em_execucao:'em execução',
+    enviado:'enviada', reprovado:'devolvida'
+  };
+
+  async function renderQuadro(){
+    const cx = document.getElementById('quadroLista');
+    cx.innerHTML = '<div class="job-service-empty" style="padding:20px 4px;">Carregando...</div>';
+
+    try{
+      const [{data:tecs, error}, {data:obras}, {data:eqs}] = await Promise.all([
+        supabaseClient.from('perfis').select('id,nome,email,equipe_id')
+          .eq('papel','tecnico').eq('aprovado', true),
+        supabaseClient.from(SUPABASE_TABLE).select('*')
+          .in('status', ['despachada','em_execucao','enviado','reprovado']),
+        supabaseClient.from('equipes').select('id,nome').order('nome'),
+      ]);
+      if(error) throw error;
+
+      const porTecnico = {};
+      (obras || []).forEach(o=>{
+        if(!o.tecnico_id) return;
+        (porTecnico[o.tecnico_id] = porTecnico[o.tecnico_id] || []).push(o);
+      });
+
+      // agrupa por equipe; quem não tem equipe cai num grupo próprio
+      const grupos = (eqs || []).map(e => ({nome:e.nome, pes:[]}));
+      const semEquipe = {nome:'Sem equipe', pes:[]};
+      (tecs || []).forEach(t=>{
+        const g = grupos.find(x => x.nome === ((eqs||[]).find(e => e.id === t.equipe_id)||{}).nome);
+        (g || semEquipe).pes.push(t);
+      });
+      if(semEquipe.pes.length) grupos.push(semEquipe);
+
+      const semTecnico = (obras || []).filter(o => !o.tecnico_id).length;
+      document.getElementById('quadroSub').textContent = semTecnico
+        ? semTecnico + ' obra(s) sem técnico · ' + (obras||[]).length + ' em aberto'
+        : (obras||[]).length + ' obra(s) em aberto';
+
+      cx.innerHTML = '';
+      if(!(tecs || []).length){
+        cx.innerHTML = '<div class="job-service-empty" style="padding:20px 4px;">Nenhum técnico liberado ainda. Convide alguém pelo painel.</div>';
+        return;
+      }
+
+      grupos.filter(g => g.pes.length).forEach(g=>{
+        const t = document.createElement('div');
+        t.className = 'quadro-eq';
+        t.textContent = g.nome;
+        cx.appendChild(t);
+
+        g.pes.forEach(p=>{
+          const minhas = porTecnico[p.id] || [];
+          const n = minhas.length;
+          const classe = n === 0 ? 'carga-livre' : (n <= 2 ? 'carga-ok' : 'carga-cheia');
+          const rotulo = n === 0 ? 'livre' : n + ' em aberto';
+
+          const linha = document.createElement('div');
+          linha.className = 'quadro-linha';
+          linha.innerHTML = `
+            <div class="quadro-pes">
+              <div class="quadro-nome">${esc(p.nome || p.email)}</div>
+              <span class="quadro-carga ${classe}">${rotulo}</span>
+            </div>
+            <div class="quadro-obras">
+              ${minhas.map(o=>{
+                 const c = (o.dados && o.dados.contract) || {};
+                 return `<div class="quadro-obra qo-${esc(o.status)}" data-obra="${o.id}"
+                              title="${esc(ROTULO_STATUS[o.status] || o.status)}">
+                   <div class="n">${esc(o.contrato)}</div>
+                   <div class="d">${esc(c.endereco || c.empresa || ROTULO_STATUS[o.status] || '')}</div>
+                 </div>`;
+               }).join('')}
+              <button class="quadro-mais" data-tec="${esc(p.id)}">+ despachar</button>
+            </div>
+          `;
+
+          linha.querySelector('.quadro-mais').addEventListener('click', ()=>{
+            despacharCard.click();
+            setTimeout(()=>{
+              const sel = document.getElementById('dTecnico');
+              if(sel){ sel.value = p.id; sel.dispatchEvent(new Event('change')); }
+            }, 600);
+          });
+
+          linha.querySelectorAll('.quadro-obra').forEach(el=>{
+            el.addEventListener('click', ()=>{
+              const o = minhas.find(x => String(x.id) === el.dataset.obra);
+              if(!o) return;
+              showToast('Contrato ' + o.contrato + ' — ' + (ROTULO_STATUS[o.status] || o.status));
+            });
+          });
+
+          cx.appendChild(linha);
+        });
+      });
+
+      const leg = document.createElement('div');
+      leg.className = 'quadro-legenda';
+      leg.innerHTML = ['despachada:#378ADD','em execução:#BA7517','enviada:#1D9E75','devolvida:#ff6a1a']
+        .map(x => { const [t,c] = x.split(':');
+          return '<span><i style="background:'+c+'"></i>'+t+'</span>'; }).join('');
+      cx.appendChild(leg);
+
+    } catch(e){
+      cx.innerHTML = '<div class="job-service-empty" style="padding:20px 4px;">Não deu pra carregar: '
+        + esc(e.message || e) + '</div>';
+    }
+  }
+
+  quadroCard.addEventListener('click', ()=>{
+    if(!ehOperador()){ showToast('Só analista e admin veem o quadro'); return; }
+    showAppView('quadro');
+    renderQuadro();
+  });
+  document.getElementById('backFromQuadro').addEventListener('click', ()=> showAppView('home'));
 
   // ---------- Despacho de obra (analista e admin) ----------
   const despachoScreen  = document.getElementById('despachoScreen');
@@ -3388,6 +3654,7 @@
   let usuariosCache = [];
   let obrasPorUsuario = {};
   let filtroUsuarios = 'todos';
+  let filtroObras = 'abertas';     // 'abertas' = o que ainda dá trabalho | 'historico' = encerradas
 
   function tempoRelativo(iso){
     if(!iso) return 'nunca entrou';
@@ -4412,6 +4679,7 @@
     myJobsScreen.classList.toggle('show', view === 'myjobs');
     usersScreen.classList.toggle('show', view === 'usuarios');
     despachoScreen.classList.toggle('show', view === 'despacho');
+    quadroScreen.classList.toggle('show', view === 'quadro');
     wizardScreen.classList.toggle('show', view === 'wizard');
     bottomBar.style.display = (view === 'wizard' && steps[currentStep] !== 'review') ? 'flex' : 'none';
     if(view !== 'wizard') empilhar({tela: view});   // o wizard empilha por passo, no showStep
@@ -4479,25 +4747,36 @@
     return (job.servicos || []).reduce((sum, s) => sum + s.qtd * s.preco, 0);
   }
 
+  const ABERTAS = ['despachada','em_execucao','enviado','reprovado','rascunho'];
+
+  function obrasDoFiltro(){
+    return reportsList.filter(j => filtroObras === 'historico'
+      ? j.status === 'aprovado'
+      : ABERTAS.includes(j.status));
+  }
+
   function renderJobsList(){
     jobsList.innerHTML = '';
+    const lista = obrasDoFiltro();
 
-    if(!reportsList.length){
+    if(!lista.length){
       jobsList.innerHTML = '<div class="job-service-empty" style="padding:24px 4px;">'
-        + (ehRevisor() ? 'Nenhuma obra enviada pela equipe ainda.'
-                       : 'Você ainda não enviou nenhuma obra. Comece pelo botão Nova obra.')
+        + (filtroObras === 'historico'
+             ? 'Nenhuma obra aprovada ainda.'
+             : (ehRevisor() ? 'Nenhuma obra em aberto no momento.'
+                            : 'Nenhuma obra despachada para você no momento.'))
         + '</div>';
       return;
     }
 
-    const totalGeral = reportsList.reduce((sum, job) => sum + jobTotal(job), 0);
+    const totalGeral = lista.reduce((sum, job) => sum + jobTotal(job), 0);
     const summary = document.createElement('div');
     summary.className = 'values-total-row';
     summary.style.marginBottom = '16px';
-    summary.innerHTML = `<span>Total (${reportsList.length} obras)</span><span>${formatBRL(totalGeral)}</span>`;
+    summary.innerHTML = `<span>${filtroObras === 'historico' ? 'Aprovadas' : 'Em aberto'} (${lista.length})</span><span>${formatBRL(totalGeral)}</span>`;
     jobsList.appendChild(summary);
 
-    reportsList.forEach(job=>{
+    lista.forEach(job=>{
       const total = jobTotal(job);
       const card = document.createElement('div');
       card.className = 'job-card';
@@ -4635,6 +4914,9 @@
 
   // Busca as obras lancadas no servidor e mistura com o que esta em memoria.
   async function refreshJobsList(){
+    document.querySelector('#myJobsScreen .step-title').textContent =
+      filtroObras === 'historico' ? 'Histórico'
+      : (ehRevisor() ? 'Todas as obras' : 'Minhas obras');
     renderJobsList();
     showAppView('myjobs');
     if(!supabaseConfigured || !online) return;
@@ -4671,7 +4953,12 @@
     } catch(e){ /* offline ou tabela vazia: segue com a lista local */ }
   }
 
-  myJobsCard.addEventListener('click', refreshJobsList);
+  myJobsCard.addEventListener('click', ()=>{ filtroObras = 'abertas'; refreshJobsList(); });
+
+  document.getElementById('historicoCard').addEventListener('click', ()=>{
+    filtroObras = 'historico';
+    refreshJobsList();
+  });
 
   homeLink.addEventListener('click', ()=> showAppView('home'));
   backFromJobs.addEventListener('click', ()=> showAppView('home'));
