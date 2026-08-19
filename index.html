@@ -1956,7 +1956,7 @@
 (function(){
   // Marque aqui a cada build enviado ao campo. O testador informa esta
   // string ao relatar um problema, senao nao da pra saber o que ele rodou.
-  const APP_VERSION = 'Enlace Ops · alpha-10.5 · 19/08/2026';
+  const APP_VERSION = 'Enlace Ops · alpha-10.6 · 19/08/2026';
 
   // ---------- Supabase config ----------
   // Troque pelos valores reais do seu projeto (Project Settings -> API no Supabase).
@@ -4530,8 +4530,13 @@
   async function carregarTecnicos(){
     const sel = document.getElementById('dTecnico');
     try{
+      // dono do produto dentro da instância de uma empresa só pode despachar
+      // pros técnicos DELA — sem esse filtro o RLS do superadmin enxerga
+      // técnicos de todas as empresas misturados no mesmo seletor.
+      let qTecnicos = supabaseClient.from('perfis').select('id,nome,email,equipe_id').eq('papel','tecnico').eq('aprovado', true);
+      if(empresaContexto) qTecnicos = qTecnicos.eq('empresa_id', empresaContexto.id);
       const [{data:perfis}, {data:obras}] = await Promise.all([
-        supabaseClient.from('perfis').select('id,nome,email,equipe_id').eq('papel','tecnico').eq('aprovado', true),
+        qTecnicos,
         supabaseClient.from(SUPABASE_TABLE).select('tecnico_id,status').in('status', ['despachada','em_execucao','reprovado']),
       ]);
       const {data:equipes} = await supabaseClient.from('equipes').select('id,nome');
@@ -4612,8 +4617,12 @@
 
       // arquivos vao pra pasta do tecnico, senao ele nao consegue abrir
       st.textContent = 'Enviando documentos...';
-      const emp = minhaEmpresa();
-      if(!emp){ throw new Error('Sua conta não está vinculada a uma empresa'); }
+      // dono do produto dentro da instância de uma empresa despacha PRA ELA,
+      // não pra empresa dele (que nem existe — ver minhaEmpresa()). Sem isso a
+      // obra ficava com empresa_id errado (ou nulo) e podia vazar/misturar
+      // com outra empresa.
+      const emp = empresaContexto ? empresaContexto.id : minhaEmpresa();
+      if(!emp){ throw new Error(ehSuper() ? 'Escolha uma empresa antes de despachar' : 'Sua conta não está vinculada a uma empresa'); }
       const base = emp + '/' + numero + '/' + tecnico + '/documentos-projeto';
       const paths = {};
       for(const d of docsDespacho){
@@ -4677,6 +4686,7 @@
   const PAPEIS = ['tecnico', 'monitor', 'admin'];
   let usuariosCache = [];
   let obrasPorUsuario = {};
+  let empresasNomeMap = {};        // {empresa_id: nome} — só o dono do produto lê a tabela toda
   let filtroUsuarios = 'todos';
   // dono do produto entrando na instância de uma empresa específica
   // (ver renderEmpresas): {id, nome} ou null quando é a visão global
@@ -4699,14 +4709,19 @@
   let convitesCache = [];
 
   async function carregarUsuarios(){
-    const [perfis, obras, convites] = await Promise.all([
+    const [perfis, obras, convites, emps] = await Promise.all([
       supabaseClient.from('perfis').select('*').order('criado_em', {ascending:false}),
       supabaseClient.from(SUPABASE_TABLE).select('tecnico_id'),
       supabaseClient.from('convites').select('*').eq('usado', false).order('criado_em', {ascending:false}),
+      // só o dono do produto enxerga mais de uma empresa por vez — pra ele,
+      // deixa claro em cada linha a qual empresa a pessoa pertence.
+      ehSuper() ? supabaseClient.from('empresas').select('id,nome') : Promise.resolve({data:null}),
     ]);
     if(perfis.error) throw perfis.error;
     usuariosCache = perfis.data || [];
     convitesCache = convites.error ? [] : (convites.data || []);
+    empresasNomeMap = {};
+    (emps && emps.data || []).forEach(e => { empresasNomeMap[e.id] = e.nome; });
     // dentro da instância de uma empresa, só as pessoas dela
     if(empresaContexto){
       usuariosCache = usuariosCache.filter(u => u.empresa_id === empresaContexto.id);
@@ -4794,11 +4809,13 @@
       const nObras = obrasPorUsuario[u.id] || 0;
       const row = document.createElement('div');
       row.className = 'user-row' + (!u.aprovado ? ' pendente' : '') + (souEu ? ' eu' : '');
+      const nomeEmpresa = ehSuper() ? (empresasNomeMap[u.empresa_id] || (u.empresa_id ? null : 'sem empresa')) : null;
       row.innerHTML = `
         <div class="user-row-body">
           <div class="user-row-nome">${esc(u.nome || '(sem nome)')}${souEu ? ' · você' : ''}</div>
           <div class="user-row-mail">${esc(u.email || '')}</div>
           <div class="user-row-meta">${tempoRelativo(u.ultimo_acesso)} · ${nObras} ${nObras === 1 ? 'obra' : 'obras'}</div>
+          ${nomeEmpresa ? `<div class="user-row-meta" style="color:var(--accent);">${esc(nomeEmpresa)}</div>` : ''}
         </div>
         <div class="user-acoes">
           <select class="user-papel">${
@@ -5027,8 +5044,11 @@
     selecionadas.clear();
     atualizarBarraObras();
 
-    const {data, error} = await supabaseClient
-      .from(SUPABASE_TABLE).select('*').order('id', {ascending:false}).limit(500);
+    // dentro da instância de uma empresa, só as obras dela — sem isso o
+    // dono do produto via obra de todas as empresas misturadas na mesma lista.
+    let qObras = supabaseClient.from(SUPABASE_TABLE).select('*').order('id', {ascending:false}).limit(500);
+    if(empresaContexto) qObras = qObras.eq('empresa_id', empresaContexto.id);
+    const {data, error} = await qObras;
     if(error){
       cx.innerHTML = '<div class="job-service-empty" style="padding:20px 4px;">Não deu pra carregar: '
         + esc(error.message) + '</div>';
@@ -5160,7 +5180,11 @@
         renderEmpresas();
       }
       document.getElementById('admSub').textContent = SUBTITULOS[alvo];
-      if(alvo === 'obras' && !obrasAdmin.length) renderObrasAdmin();
+      // sempre recarrega (não só na primeira vez): a lista em memória pode
+      // ser de outra empresa, ou de todas, dependendo de por onde a pessoa
+      // entrou — cache velho aqui é exatamente o tipo de mistura entre
+      // empresas que a gente não pode deixar acontecer.
+      if(alvo === 'obras') renderObrasAdmin();
     });
   });
 
