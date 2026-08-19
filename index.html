@@ -597,6 +597,307 @@
   .menu-sep{height:1px;background:var(--border);margin:8px 0;}
   .menu-rodape{padding:12px 16px;border-top:1px solid var(--border);
     font-size:10.5px;color:var(--text-faint);font-family:'IBM Plex Mono',monospace;}
+
+  /* ============================================================
+     ENLACE OPS — SHELL SAAS (sidebar + header + conteúdo)
+     Escala de espaçamento: 8 / 12 / 16 / 24 / 32
+     ============================================================ */
+  :root{
+    --sb-w:236px;          /* largura da sidebar */
+    --sb-w-min:68px;       /* sidebar recolhida  */
+    --hd-h:64px;           /* altura do header   */
+    --sp1:8px; --sp2:12px; --sp3:16px; --sp4:24px; --sp5:32px;
+    --r-sm:6px; --r-md:8px; --r-lg:12px;
+    --surf:#0A1730;        /* cartão            */
+    --surf2:#0D1D3A;       /* cartão elevado    */
+    --line:#17294C;        /* borda discreta    */
+    --line2:#223A66;       /* borda destacada   */
+  }
+
+  /* ---------- casca ----------
+     A sidebar e o header só existem depois do login. Antes disso o
+     shell é transparente e a tela de entrada mantém o cartão centrado. */
+  /* body:not(.app-on) tem peso maior que .sb — assim não importa a ordem
+     em que as regras aparecem no arquivo. Foi o que quebrou da primeira vez. */
+  body:not(.app-on) .shell{ display:block; }
+  body:not(.app-on) .sb,
+  body:not(.app-on) .hd{ display:none !important; }
+  body:not(.app-on) .main{ margin-left:0 !important; }
+  body:not(.app-on) .page{ padding:0 !important; }
+  body:not(.app-on) .page-in{ max-width:none !important; margin:0 !important; }
+
+  body.app-on{ padding:0; align-items:stretch; justify-content:flex-start; }
+  body.app-on .rf-app{
+    max-width:none; width:100%; min-height:100vh; min-height:100dvh;
+    border:0; border-radius:0; box-shadow:none; margin:0;
+  }
+  body.app-on .shell{ display:flex; min-height:100vh; min-height:100dvh; }
+  body.app-on .sb{ display:flex; }
+  body.app-on .hd{ display:flex; }
+  body.app-on .main{ margin-left:var(--sb-w); }
+  body.app-on .page{ padding:var(--sp4) var(--sp5) var(--sp5); }
+  body.app-on .page-in{ max-width:1560px; margin:0 auto; }
+
+  /* ---------- sidebar ---------- */
+  .sb{
+    flex:0 0 var(--sb-w); width:var(--sb-w);
+    background:#060F22; border-right:1px solid var(--line);
+    display:flex; flex-direction:column; position:fixed;
+    top:0; left:0; bottom:0; z-index:60; transition:width .18s, flex-basis .18s;
+  }
+  .sb-logo{
+    height:var(--hd-h); display:flex; align-items:center; gap:10px;
+    padding:0 var(--sp3); border-bottom:1px solid var(--line); overflow:hidden;
+  }
+  .sb-logo img{ height:26px; width:auto; flex:0 0 auto; }
+  .sb-nav{ flex:1; overflow-y:auto; padding:var(--sp3) var(--sp2); }
+  .sb-sec{
+    font-size:10px; letter-spacing:.12em; text-transform:uppercase;
+    color:#4A5C7A; padding:var(--sp3) var(--sp2) var(--sp1);
+    font-family:'IBM Plex Mono',monospace;
+  }
+  .sb-item{
+    display:flex; align-items:center; gap:12px; padding:11px var(--sp2);
+    border-radius:var(--r-md); cursor:pointer; margin-bottom:2px;
+    font-size:13.5px; color:#A9BAD4; white-space:nowrap; overflow:hidden;
+    transition:background .12s, color .12s;
+  }
+  .sb-item:hover{ background:#0C1B36; color:var(--text); }
+  .sb-item.on{ background:rgba(0,162,245,.14); color:#4FC0FF; font-weight:600; }
+  .sb-item svg{ flex:0 0 20px; opacity:.9; }
+  .sb-badge{
+    margin-left:auto; font-size:10px; min-width:19px; height:19px; padding:0 6px;
+    border-radius:999px; background:var(--accent); color:#00121F;
+    display:flex; align-items:center; justify-content:center;
+    font-family:'IBM Plex Mono',monospace; font-weight:600;
+  }
+  .sb-foot{ padding:var(--sp2) var(--sp3); border-top:1px solid var(--line); }
+  .sb-sync{
+    border:1px solid var(--line); border-radius:var(--r-md);
+    padding:var(--sp2); font-size:11px; color:var(--text-dim); overflow:hidden;
+  }
+  .sb-sync b{ display:block; color:#3ED08A; font-size:10.5px; letter-spacing:.08em;
+    text-transform:uppercase; font-family:'IBM Plex Mono',monospace; margin-bottom:4px; }
+
+  /* sidebar recolhida */
+  .shell.mini .sb{ flex-basis:var(--sb-w-min); width:var(--sb-w-min); }
+  .shell.mini .sb-item span,
+  .shell.mini .sb-sec,
+  .shell.mini .sb-sync,
+  .shell.mini .sb-logo .wordmark{ display:none; }
+  .shell.mini .sb-item{ justify-content:center; padding:11px 0; }
+  .shell.mini .sb-badge{ position:absolute; margin:0; transform:translate(14px,-12px); }
+  .shell.mini + .main, body.app-on .shell.mini .main{ margin-left:var(--sb-w-min); }
+
+  /* ---------- conteúdo ---------- */
+  .main{ flex:1; margin-left:var(--sb-w); display:flex; flex-direction:column;
+    min-width:0; transition:margin-left .18s; }
+  body.app-on .shell.mini .main{ margin-left:var(--sb-w-min); }
+
+  .hd{
+    height:var(--hd-h); flex:0 0 var(--hd-h); display:flex; align-items:center;
+    gap:var(--sp3); padding:0 var(--sp4); border-bottom:1px solid var(--line);
+    background:rgba(6,15,34,.72); backdrop-filter:blur(8px);
+    position:sticky; top:0; z-index:50;
+  }
+  .hd-burger{
+    background:transparent; border:0; color:var(--text-dim); cursor:pointer;
+    padding:6px; border-radius:var(--r-sm); display:flex;
+  }
+  .hd-burger:hover{ background:#0C1B36; color:var(--text); }
+  .hd-title{
+    font-family:'Barlow Condensed',sans-serif; font-size:21px; font-weight:700;
+    letter-spacing:.06em; text-transform:uppercase; white-space:nowrap;
+  }
+  .hd-mid{ flex:1; display:flex; align-items:center; justify-content:center; gap:var(--sp4); }
+  .hd-sync{ display:flex; align-items:center; gap:7px; font-size:11.5px;
+    letter-spacing:.08em; text-transform:uppercase; color:#4FC0FF;
+    font-family:'IBM Plex Mono',monospace; }
+  .hd-sync i{ width:7px; height:7px; border-radius:50%; background:#4FC0FF;
+    display:inline-block; box-shadow:0 0 0 3px rgba(0,162,245,.18); }
+  .hd-upd{ font-size:11.5px; color:var(--text-faint); }
+  .hd-ic{
+    background:transparent; border:0; color:var(--text-dim); cursor:pointer;
+    padding:8px; border-radius:var(--r-sm); position:relative; display:flex;
+  }
+  .hd-ic:hover{ background:#0C1B36; color:var(--text); }
+  .hd-ic .dot{ position:absolute; top:6px; right:6px; width:7px; height:7px;
+    border-radius:50%; background:var(--accent); }
+  .hd-user{
+    display:flex; align-items:center; gap:10px; padding:6px 10px 6px 6px;
+    border-radius:var(--r-md); cursor:pointer;
+  }
+  .hd-user:hover{ background:#0C1B36; }
+  .hd-av{
+    width:34px; height:34px; border-radius:50%; flex:0 0 auto;
+    display:flex; align-items:center; justify-content:center;
+    font-size:12px; font-weight:700; background:rgba(0,162,245,.16);
+    color:#4FC0FF; border:1px solid rgba(0,162,245,.4);
+  }
+  .hd-un{ font-size:13px; line-height:1.25; white-space:nowrap; }
+  .hd-ur{ font-size:9.5px; letter-spacing:.09em; text-transform:uppercase;
+    color:#4FC0FF; background:rgba(0,162,245,.13); border-radius:3px;
+    padding:1px 6px; display:inline-block; margin-top:2px;
+    font-family:'IBM Plex Mono',monospace; }
+
+  .page{ flex:1; overflow-y:auto; padding:var(--sp4) var(--sp5) var(--sp5); }
+  .page-in{ width:100%; max-width:1560px; margin:0 auto; }
+
+  /* ---------- cabeçalho de página ---------- */
+  .ph{ display:flex; align-items:flex-start; gap:var(--sp4); margin-bottom:var(--sp4); }
+  .ph-hello{ font-size:14px; color:var(--text-dim); margin-bottom:2px; }
+  .ph-t{
+    font-family:'Barlow Condensed',sans-serif; font-size:38px; font-weight:700;
+    letter-spacing:.02em; text-transform:uppercase; line-height:1.05;
+  }
+  .ph-s{ font-size:13px; color:var(--text-dim); margin-top:4px; }
+  .ph-r{ margin-left:auto; display:flex; align-items:center; gap:var(--sp2); }
+  .datebox{
+    display:flex; align-items:center; gap:10px; padding:11px var(--sp3);
+    border:1px solid var(--line2); border-radius:var(--r-md);
+    background:var(--surf); font-size:13px; cursor:pointer; white-space:nowrap;
+  }
+  .datebox:hover{ border-color:var(--accent); }
+
+  /* ---------- KPI ---------- */
+  .kpis{ display:grid; grid-template-columns:repeat(4,1fr); gap:var(--sp3);
+    margin-bottom:var(--sp5); }
+  .kpi{
+    background:var(--surf); border:1px solid var(--line); border-radius:var(--r-lg);
+    padding:var(--sp4); display:flex; align-items:center; gap:var(--sp3);
+    transition:border-color .15s;
+  }
+  .kpi:hover{ border-color:var(--line2); }
+  .kpi.hot{ border-color:rgba(0,162,245,.55); box-shadow:inset 3px 0 0 var(--accent); }
+  .kpi-ic{
+    width:46px; height:46px; border-radius:var(--r-md); flex:0 0 auto;
+    display:flex; align-items:center; justify-content:center;
+    background:rgba(0,162,245,.10); color:#4FC0FF; border:1px solid rgba(0,162,245,.22);
+  }
+  .kpi.amber .kpi-ic{ background:rgba(217,164,65,.10); color:#E0B463; border-color:rgba(217,164,65,.24);}
+  .kpi.green .kpi-ic{ background:rgba(34,192,138,.10); color:#3ED08A; border-color:rgba(34,192,138,.24);}
+  .kpi.red   .kpi-ic{ background:rgba(228,88,90,.10);  color:#EE7A7B; border-color:rgba(228,88,90,.24);}
+  .kpi-n{ font-family:'Barlow Condensed',sans-serif; font-size:40px; font-weight:700;
+    line-height:.95; letter-spacing:.01em; }
+  .kpi-l{ font-size:11.5px; letter-spacing:.07em; text-transform:uppercase;
+    color:var(--text-dim); margin-top:5px; }
+  .kpi-h{ font-size:11px; color:var(--text-faint); margin-top:3px; }
+  .kpi.zero .kpi-n{ color:var(--text-faint); }
+
+  /* ---------- seção ---------- */
+  .sec-h{ display:flex; align-items:center; gap:var(--sp3); margin-bottom:var(--sp3); }
+  .sec-t{ font-family:'Barlow Condensed',sans-serif; font-size:19px; font-weight:700;
+    letter-spacing:.07em; text-transform:uppercase; }
+  .sec-r{ margin-left:auto; display:flex; gap:var(--sp1); }
+  .fld{
+    display:flex; align-items:center; gap:9px; padding:9px var(--sp2);
+    border:1px solid var(--line); border-radius:var(--r-md); background:var(--surf);
+    min-width:250px;
+  }
+  .fld input{ background:transparent; border:0; color:var(--text); font-family:inherit;
+    font-size:13px; width:100%; outline:none; }
+  .fld input::placeholder{ color:var(--text-faint); }
+  .btn-g{
+    display:flex; align-items:center; gap:8px; padding:9px var(--sp3);
+    border:1px solid var(--line); border-radius:var(--r-md); background:var(--surf);
+    font-size:13px; color:var(--text-dim); cursor:pointer; font-family:inherit;
+    white-space:nowrap;
+  }
+  .btn-g:hover{ border-color:var(--line2); color:var(--text); }
+
+  /* ---------- cartão de técnico ---------- */
+  .tec{
+    display:flex; align-items:center; gap:var(--sp4);
+    background:var(--surf); border:1px solid var(--line); border-radius:var(--r-lg);
+    padding:var(--sp3) var(--sp4); margin-bottom:var(--sp2);
+    transition:border-color .15s;
+  }
+  .tec:hover{ border-color:var(--line2); }
+  .tec-id{ display:flex; align-items:center; gap:var(--sp2); flex:0 0 232px; min-width:0; }
+  .tec-av{
+    width:50px; height:50px; border-radius:50%; flex:0 0 auto; position:relative;
+    display:flex; align-items:center; justify-content:center;
+    font-size:15px; font-weight:700; background:rgba(0,162,245,.13);
+    color:#4FC0FF; border:1.5px solid rgba(0,162,245,.45);
+  }
+  .tec-av i{
+    position:absolute; right:-1px; bottom:-1px; width:13px; height:13px;
+    border-radius:50%; border:2.5px solid var(--surf);
+  }
+  .tec-av i.free{ background:#3ED08A; } .tec-av i.busy{ background:#E0B463; }
+  .tec-av i.over{ background:#EE7A7B; }
+  .tec-n{ font-size:15px; font-weight:600; overflow:hidden;
+    text-overflow:ellipsis; white-space:nowrap; }
+  .tec-st{ font-size:11px; letter-spacing:.08em; text-transform:uppercase; margin-top:3px;
+    font-family:'IBM Plex Mono',monospace; }
+  .tec-st.free{ color:#3ED08A; } .tec-st.busy{ color:#E0B463; } .tec-st.over{ color:#EE7A7B; }
+  .tec-sub{ font-size:11.5px; color:var(--text-faint); margin-top:3px;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .tec-cols{ flex:1; display:grid; grid-template-columns:repeat(4,1fr); gap:var(--sp3);
+    min-width:0; }
+  .tec-c{ min-width:0; padding-left:var(--sp3); border-left:1px solid var(--line); }
+  .tec-cl{ display:flex; align-items:center; gap:6px; font-size:10.5px;
+    letter-spacing:.06em; text-transform:uppercase; color:var(--text-faint);
+    margin-bottom:5px; }
+  .tec-cv{ font-size:13.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .tec-go{
+    flex:0 0 auto; display:flex; align-items:center; gap:8px;
+    padding:11px var(--sp3); border-radius:var(--r-md);
+    border:1px solid rgba(0,162,245,.5); color:#4FC0FF; background:transparent;
+    font-family:inherit; font-size:12.5px; font-weight:600; letter-spacing:.05em;
+    text-transform:uppercase; cursor:pointer; white-space:nowrap;
+    transition:background .15s, color .15s, border-color .15s;
+  }
+  .tec-go:hover{ background:var(--accent); color:#00121F; border-color:var(--accent); }
+
+  /* ---------- painéis de rodapé ---------- */
+  .duo{ display:grid; grid-template-columns:1fr 1fr; gap:var(--sp3); margin-top:var(--sp5); }
+  .pnl{ background:var(--surf); border:1px solid var(--line); border-radius:var(--r-lg);
+    overflow:hidden; }
+  .pnl-h{ display:flex; align-items:center; gap:10px; padding:var(--sp3) var(--sp4);
+    border-bottom:1px solid var(--line); }
+  .pnl-t{ font-family:'Barlow Condensed',sans-serif; font-size:16px; font-weight:700;
+    letter-spacing:.07em; text-transform:uppercase; }
+  .pnl-b{ padding:var(--sp4); }
+  .empty{ text-align:center; padding:var(--sp5) var(--sp3); color:var(--text-faint);
+    font-size:13px; line-height:1.7; }
+  .empty svg{ opacity:.35; margin-bottom:var(--sp2); }
+  .aviso{ display:flex; gap:10px; padding-bottom:var(--sp2); }
+  .aviso i{ width:7px; height:7px; border-radius:50%; background:var(--accent);
+    margin-top:6px; flex:0 0 auto; }
+  .aviso b{ font-size:13.5px; font-weight:600; display:block; }
+  .aviso p{ font-size:12.5px; color:var(--text-dim); margin-top:3px; line-height:1.6; }
+  .lnk{ display:inline-flex; align-items:center; gap:6px; font-size:12.5px;
+    color:#4FC0FF; cursor:pointer; margin-top:var(--sp2); }
+
+  /* ---------- responsivo ---------- */
+  @media (max-width:1400px){ .tec-cols{ grid-template-columns:repeat(2,1fr); } }
+  @media (max-width:1100px){
+    .kpis{ grid-template-columns:repeat(2,1fr); }
+    .duo{ grid-template-columns:1fr; }
+    body.app-on .page{ padding:var(--sp3) var(--sp3) var(--sp4); }
+  }
+  @media (max-width:900px){
+    .sb{ transform:translateX(-100%); transition:transform .2s; }
+    .shell.open .sb{ transform:translateX(0); box-shadow:0 0 50px rgba(0,0,0,.6); }
+    body.app-on .main, body.app-on .shell.mini .main{ margin-left:0; }
+    .hd-mid{ display:none; }
+    .hd-un, .hd-ur{ display:none; }
+    .ph{ flex-direction:column; gap:var(--sp2); }
+    .ph-r{ margin-left:0; width:100%; }
+    .tec{ flex-wrap:wrap; }
+    .tec-id{ flex:1 1 100%; }
+    .tec-cols{ flex:1 1 100%; grid-template-columns:repeat(2,1fr); }
+    .tec-go{ flex:1 1 100%; justify-content:center; }
+    .fld{ min-width:0; flex:1; }
+  }
+  @media (max-width:560px){
+    .kpis{ grid-template-columns:1fr 1fr; gap:var(--sp1); }
+    .kpi{ padding:var(--sp3); gap:var(--sp2); }
+    .kpi-ic{ width:38px; height:38px; }
+    .kpi-n{ font-size:30px; }
+    .ph-t{ font-size:30px; }
+  }
   .revisao-box{
     border:1px solid var(--warning);background:var(--warning-dim);border-radius:7px;
     padding:12px;margin-top:14px;
@@ -746,6 +1047,65 @@
     .nav-btn.secondary{ flex:0 0 110px; }
 
     .review-actions{ max-width:340px; margin-left:auto; }
+  }
+
+  /* ============ TELA GRANDE (>= 1100px) ============
+     O app deixa de ser uma coluna estreita. O menu vira barra lateral
+     fixa — num painel de trabalho, esconder a navegação atrás de um
+     botão é atrito desnecessário quando há espaço de sobra. */
+  @media (min-width: 1100px){
+    body{ padding:0; align-items:stretch; justify-content:flex-start; }
+    .rf-app{
+      max-width:none; width:100%; min-height:100vh; min-height:100dvh;
+      border:0; border-radius:0; box-shadow:none;
+      margin-left:252px;                 /* espaço da barra lateral */
+    }
+
+    /* menu sempre visível, sem fundo escurecido */
+    .menu-lateral{ transform:none !important; box-shadow:none; }
+    .menu-fundo{ display:none !important; }
+    .menu-btn{ display:none; }           /* o hambúrguer perde a função */
+    body.demo .menu-lateral{ top:18px; }
+
+    /* o conteúdo respira e usa a largura */
+    .status-bar,.queue-banner{ padding-left:32px; padding-right:32px; }
+    .tech-bar{ padding-left:32px; padding-right:32px; }
+    .home-screen,.my-jobs-screen,.users-screen,#despachoScreen,#quadroScreen{
+      max-width:1280px; margin:0 auto; width:100%;
+    }
+    .pnl-topo{ padding:26px 32px 4px; }
+    .pnl-titulo{ font-size:38px; }
+    .kpis{ grid-template-columns:repeat(4,1fr); gap:14px; padding:18px 32px 6px; }
+    .kpi{ padding:16px 18px; }
+    .kpi-n{ font-size:38px; }
+    #quadroLista,#usersList,#obrasList,#jobsList{ padding-left:32px; padding-right:32px; }
+    .my-jobs-head{ padding-left:32px; padding-right:32px; }
+
+    /* linhas do quadro mais largas: cabem mais obras lado a lado */
+    .quadro-pes{ flex:0 0 200px; }
+    .quadro-obra{ min-width:150px; }
+
+    /* despacho em duas colunas, para não virar um formulário quilométrico */
+    #despachoScreen > div:last-child{
+      max-width:1100px; margin:0 auto;
+      display:grid; grid-template-columns:1fr 1fr; gap:0 32px; align-items:start;
+    }
+    #despachoScreen > div:last-child > *{ grid-column:1; }
+    #despachoScreen .step-sub,
+    #despachoScreen #dDocs,
+    #despachoScreen #dTecnico,
+    #despachoScreen #dCarga,
+    #despachoScreen #btnDespachar,
+    #despachoScreen #dStatus{ grid-column:2; }
+
+    /* obras e usuários em duas colunas */
+    #jobsList{ display:grid; grid-template-columns:1fr 1fr; gap:0 16px; align-items:start; }
+    #usersList{ display:grid; grid-template-columns:1fr 1fr; gap:0 14px; align-items:start; }
+  }
+
+  @media (min-width: 1600px){
+    .home-screen,.my-jobs-screen,.users-screen,#despachoScreen,#quadroScreen{ max-width:1500px; }
+    #jobsList{ grid-template-columns:repeat(3,1fr); }
   }
 </style>
 </head>
@@ -906,23 +1266,102 @@
   </div>
 
   <div class="menu-fundo" id="menuFundo"></div>
-  <nav class="menu-lateral" id="menuLateral">
-    <div class="menu-topo">
-      <div class="menu-nome" id="menuNome">—</div>
-      <div class="menu-sub" id="menuSub"></div>
-    </div>
-    <div class="menu-itens" id="menuItens"></div>
-    <div class="menu-rodape" id="menuRodape"></div>
-  </nav>
+
+  <div class="shell" id="shell">
+
+    <!-- ============ SIDEBAR ============ -->
+    <nav class="sb" id="sb">
+      <div class="sb-logo">
+        <img id="sbLogo" alt="Enlace Ops">
+      </div>
+      <div class="sb-nav" id="sbNav"></div>
+      <div class="sb-foot">
+        <div class="sb-sync">
+          <b id="sbSyncT">&#9679; Sincronizado</b>
+          <span id="sbSyncD">&mdash;</span>
+        </div>
+      </div>
+    </nav>
+
+    <!-- ============ CONTEUDO ============ -->
+    <div class="main">
+
+      <header class="hd">
+        <button class="hd-burger" id="hdBurger" aria-label="Menu">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M3 12h18"/><path d="M3 18h18"/></svg>
+        </button>
+        <div class="hd-title" id="hdTitle">Dashboard</div>
+        <div class="hd-mid">
+          <span class="hd-sync"><i></i><span id="hdSync">Sincronizado</span></span>
+          <span class="hd-upd" id="hdUpd"></span>
+        </div>
+        <button class="hd-ic" id="hdBell" aria-label="Notificações">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+          <span class="dot" id="hdDot" style="display:none;"></span>
+        </button>
+        <div class="hd-user" id="hdUser">
+          <span class="hd-av" id="hdAv">--</span>
+          <div>
+            <div class="hd-un" id="hdName">&mdash;</div>
+            <span class="hd-ur" id="hdRole">&mdash;</span>
+          </div>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity:.6"><path d="M6 9l6 6 6-6"/></svg>
+        </div>
+      </header>
+
+      <div class="page" id="pageWrap">
+        <div class="page-in" id="pageIn">
 
   <div class="users-screen" id="quadroScreen">
-    <div class="pnl-topo">
-      <div class="pnl-data" id="quadroData"></div>
-      <div class="pnl-titulo">Despacho</div>
-      <div class="step-sub" style="padding:4px 0 0;" id="quadroSub"></div>
+    <div class="ph">
+      <div>
+        <div class="ph-hello" id="phHello">&mdash;</div>
+        <div class="ph-t" id="phTitle">Despacho</div>
+        <div class="ph-s" id="phSub">&mdash;</div>
+      </div>
+      <div class="ph-r">
+        <div class="datebox" id="dateBox">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4.5" width="18" height="17" rx="2"/><path d="M3 9.5h18"/><path d="M8 2.5v4M16 2.5v4"/></svg>
+          <span id="dateTxt">&mdash;</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity:.6"><path d="M6 9l6 6 6-6"/></svg>
+        </div>
+      </div>
     </div>
+
     <div class="kpis" id="quadroKpis"></div>
-    <div id="quadroLista" style="padding:4px 16px 24px;"></div>
+
+    <div class="sec-h">
+      <div class="sec-t">Técnicos disponíveis</div>
+      <div class="sec-r">
+        <div class="fld">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="opacity:.55"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+          <input id="tecBusca" placeholder="Buscar técnico..." autocomplete="off">
+        </div>
+        <button class="btn-g" id="tecFiltro">
+          Filtrar
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 5h18l-7 8v6l-4 2v-8z"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div id="quadroLista"></div>
+
+    <div class="duo">
+      <div class="pnl">
+        <div class="pnl-h">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#4FC0FF" stroke-width="1.8"><rect x="3" y="4.5" width="18" height="17" rx="2"/><path d="M3 9.5h18"/><path d="M8 2.5v4M16 2.5v4"/></svg>
+          <div class="pnl-t">Atividades do dia</div>
+        </div>
+        <div class="pnl-b" id="pnlAtiv"></div>
+      </div>
+      <div class="pnl">
+        <div class="pnl-h">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#4FC0FF" stroke-width="1.8"><path d="M3 11v3a1 1 0 0 0 1 1h3l5 4V6L7 10H4a1 1 0 0 0-1 1z"/><path d="M16 8.5a4.5 4.5 0 0 1 0 7"/></svg>
+          <div class="pnl-t">Comunicados</div>
+        </div>
+        <div class="pnl-b" id="pnlCom"></div>
+      </div>
+    </div>
   </div>
 
   <div class="users-screen" id="despachoScreen">
@@ -1260,6 +1699,12 @@
     </div>
   </div>
 
+
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="toast" id="toast"></div>
 
   </div>
@@ -1271,7 +1716,7 @@
 (function(){
   // Marque aqui a cada build enviado ao campo. O testador informa esta
   // string ao relatar um problema, senao nao da pra saber o que ele rodou.
-  const APP_VERSION = 'Enlace Ops · alpha-8.2 · 19/08/2026';
+  const APP_VERSION = 'Enlace Ops · alpha-10.1 · 19/08/2026';
 
   // ---------- Supabase config ----------
   // Troque pelos valores reais do seu projeto (Project Settings -> API no Supabase).
@@ -3072,6 +3517,7 @@
   // entrar no mesmo aparelho via as obras do anterior na tela enquanto o
   // servidor não respondia — o banco nunca entregaria, mas a tela mostrava.
   function limparDadosDaSessao(){
+    try{ document.body.classList.remove('app-on'); shell.classList.remove('open','mini'); }catch(e){}
     perfilAtual = null;
     obraEditandoId = null;
     obraDonoId = null;
@@ -3134,38 +3580,25 @@
 
   function aplicarPermissoes(){
     const badge = document.getElementById('papelBadge');
-    const papel = papelAtual();
-
-    badge.textContent = papel;
-    badge.className = 'papel-badge ' + papel;
-    badge.style.display = perfilAtual ? 'inline-block' : 'none';
-
-    document.getElementById('abaEmpresas').style.display = ehSuper() ? 'block' : 'none';
-    document.getElementById('empresaNome').textContent =
-      ehSuper() ? 'dono do produto' : (perfilAtual && perfilAtual.empresa_nome ? perfilAtual.empresa_nome : '');
-
-    // a obra nasce no escritório, nunca no celular
-    newJobCard.style.display    = 'none';
-    despacharCard.style.display = ehOperador() ? 'block' : 'none';
-    quadroCard.style.display    = ehOperador() ? 'block' : 'none';
-    usersCard.style.display     = ehAdmin() ? 'block' : 'none';
-    equipeCard.style.display    = (ehOperador() && !ehAdmin()) ? 'block' : 'none';
-
-    const titulo = document.querySelector('#myJobsCard .action-card-title');
-    const sub    = document.querySelector('#myJobsCard .action-card-sub');
-    if(ehRevisor()){
-      titulo.textContent = 'Todas as obras';
-      sub.textContent = ehOperador()
-        ? 'Acompanhar, corrigir e aprovar os relatórios.'
-        : 'Revisar e aprovar os relatórios enviados.';
-    } else {
-      titulo.textContent = 'Minhas obras';
-      sub.textContent = 'Obras despachadas para você.';
+    if(badge){
+      badge.textContent = papelAtual();
+      badge.className = 'papel-badge ' + papelAtual();
+      badge.style.display = perfilAtual ? 'inline-block' : 'none';
     }
+    // A navegação agora é a sidebar, mas estes cartões continuam sendo os
+    // pontos de entrada usados internamente (ex.: navegarMenu('despacho')).
+    const mostrar = (el, v) => { if(el) el.style.display = v ? 'block' : 'none'; };
+    mostrar(document.getElementById('newJobCard'), false);   // obra nasce no escritório
+    mostrar(despacharCard, ehOperador());
+    mostrar(equipeCard,    ehOperador() && !ehAdmin());
+    mostrar(usersCard,     ehAdmin());
+    mostrar(quadroCard,    ehOperador());
+
     document.querySelector('#myJobsScreen .step-title').textContent =
       ehRevisor() ? 'Todas as obras' : 'Minhas obras';
     atualizarHome();
   }
+
 
   // ---------- Home: contagens reais em vez de texto fixo ----------
   // O card deixa de perguntar "o que você quer fazer" e passa a informar
@@ -3211,7 +3644,7 @@
         ? aprovadas + (aprovadas === 1 ? ' obra aprovada' : ' obras aprovadas')
         : 'Nenhuma obra aprovada ainda.';
 
-      const badge = document.getElementById('menuBadgeObras');
+      const badge = document.getElementById('sbBadge');
       if(badge){
         const pend = ehTecnico() ? aFazer + reprovada : aRevisar + reprovada;
         badge.style.display = pend ? 'inline-block' : 'none';
@@ -3429,89 +3862,127 @@
     }
   }
 
-  // ---------- Menu lateral e rota inicial ----------
-  // A home de cartões virou menu: cada papel abre direto na tela onde
-  // trabalha. O analista cai no quadro; o técnico, na lista dele.
-  const menuLateral = document.getElementById('menuLateral');
-  const menuFundo   = document.getElementById('menuFundo');
+  // ---------- Navegação: sidebar + header ----------
+  const shell   = document.getElementById('shell');
+  const sbNav   = document.getElementById('sbNav');
+  const hdTitle = document.getElementById('hdTitle');
 
-  function rotaInicial(){
-    if(ehOperador()) return 'quadro';
-    return 'myjobs';
-  }
-
-  function irParaInicio(){
-    const r = rotaInicial();
-    if(r === 'quadro'){ showAppView('quadro'); renderQuadro(); }
-    else { filtroObras = 'abertas'; refreshJobsList(); }
-  }
-
-  const ICONES = {
-    quadro:    '<path d="M3 5h18"/><path d="M3 10h11"/><path d="M3 15h15"/><path d="M3 20h8"/>',
-    despachar: '<path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/>',
-    obras:     '<path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/>',
-    historico: '<path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 7v5l3 2"/>',
-    equipe:    '<circle cx="9" cy="8" r="3.2"/><path d="M3 20a6 6 0 0112 0"/><path d="M16 11a3 3 0 100-6"/><path d="M18.5 20a5.5 5.5 0 00-3-4.9"/>',
-    painel:    '<path d="M12 3l8 4v5c0 5-3.4 8.4-8 9-4.6-.6-8-4-8-9V7l8-4z"/>',
-    sair:      '<path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/>',
+  // Os itens seguem o que o app faz hoje. "Relatórios" e "Configurações"
+  // ainda não têm tela própria: apontam para o que mais se aproxima.
+  const IC = {
+    dashboard:'<path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V21h13V9.5"/>',
+    despacho :'<path d="M22 2 11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/>',
+    tecnicos :'<circle cx="12" cy="8" r="3.6"/><path d="M4.5 21a7.5 7.5 0 0 1 15 0"/>',
+    obras    :'<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M3 12.5h18"/>',
+    historico:'<path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 7.5V12l3 2"/>',
+    relatorios:'<path d="M5 21V9"/><path d="M12 21V4"/><path d="M19 21v-7"/>',
+    config   :'<circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.6 1.6 0 0 0-1-1.5 1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.6 1.6 0 0 0 1.5-1 1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"/>',
+    sair     :'<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/>',
   };
 
   let rotaAtual = '';
 
-  function montarMenu(){
-    const itens = [];
-    if(ehOperador()) itens.push({id:'quadro',    txt:'Quadro de despacho'});
-    if(ehOperador()) itens.push({id:'despachar', txt:'Despachar obra'});
-    itens.push({id:'obras',     txt: ehRevisor() ? 'Todas as obras' : 'Minhas obras'});
-    itens.push({id:'historico', txt:'Histórico'});
-    if(ehOperador() && !ehAdmin()) itens.push({id:'equipe', txt:'Equipe'});
-    if(ehAdmin())                  itens.push({id:'painel', txt:'Painel do administrador'});
-    itens.push({sep:true});
-    itens.push({id:'sair', txt:'Sair'});
+  function itensMenu(){
+    const L = [];
+    if(ehOperador()) L.push({id:'dashboard', t:'Dashboard', ic:'dashboard'});
+    if(ehOperador()) L.push({id:'despacho',  t:'Despacho',  ic:'despacho'});
+    if(ehOperador()) L.push({id:'tecnicos',  t:'Técnicos',  ic:'tecnicos'});
+    L.push({id:'obras',     t: ehRevisor() ? 'Obras' : 'Minhas obras', ic:'obras', badge:true});
+    L.push({id:'historico', t:'Histórico', ic:'historico'});
+    if(ehRevisor()) L.push({id:'relatorios', t:'Relatórios', ic:'relatorios'});
+    if(ehAdmin())   L.push({id:'config',     t:'Configurações', ic:'config'});
+    return L;
+  }
 
-    const cx = document.getElementById('menuItens');
-    cx.innerHTML = '';
-    itens.forEach(it=>{
-      if(it.sep){ const s = document.createElement('div'); s.className = 'menu-sep'; cx.appendChild(s); return; }
+  function montarMenu(){
+    const L = itensMenu();
+    sbNav.innerHTML = '<div class="sb-sec">Operação</div>';
+    L.forEach((it, n)=>{
+      if(it.id === 'relatorios')
+        sbNav.insertAdjacentHTML('beforeend', '<div class="sb-sec">Análise</div>');
+      if(it.id === 'config')
+        sbNav.insertAdjacentHTML('beforeend', '<div class="sb-sec">Sistema</div>');
       const el = document.createElement('div');
-      el.className = 'menu-item' + (rotaAtual === it.id ? ' ativo' : '');
+      el.className = 'sb-item' + (rotaAtual === it.id ? ' on' : '');
       el.dataset.rota = it.id;
-      el.innerHTML = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">'
-        + ICONES[it.id] + '</svg><span>' + esc(it.txt) + '</span>'
-        + (it.id === 'obras' ? '<span class="menu-badge" id="menuBadgeObras" style="display:none;"></span>' : '');
+      el.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" '
+        + 'stroke="currentColor" stroke-width="1.8" stroke-linecap="round" '
+        + 'stroke-linejoin="round">' + IC[it.ic] + '</svg><span>' + esc(it.t) + '</span>'
+        + (it.badge ? '<span class="sb-badge" id="sbBadge" style="display:none;"></span>' : '');
       el.addEventListener('click', ()=> navegarMenu(it.id));
-      cx.appendChild(el);
+      sbNav.appendChild(el);
     });
 
-    document.getElementById('menuNome').textContent = (techNameDisplay.textContent || '').trim();
-    document.getElementById('menuSub').textContent = papelAtual()
-      + (perfilAtual && perfilAtual.empresa_nome ? ' · ' + perfilAtual.empresa_nome
-         : (ehSuper() ? ' · dono do produto' : ''));
-    document.getElementById('menuRodape').textContent = APP_VERSION;
+    // sair fica separado, no fim
+    sbNav.insertAdjacentHTML('beforeend', '<div class="sb-sec">&nbsp;</div>');
+    const sair = document.createElement('div');
+    sair.className = 'sb-item';
+    sair.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" '
+      + 'stroke="currentColor" stroke-width="1.8" stroke-linecap="round" '
+      + 'stroke-linejoin="round">' + IC.sair + '</svg><span>Sair</span>';
+    sair.addEventListener('click', ()=> logoutLink.click());
+    sbNav.appendChild(sair);
+
+    atualizarHome();
   }
 
-  function abrirMenu(v){
-    menuLateral.classList.toggle('show', v);
-    menuFundo.classList.toggle('show', v);
-    if(v) montarMenu();
-  }
+  const TITULOS = {
+    dashboard:'Dashboard', despacho:'Despacho', tecnicos:'Técnicos',
+    obras:'Obras', historico:'Histórico', relatorios:'Relatórios',
+    config:'Configurações',
+  };
 
   function navegarMenu(rota){
     rotaAtual = rota;
-    abrirMenu(false);
+    hdTitle.textContent = TITULOS[rota] || '';
+    if(window.matchMedia('(max-width:900px)').matches) shell.classList.remove('open');
+
     switch(rota){
-      case 'quadro':    showAppView('quadro'); renderQuadro(); break;
-      case 'despachar': despacharCard.click(); break;
+      case 'dashboard': showAppView('quadro'); renderQuadro(); break;
+      case 'despacho':  despacharCard.click(); break;
+      case 'tecnicos':  showAppView('usuarios'); filtroUsuarios = 'tecnico'; renderUsuarios(); break;
       case 'obras':     filtroObras = 'abertas';   refreshJobsList(); break;
       case 'historico': filtroObras = 'historico'; refreshJobsList(); break;
-      case 'equipe':    showAppView('usuarios'); renderUsuarios(); break;
-      case 'painel':    showAppView('usuarios'); renderUsuarios(); break;
-      case 'sair':      logoutLink.click(); break;
+      case 'relatorios':
+        showToast('Relatórios ainda não têm tela própria — por ora, use o Histórico');
+        filtroObras = 'historico'; refreshJobsList(); break;
+      case 'config':    showAppView('usuarios'); renderUsuarios(); break;
     }
+    montarMenu();
   }
 
-  document.getElementById('menuBtn').addEventListener('click', ()=> abrirMenu(true));
-  menuFundo.addEventListener('click', ()=> abrirMenu(false));
+  function rotaInicial(){ return ehOperador() ? 'dashboard' : 'obras'; }
+  function irParaInicio(){ navegarMenu(rotaInicial()); }
+
+  // recolher / abrir a sidebar
+  document.getElementById('hdBurger').addEventListener('click', ()=>{
+    if(window.matchMedia('(max-width:900px)').matches) shell.classList.toggle('open');
+    else shell.classList.toggle('mini');
+  });
+  menuFundo.addEventListener('click', ()=> shell.classList.remove('open'));
+  document.getElementById('hdBell').addEventListener('click', ()=>
+    showToast('Notificações ainda não estão ligadas'));
+
+  // preenche o topo com quem está logado
+  function pintarCabecalho(){
+    const nome = (techNameDisplay.textContent || '').trim();
+    const ini = nome.split(/\s+/).slice(0,2).map(x => x[0] || '').join('').toUpperCase();
+    document.getElementById('hdAv').textContent = ini || '--';
+    document.getElementById('hdName').textContent = nome || '—';
+    document.getElementById('hdRole').textContent = papelAtual();
+    try{
+      const L = document.getElementById('loginLogo');
+      if(L) document.getElementById('sbLogo').src = L.src;   // mesma imagem, sem duplicar
+    }catch(e){}
+    const agora = new Date().toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+    document.getElementById('hdUpd').textContent = 'Última atualização: ' + agora;
+    document.getElementById('sbSyncD').textContent =
+      new Date().toLocaleDateString('pt-BR') + ' ' + agora;
+    const on = online;
+    document.getElementById('hdSync').textContent = on ? 'Sincronizado' : 'Sem conexão';
+    document.getElementById('sbSyncT').innerHTML =
+      (on ? '&#9679; Sincronizado' : '&#9679; Offline');
+  }
 
   // ---------- Quadro de despacho ----------
   // Mostra carga por pessoa, não agenda por hora. As obras aqui duram
@@ -3525,137 +3996,202 @@
     enviado:'enviada', reprovado:'devolvida'
   };
 
+  let tecCache = [];
+
   async function renderQuadro(){
     const cx = document.getElementById('quadroLista');
-    cx.innerHTML = '<div class="job-service-empty" style="padding:20px 4px;">Carregando...</div>';
+    cx.innerHTML = '<div class="empty">Carregando...</div>';
+    pintarCabecalho();
+
+    const hoje = new Date();
+    document.getElementById('dateTxt').textContent = hoje.toLocaleDateString('pt-BR');
+    document.getElementById('phHello').textContent =
+      (hoje.getHours() < 12 ? 'Bom dia, ' : hoje.getHours() < 18 ? 'Boa tarde, ' : 'Boa noite, ')
+      + (techNameDisplay.textContent || '').trim().split(/\s+/)[0];
+    document.getElementById('phTitle').textContent = 'Despacho';
 
     try{
       const [{data:tecs, error}, {data:obras}, {data:eqs}] = await Promise.all([
-        supabaseClient.from('perfis').select('id,nome,email,equipe_id')
+        supabaseClient.from('perfis').select('id,nome,email,equipe_id,ultimo_acesso')
           .eq('papel','tecnico').eq('aprovado', true),
         supabaseClient.from(SUPABASE_TABLE).select('*')
-          .in('status', ['despachada','em_execucao','enviado','reprovado']),
-        supabaseClient.from('equipes').select('id,nome').order('nome'),
+          .in('status', ['despachada','em_execucao','enviado','reprovado','aprovado']),
+        supabaseClient.from('equipes').select('id,nome'),
       ]);
       if(error) throw error;
 
-      const porTecnico = {};
+      const nomeEq = {};
+      (eqs || []).forEach(e => nomeEq[e.id] = e.nome);
+
+      const abertas = ['despachada','em_execucao','enviado','reprovado'];
+      const porTec = {};
       (obras || []).forEach(o=>{
         if(!o.tecnico_id) return;
-        (porTecnico[o.tecnico_id] = porTecnico[o.tecnico_id] || []).push(o);
+        (porTec[o.tecnico_id] = porTec[o.tecnico_id] || []).push(o);
       });
 
-      // agrupa por equipe; quem não tem equipe cai num grupo próprio
-      const grupos = (eqs || []).map(e => ({nome:e.nome, pes:[]}));
-      const semEquipe = {nome:'Sem equipe', pes:[]};
-      (tecs || []).forEach(t=>{
-        const g = grupos.find(x => x.nome === ((eqs||[]).find(e => e.id === t.equipe_id)||{}).nome);
-        (g || semEquipe).pes.push(t);
-      });
-      if(semEquipe.pes.length) grupos.push(semEquipe);
-
-      // ---- indicadores do topo ----
       const conta = s => (obras||[]).filter(o => o.status === s).length;
-      const emCampo   = conta('despachada') + conta('em_execucao');
-      const aRevisar  = conta('enviado');
-      const devolvidas= conta('reprovado');
-      const livres    = (tecs||[]).filter(t => !(porTecnico[t.id]||[]).length).length;
+      const emCampo    = conta('despachada') + conta('em_execucao');
+      const aRevisar   = conta('enviado');
+      const devolvidas = conta('reprovado');
+      const livres = (tecs||[]).filter(t =>
+        !(porTec[t.id]||[]).some(o => abertas.includes(o.status))).length;
 
-      document.getElementById('quadroData').textContent =
-        new Date().toLocaleDateString('pt-BR', {weekday:'long', day:'numeric', month:'long'});
-      document.getElementById('quadroSub').textContent =
-        (tecs||[]).length + ' técnico(s) · ' + (obras||[]).length + ' obra(s) em aberto';
+      const mes = new Date(); mes.setDate(1); mes.setHours(0,0,0,0);
 
+      // ---- indicadores ----
       document.getElementById('quadroKpis').innerHTML = [
-        ['campo',   emCampo,    'em campo'],
-        ['revisar', aRevisar,   'aguardando revisão'],
-        ['devolv',  devolvidas, 'devolvidas'],
-        ['livre',   livres,     livres === 1 ? 'técnico livre' : 'técnicos livres'],
-      ].map(([c,n,t]) =>
-        `<div class="kpi ${c}${n ? '' : ' zero'}"><div class="kpi-n">${n}</div><div class="kpi-t">${t}</div></div>`
-      ).join('');
+        ['', 'tecnicos', emCampo,    'Em campo',            'Equipes trabalhando'],
+        ['amber','revisar', aRevisar,'Aguardando revisão',  'Aguardando análise'],
+        ['red',  'alerta',  devolvidas,'Devolvidas',        'Precisam de atenção'],
+        ['green','livre',   livres,  'Técnicos livres',     'Disponíveis para despacho'],
+      ].map(([cls, ic, n, rot, ajuda]) => `
+        <div class="kpi ${cls}${n ? '' : ' zero'}${(ic==='alerta'&&n)?' hot':''}">
+          <div class="kpi-ic">${ICO_KPI[ic]}</div>
+          <div style="min-width:0;">
+            <div class="kpi-n">${n}</div>
+            <div class="kpi-l">${rot}</div>
+            <div class="kpi-h">${ajuda}</div>
+          </div>
+        </div>`).join('');
 
-      cx.innerHTML = '';
-      if(!(tecs || []).length){
-        cx.innerHTML = '<div class="job-service-empty" style="padding:20px 4px;">Nenhum técnico liberado ainda. Convide alguém pelo painel.</div>';
-        return;
-      }
+      document.getElementById('phSub').textContent =
+        (tecs||[]).length + ' técnico(s) · ' + (emCampo + aRevisar + devolvidas) + ' obra(s) em aberto';
 
-      grupos.forEach(g => g.pes.sort((a,b) =>
-        (porTecnico[a.id]||[]).length - (porTecnico[b.id]||[]).length ||
-        String(a.nome||'').localeCompare(String(b.nome||''))));
+      // ---- técnicos ----
+      tecCache = (tecs || []).map(t=>{
+        const minhas = porTec[t.id] || [];
+        const abertos = minhas.filter(o => abertas.includes(o.status));
+        const noMes = minhas.filter(o =>
+          o.status === 'aprovado' && o.criado_em && new Date(o.criado_em) >= mes).length;
+        return {
+          id:t.id, nome:t.nome || t.email,
+          equipe: nomeEq[t.equipe_id] || 'sem equipe',
+          n: abertos.length,
+          devolvida: abertos.some(o => o.status === 'reprovado'),
+          ultimo: t.ultimo_acesso,
+          mes: noMes,
+          atual: abertos.length ? abertos[0] : null,
+        };
+      }).sort((a,b)=> a.n - b.n || String(a.nome).localeCompare(String(b.nome)));
 
-      grupos.filter(g => g.pes.length).forEach(g=>{
-        const t = document.createElement('div');
-        t.className = 'quadro-eq';
-        t.textContent = g.nome;
-        cx.appendChild(t);
-
-        g.pes.forEach(p=>{
-          const minhas = porTecnico[p.id] || [];
-          const n = minhas.length;
-          const rotulo = n === 0 ? 'livre' : n + (n === 1 ? ' em aberto' : ' em aberto');
-
-          const iniciais = String(p.nome || p.email).trim().split(/\s+/)
-            .slice(0,2).map(x => x[0]).join('').toUpperCase();
-          const estadoAv = n === 0 ? 'livre' : (n >= 3 ? 'ocupado' : '');
-          const temDevolvida = minhas.some(o => o.status === 'reprovado');
-
-          const linha = document.createElement('div');
-          linha.className = 'quadro-linha';
-          linha.innerHTML = `
-            <div class="quadro-pes">
-              <span class="quadro-av ${estadoAv}">${esc(iniciais)}</span>
-              <div style="min-width:0;">
-                <div class="quadro-nome">${esc(p.nome || p.email)}</div>
-                <div class="quadro-carga">${rotulo}${temDevolvida ? ' · retrabalho' : ''}</div>
-              </div>
-            </div>
-            <div class="quadro-obras">
-              ${minhas.length ? minhas.map(o=>{
-                 const c = (o.dados && o.dados.contract) || {};
-                 return `<div class="quadro-obra qo-${esc(o.status)}" data-obra="${o.id}"
-                              title="${esc(ROTULO_STATUS[o.status] || o.status)}">
-                   <div class="n">${esc(o.contrato)}</div>
-                   <div class="d">${esc(c.endereco || c.empresa || ROTULO_STATUS[o.status] || '')}</div>
-                 </div>`;
-               }).join('') : '<div class="quadro-vazio">sem obra atribuída</div>'}
-              <button class="quadro-mais" data-tec="${esc(p.id)}">+ despachar</button>
-            </div>
-          `;
-
-          linha.querySelector('.quadro-mais').addEventListener('click', ()=>{
-            despacharCard.click();
-            setTimeout(()=>{
-              const sel = document.getElementById('dTecnico');
-              if(sel){ sel.value = p.id; sel.dispatchEvent(new Event('change')); }
-            }, 600);
-          });
-
-          linha.querySelectorAll('.quadro-obra').forEach(el=>{
-            el.addEventListener('click', ()=>{
-              const o = minhas.find(x => String(x.id) === el.dataset.obra);
-              if(!o) return;
-              showToast('Contrato ' + o.contrato + ' — ' + (ROTULO_STATUS[o.status] || o.status));
-            });
-          });
-
-          cx.appendChild(linha);
-        });
-      });
-
-      const leg = document.createElement('div');
-      leg.className = 'quadro-legenda';
-      leg.innerHTML = ['despachada:#4A9BE0','em execução:#C08A2E','enviada:#2AA87F','devolvida:var(--accent)']
-        .map(x => { const [t,c] = x.split(':');
-          return '<span><i style="background:'+c+'"></i>'+t+'</span>'; }).join('');
-      cx.appendChild(leg);
+      pintarTecnicos();
+      pintarRodape(obras || []);
 
     } catch(e){
-      cx.innerHTML = '<div class="job-service-empty" style="padding:20px 4px;">Não deu pra carregar: '
-        + esc(e.message || e) + '</div>';
+      cx.innerHTML = '<div class="empty">Não deu pra carregar: ' + esc(e.message || e) + '</div>';
     }
   }
+
+  const ICO_KPI = {
+    tecnicos:'<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="8" r="3.4"/><path d="M5 21a7 7 0 0 1 14 0"/></svg>',
+    revisar :'<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>',
+    alerta  :'<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M12 3 2.5 20h19z"/><path d="M12 9.5v4.5M12 17.5h.01"/></svg>',
+    livre   :'<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg>',
+  };
+
+  const ICO_COL = {
+    reg :'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21s7-5.5 7-11a7 7 0 1 0-14 0c0 5.5 7 11 7 11z"/><circle cx="12" cy="10" r="2.4"/></svg>',
+    hora:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
+    os  :'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6"/></svg>',
+    carga:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 20V9M10 20V4M16 20v-8M22 20h-20"/></svg>',
+  };
+
+  function pintarTecnicos(){
+    const cx = document.getElementById('quadroLista');
+    const termo = (document.getElementById('tecBusca').value || '').trim().toLowerCase();
+    const lista = tecCache.filter(t =>
+      !termo || t.nome.toLowerCase().includes(termo) || t.equipe.toLowerCase().includes(termo));
+
+    if(!lista.length){
+      cx.innerHTML = '<div class="empty">'
+        + (tecCache.length ? 'Nenhum técnico com esse nome.'
+                           : 'Nenhum técnico liberado ainda. Convide alguém em Técnicos.')
+        + '</div>';
+      return;
+    }
+
+    cx.innerHTML = '';
+    lista.forEach(t=>{
+      const est = t.n === 0 ? 'free' : (t.n >= 3 ? 'over' : 'busy');
+      const rot = t.n === 0 ? 'Disponível' : (t.n >= 3 ? 'Sobrecarregado' : 'Em atividade');
+      const ini = String(t.nome).split(/\s+/).slice(0,2).map(x=>x[0]||'').join('').toUpperCase();
+      const c = t.atual && t.atual.dados ? (t.atual.dados.contract || {}) : {};
+
+      const el = document.createElement('div');
+      el.className = 'tec';
+      el.innerHTML = `
+        <div class="tec-id">
+          <span class="tec-av">${esc(ini)}<i class="${est}"></i></span>
+          <div style="min-width:0;">
+            <div class="tec-n">${esc(t.nome)}</div>
+            <div class="tec-st ${est}">${rot}</div>
+            <div class="tec-sub">${t.n ? esc('Contrato ' + t.atual.contrato) : 'Sem obra atribuída'}${t.devolvida ? ' · retrabalho' : ''}</div>
+          </div>
+        </div>
+        <div class="tec-cols">
+          <div class="tec-c">
+            <div class="tec-cl">${ICO_COL.reg} Equipe</div>
+            <div class="tec-cv">${esc(t.equipe)}</div>
+          </div>
+          <div class="tec-c">
+            <div class="tec-cl">${ICO_COL.hora} Última atividade</div>
+            <div class="tec-cv">${esc(tempoRelativo(t.ultimo))}</div>
+          </div>
+          <div class="tec-c">
+            <div class="tec-cl">${ICO_COL.os} Aprovadas (mês)</div>
+            <div class="tec-cv">${t.mes}</div>
+          </div>
+          <div class="tec-c">
+            <div class="tec-cl">${ICO_COL.carga} Carga atual</div>
+            <div class="tec-cv">${t.n ? t.n + ' em aberto' : '—'}</div>
+          </div>
+        </div>
+        <button class="tec-go" type="button">+ Despachar
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 6l6 6-6 6"/></svg>
+        </button>`;
+
+      el.querySelector('.tec-go').addEventListener('click', ()=>{
+        navegarMenu('despacho');
+        setTimeout(()=>{
+          const s = document.getElementById('dTecnico');
+          if(s){ s.value = t.id; s.dispatchEvent(new Event('change')); }
+        }, 650);
+      });
+      cx.appendChild(el);
+    });
+  }
+
+  function pintarRodape(obras){
+    const hoje = new Date().toISOString().slice(0,10);
+    const doDia = (obras||[]).filter(o=>
+      (o.despachado_em && o.despachado_em.slice(0,10) === hoje) ||
+      (o.criado_em && o.criado_em.slice(0,10) === hoje));
+
+    const cxA = document.getElementById('pnlAtiv');
+    if(!doDia.length){
+      cxA.innerHTML = '<div class="empty">'
+        + '<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 9h6M9 13h6M9 17h3"/></svg>'
+        + '<div>Nenhuma atividade programada para hoje.</div>'
+        + '<div style="opacity:.75;">Tudo em dia por aqui.</div></div>';
+    } else {
+      cxA.innerHTML = doDia.slice(0,6).map(o=>{
+        const c = (o.dados || {}).contract || {};
+        return '<div class="aviso"><i></i><div><b>Contrato ' + esc(o.contrato) + '</b>'
+          + '<p>' + esc(c.endereco || c.empresa || '') + ' · ' + esc(o.status) + '</p></div></div>';
+      }).join('');
+    }
+
+    document.getElementById('pnlCom').innerHTML =
+      '<div class="aviso"><i></i><div><b>Nenhum comunicado no momento</b>'
+      + '<p>Avisos da operação aparecem aqui quando houver.</p></div></div>';
+  }
+
+  document.getElementById('tecBusca').addEventListener('input', ()=>{
+    if(tecCache.length) pintarTecnicos();
+  });
+  document.getElementById('tecFiltro').addEventListener('click', ()=>
+    showToast('Filtros avançados ainda não estão ligados'));
 
   quadroCard.addEventListener('click', ()=>{
     if(!ehOperador()){ showToast('Só analista e admin veem o quadro'); return; }
@@ -4378,8 +4914,10 @@
     loginScreen.style.display = 'none';
     appMain.style.display = 'flex';
     aplicarPermissoes();
-    atualizarHome();
-    rotaAtual = ehOperador() ? 'quadro' : 'obras';
+    document.body.classList.add('app-on');
+    pintarCabecalho();
+    rotaAtual = rotaInicial();
+    montarMenu();
     irParaInicio();
   }
 
