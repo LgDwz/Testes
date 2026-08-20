@@ -1768,6 +1768,10 @@
     <div class="my-jobs-head">
       <span class="logout-link" id="backFromJobs">&#8592; Início</span>
       <div class="step-title" style="margin:10px 0 0;">Minhas obras</div>
+      <button class="job-edit-btn" id="btnNovaObraJobs" type="button" style="width:100%;margin-top:12px;display:none;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+        Adicionar obra
+      </button>
     </div>
     <div id="jobsList" style="padding:0 16px 24px;"></div>
   </div>
@@ -1977,7 +1981,7 @@
 (function(){
   // Marque aqui a cada build enviado ao campo. O testador informa esta
   // string ao relatar um problema, senao nao da pra saber o que ele rodou.
-  const APP_VERSION = 'Enlace Ops · alpha-10.10 · 20/08/2026';
+  const APP_VERSION = 'Enlace Ops · alpha-10.11 · 20/08/2026';
 
   // ---------- Supabase config ----------
   // Troque pelos valores reais do seu projeto (Project Settings -> API no Supabase).
@@ -6440,11 +6444,19 @@
     showStep(0);
   });
 
+  document.getElementById('btnNovaObraJobs').addEventListener('click', ()=> despacharCard.click());
+
   // Busca as obras lancadas no servidor e mistura com o que esta em memoria.
   async function refreshJobsList(){
     document.querySelector('#myJobsScreen .step-title').textContent =
       filtroObras === 'historico' ? 'Histórico'
       : (ehRevisor() ? 'Todas as obras' : 'Minhas obras');
+    // este é o "Obras" que todo mundo acha primeiro pelo menu — o botão de
+    // adicionar tem que estar aqui também, não só escondido dentro do painel
+    // do administrador. Só quem despacha vê, e só quando tem empresa certa.
+    const btnNovaJobs = document.getElementById('btnNovaObraJobs');
+    if(btnNovaJobs) btnNovaJobs.style.display =
+      (ehOperador() && !(ehSuper() && !empresaContexto)) ? '' : 'none';
     renderJobsList();
     showAppView('myjobs');
     if(!supabaseConfigured || !online) return;
