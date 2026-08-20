@@ -1625,6 +1625,10 @@
     </div>
 
     <div style="padding:0 16px 24px;">
+      <div id="dEmpresaWrap" style="display:none;">
+        <div class="field-label" style="margin-top:4px;">Empresa *</div>
+        <select class="field-input" id="dEmpresaAlvo"><option value="">Escolha a empresa</option></select>
+      </div>
       <div class="field-label" style="margin-top:4px;">Contrato *</div>
       <input class="field-input" id="dNumero" inputmode="numeric" placeholder="Ex: 2438766" autocomplete="off">
       <div id="dLookup" style="font-size:11.5px;color:var(--text-faint);margin:4px 0 12px;"></div>
@@ -1981,7 +1985,7 @@
 (function(){
   // Marque aqui a cada build enviado ao campo. O testador informa esta
   // string ao relatar um problema, senao nao da pra saber o que ele rodou.
-  const APP_VERSION = 'Enlace Ops · alpha-10.11 · 20/08/2026';
+  const APP_VERSION = 'Enlace Ops · alpha-10.12 · 20/08/2026';
 
   // ---------- Supabase config ----------
   // Troque pelos valores reais do seu projeto (Project Settings -> API no Supabase).
@@ -3824,6 +3828,18 @@
   const ehSuper     = ()=> papelAtual() === 'superadmin';
   // eixo do isolamento: tudo que grava precisa carregar isto
   const minhaEmpresa = ()=> perfilAtual ? perfilAtual.empresa_id : null;
+  // pra quem despacha: a empresa da instância em que o dono do produto
+  // entrou, OU a que ele escolheu no seletor do próprio formulário (quando
+  // despacha sem ter entrado em nenhuma), OU a empresa de quem não é
+  // superadmin — sempre a mesma automaticamente.
+  function empresaAlvoDespacho(){
+    if(empresaContexto) return empresaContexto.id;
+    if(ehSuper()){
+      const sel = document.getElementById('dEmpresaAlvo');
+      return sel && sel.value ? Number(sel.value) : null;
+    }
+    return minhaEmpresa();
+  }
 
   async function carregarPerfil(userId){
     if(!supabaseConfigured) return null;
@@ -4554,12 +4570,19 @@
   // lista de tecnicos, com a carga de cada um
   async function carregarTecnicos(){
     const sel = document.getElementById('dTecnico');
+    // dono do produto sem ter escolhido a empresa ainda não pode ver
+    // ninguém — sem essa trava a lista misturaria técnicos de todo mundo.
+    const empAlvo = empresaAlvoDespacho();
+    if(ehSuper() && !empAlvo){
+      sel.innerHTML = '<option value="">Escolha a empresa acima primeiro</option>';
+      return;
+    }
     try{
       // dono do produto dentro da instância de uma empresa só pode despachar
       // pros técnicos DELA — sem esse filtro o RLS do superadmin enxerga
       // técnicos de todas as empresas misturados no mesmo seletor.
       let qTecnicos = supabaseClient.from('perfis').select('id,nome,email,equipe_id').eq('papel','tecnico').eq('aprovado', true);
-      if(empresaContexto) qTecnicos = qTecnicos.eq('empresa_id', empresaContexto.id);
+      if(empAlvo) qTecnicos = qTecnicos.eq('empresa_id', empAlvo);
       const [{data:perfis}, {data:obras}] = await Promise.all([
         qTecnicos,
         supabaseClient.from(SUPABASE_TABLE).select('tecnico_id,status').in('status', ['despachada','em_execucao','reprovado']),
@@ -4593,7 +4616,12 @@
       : '';
   });
 
-  despacharCard.addEventListener('click', ()=>{
+  // trocar a empresa no seletor do próprio despacho recarrega os técnicos
+  // dela — sem isso o dono do produto ficava preso na lista da empresa
+  // anterior, ou tinha que sair e entrar de novo na instância certa.
+  document.getElementById('dEmpresaAlvo').addEventListener('change', carregarTecnicos);
+
+  despacharCard.addEventListener('click', async ()=>{
     if(!ehOperador()){ showToast('Só analista e admin despacham obras'); return; }
     arquivosDespacho = {};
     ['dNumero','dData','dCodtcomp','dEmpresa','dEndereco','dCidade','dCep','dCoord','dObs']
@@ -4604,6 +4632,22 @@
     document.getElementById('dStatus').textContent = '';
     renderDocsDespacho();
     showAppView('despacho');
+
+    // dono do produto sem ter entrado numa empresa escolhe aqui mesmo, no
+    // formulário — não precisa mais ir em Empresas → Gerenciar só pra
+    // conseguir despachar uma obra.
+    const wrap = document.getElementById('dEmpresaWrap');
+    const selEmp = document.getElementById('dEmpresaAlvo');
+    if(ehSuper() && !empresaContexto){
+      wrap.style.display = '';
+      selEmp.innerHTML = '<option value="">Carregando...</option>';
+      const {data: emps} = await supabaseClient.from('empresas').select('id,nome').order('nome');
+      selEmp.innerHTML = '<option value="">Escolha a empresa</option>'
+        + (emps || []).map(e => `<option value="${esc(e.id)}">${esc(e.nome)}</option>`).join('');
+    } else {
+      wrap.style.display = 'none';
+      selEmp.value = '';
+    }
     carregarTecnicos();
   });
 
@@ -4620,6 +4664,9 @@
 
     if(!numero){ showToast('Informe o número do contrato'); return; }
     if(!data){ showToast('Informe a data'); return; }
+    if(ehSuper() && !empresaContexto && !document.getElementById('dEmpresaAlvo').value){
+      showToast('Escolha a empresa primeiro'); return;
+    }
     if(!tecnico){ showToast('Escolha o técnico'); return; }
     const faltando = docsDespacho.filter(d => d.obrig && !arquivosDespacho[d.id]);
     if(faltando.length){
@@ -4642,11 +4689,11 @@
 
       // arquivos vao pra pasta do tecnico, senao ele nao consegue abrir
       st.textContent = 'Enviando documentos...';
-      // dono do produto dentro da instância de uma empresa despacha PRA ELA,
-      // não pra empresa dele (que nem existe — ver minhaEmpresa()). Sem isso a
-      // obra ficava com empresa_id errado (ou nulo) e podia vazar/misturar
-      // com outra empresa.
-      const emp = empresaContexto ? empresaContexto.id : minhaEmpresa();
+      // dono do produto despacha pra empresa da instância em que entrou, ou
+      // pra que escolheu no seletor do formulário — nunca pra empresa dele
+      // (que nem existe). Sem isso a obra ficava com empresa_id errado (ou
+      // nulo) e podia vazar/misturar com outra empresa.
+      const emp = empresaAlvoDespacho();
       if(!emp){ throw new Error(ehSuper() ? 'Escolha uma empresa antes de despachar' : 'Sua conta não está vinculada a uma empresa'); }
       const base = emp + '/' + numero + '/' + tecnico + '/documentos-projeto';
       const paths = {};
@@ -5111,9 +5158,8 @@
     selecionadas.clear();
     atualizarBarraObras();
 
-    // dono do produto sem ter entrado numa empresa não tem pra quem despachar
     const btnNova = document.getElementById('btnNovaObra');
-    if(btnNova) btnNova.style.display = (ehSuper() && !empresaContexto) ? 'none' : '';
+    if(btnNova) btnNova.style.display = ehOperador() ? '' : 'none';
 
     // dentro da instância de uma empresa, só as obras dela — sem isso o
     // dono do produto via obra de todas as empresas misturadas na mesma lista.
@@ -6453,10 +6499,11 @@
       : (ehRevisor() ? 'Todas as obras' : 'Minhas obras');
     // este é o "Obras" que todo mundo acha primeiro pelo menu — o botão de
     // adicionar tem que estar aqui também, não só escondido dentro do painel
-    // do administrador. Só quem despacha vê, e só quando tem empresa certa.
+    // do administrador. O despacho agora pede a empresa no próprio
+    // formulário quando precisa, então não tem mais motivo pra esconder o
+    // botão do dono do produto só por ele não ter entrado numa instância.
     const btnNovaJobs = document.getElementById('btnNovaObraJobs');
-    if(btnNovaJobs) btnNovaJobs.style.display =
-      (ehOperador() && !(ehSuper() && !empresaContexto)) ? '' : 'none';
+    if(btnNovaJobs) btnNovaJobs.style.display = ehOperador() ? '' : 'none';
     renderJobsList();
     showAppView('myjobs');
     if(!supabaseConfigured || !online) return;
