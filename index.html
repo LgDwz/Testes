@@ -406,6 +406,23 @@
     background:var(--bg-elev-2);color:var(--text);border:1px solid var(--border);
     border-radius:6px;padding:6px 8px;font-size:12px;font-family:inherit;
   }
+  /* vínculo de empresa na visão global do dono do produto: por padrão só um
+     rótulo + lápis discreto; clicar no lápis troca pelo select (mesmo tema
+     do resto do painel, nada de combobox branco do navegador). */
+  .user-empresa-wrap{display:flex;align-items:center;gap:5px;margin-top:4px;}
+  .user-empresa-label{margin-top:0 !important;}
+  .user-empresa-edit{
+    border:1px solid var(--border);color:var(--text-faint);background:transparent;
+    border-radius:5px;width:20px;height:20px;flex:0 0 auto;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;padding:0;
+  }
+  .user-empresa-edit:hover{border-color:var(--accent);color:var(--accent);}
+  .user-empresa{
+    background:var(--bg-elev-2);color:var(--text);border:1px solid var(--accent);
+    border-radius:6px;padding:4px 6px;font-size:10.5px;font-family:'IBM Plex Mono',monospace;
+    max-width:100%;
+  }
+  .user-empresa:focus{outline:none;}
   .user-aprovar{
     border:1px solid var(--success);color:var(--success);background:transparent;
     border-radius:6px;padding:6px 10px;font-size:11.5px;cursor:pointer;white-space:nowrap;
@@ -1956,7 +1973,7 @@
 (function(){
   // Marque aqui a cada build enviado ao campo. O testador informa esta
   // string ao relatar um problema, senao nao da pra saber o que ele rodou.
-  const APP_VERSION = 'Enlace Ops · alpha-10.7 · 20/08/2026';
+  const APP_VERSION = 'Enlace Ops · alpha-10.8 · 20/08/2026';
 
   // ---------- Supabase config ----------
   // Troque pelos valores reais do seu projeto (Project Settings -> API no Supabase).
@@ -4821,12 +4838,18 @@
           <div class="user-row-mail">${esc(u.email || '')}</div>
           <div class="user-row-meta">${tempoRelativo(u.ultimo_acesso)} · ${nObras} ${nObras === 1 ? 'obra' : 'obras'}</div>
           ${podeVincularEmpresa
-            ? `<select class="user-empresa" style="margin-top:6px;">
-                 <option value="">sem empresa</option>
-                 ${Object.keys(empresasNomeMap).map(id =>
-                   `<option value="${esc(id)}"${String(u.empresa_id) === String(id) ? ' selected' : ''}>${esc(empresasNomeMap[id])}</option>`
-                 ).join('')}
-               </select>`
+            ? `<div class="user-empresa-wrap">
+                 <span class="user-row-meta user-empresa-label" style="color:var(--accent);">${esc(nomeEmpresa)}</span>
+                 <button type="button" class="user-empresa-edit" data-acao="editar-empresa" title="Vincular empresa" aria-label="Vincular empresa">
+                   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                 </button>
+                 <select class="user-empresa" style="display:none;">
+                   <option value="">sem empresa</option>
+                   ${Object.keys(empresasNomeMap).map(id =>
+                     `<option value="${esc(id)}"${String(u.empresa_id) === String(id) ? ' selected' : ''}>${esc(empresasNomeMap[id])}</option>`
+                   ).join('')}
+                 </select>
+               </div>`
             : (nomeEmpresa ? `<div class="user-row-meta" style="color:var(--accent);">${esc(nomeEmpresa)}</div>` : '')}
         </div>
         <div class="user-acoes">
@@ -4840,8 +4863,27 @@
 
       const sel = row.querySelector('.user-papel');
       const selEmp = row.querySelector('.user-empresa');
+      const btnEmpEditar = row.querySelector('[data-acao="editar-empresa"]');
+      const empLabel = row.querySelector('.user-empresa-label');
       const btn = row.querySelector('[data-acao="liberar"]');
       const btnDel = row.querySelector('[data-acao="excluir"]');
+
+      // troca o rótulo pelo select só quando clica no lápis — volta a
+      // esconder ao perder o foco sem escolher nada (não fica um combobox
+      // aberto o tempo todo, feio, no meio da lista).
+      if(btnEmpEditar && selEmp){
+        btnEmpEditar.addEventListener('click', ()=>{
+          empLabel.style.display = 'none';
+          btnEmpEditar.style.display = 'none';
+          selEmp.style.display = '';
+          selEmp.focus();
+        });
+        selEmp.addEventListener('blur', ()=>{
+          selEmp.style.display = 'none';
+          empLabel.style.display = '';
+          btnEmpEditar.style.display = '';
+        });
+      }
 
       if(btnDel){
         btnDel.addEventListener('click', async ()=>{
