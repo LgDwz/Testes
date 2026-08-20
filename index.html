@@ -1973,7 +1973,7 @@
 (function(){
   // Marque aqui a cada build enviado ao campo. O testador informa esta
   // string ao relatar um problema, senao nao da pra saber o que ele rodou.
-  const APP_VERSION = 'Enlace Ops · alpha-10.8 · 20/08/2026';
+  const APP_VERSION = 'Enlace Ops · alpha-10.9 · 20/08/2026';
 
   // ---------- Supabase config ----------
   // Troque pelos valores reais do seu projeto (Project Settings -> API no Supabase).
@@ -5094,6 +5094,7 @@
 
   // ---------- Aba Obras: gestao e exclusao em lote ----------
   let obrasAdmin = [];
+  let tecnicosObrasCache = [];   // {id,nome,empresa_id} de todo mundo elegível a receber obra
   const selecionadas = new Set();
 
   async function renderObrasAdmin(){
@@ -5106,13 +5107,19 @@
     // dono do produto via obra de todas as empresas misturadas na mesma lista.
     let qObras = supabaseClient.from(SUPABASE_TABLE).select('*').order('id', {ascending:false}).limit(500);
     if(empresaContexto) qObras = qObras.eq('empresa_id', empresaContexto.id);
-    const {data, error} = await qObras;
+    // técnicos pra poder remanejar a obra direto na lista — se um deles falta
+    // num dia cheio de despacho, dá pra trocar sem reabrir o formulário inteiro.
+    let qTecObras = supabaseClient.from('perfis').select('id,nome,email,empresa_id')
+      .eq('papel','tecnico').eq('aprovado', true);
+    if(empresaContexto) qTecObras = qTecObras.eq('empresa_id', empresaContexto.id);
+    const [{data, error}, {data: tecs}] = await Promise.all([qObras, qTecObras]);
     if(error){
       cx.innerHTML = '<div class="job-service-empty" style="padding:20px 4px;">Não deu pra carregar: '
         + esc(error.message) + '</div>';
       return;
     }
     obrasAdmin = data || [];
+    tecnicosObrasCache = tecs || [];
     pintarObras();
   }
 
@@ -5139,11 +5146,29 @@
       const nFotos = Object.keys((d.arquivos || {}).photos || {}).length;
       const row = document.createElement('div');
       row.className = 'obra-row' + (selecionadas.has(o.id) ? ' sel' : '');
+      // remanejar pra outro técnico da mesma empresa da obra — direto na
+      // lista, sem reabrir o despacho. É o que resolve o técnico que falta
+      // num dia com um monte de obra já preparada.
+      const tecnicosDaObra = tecnicosObrasCache.filter(t => String(t.empresa_id) === String(o.empresa_id));
       row.innerHTML = `
         <input type="checkbox" class="obra-check"${selecionadas.has(o.id) ? ' checked' : ''}>
         <div class="obra-info">
           <div class="obra-num">Contrato ${esc(o.contrato)}</div>
-          <div class="obra-meta">${esc(c.empresa || 'sem empresa')} · ${esc(d.tecnico || 'sem técnico')}</div>
+          <div class="obra-meta">
+            ${esc(c.empresa || 'sem empresa')} ·
+            <span class="user-empresa-wrap" style="display:inline-flex;margin-top:0;vertical-align:middle;">
+              <span class="user-empresa-label">${esc(d.tecnico || 'sem técnico')}</span>
+              <button type="button" class="user-empresa-edit" data-acao="remanejar" title="Remanejar técnico" aria-label="Remanejar técnico">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+              </button>
+              <select class="user-empresa obra-tecnico" style="display:none;">
+                <option value="">sem técnico</option>
+                ${tecnicosDaObra.map(t =>
+                  `<option value="${esc(t.id)}"${String(o.tecnico_id) === String(t.id) ? ' selected' : ''}>${esc(t.nome || t.email)}</option>`
+                ).join('')}
+              </select>
+            </span>
+          </div>
           <div class="obra-meta">${c.data ? esc(toDateBR(c.data)) : 'sem data'} · ${nFotos} ${nFotos === 1 ? 'item' : 'itens'} com foto</div>
         </div>
         <span class="obra-tag">${esc(o.status || '—')}</span>
@@ -5154,6 +5179,41 @@
         row.classList.toggle('sel', chk.checked);
         atualizarBarraObras();
       });
+
+      const tecEditar = row.querySelector('[data-acao="remanejar"]');
+      const tecLabel = row.querySelector('.user-empresa-label');
+      const tecSelect = row.querySelector('.obra-tecnico');
+      if(tecEditar && tecSelect){
+        tecEditar.addEventListener('click', ()=>{
+          tecLabel.style.display = 'none';
+          tecEditar.style.display = 'none';
+          tecSelect.style.display = '';
+          tecSelect.focus();
+        });
+        tecSelect.addEventListener('blur', ()=>{
+          tecSelect.style.display = 'none';
+          tecLabel.style.display = '';
+          tecEditar.style.display = '';
+        });
+        tecSelect.addEventListener('change', async ()=>{
+          const novoId = tecSelect.value || null;
+          const novoTec = novoId ? tecnicosDaObra.find(t => String(t.id) === String(novoId)) : null;
+          tecSelect.disabled = true;
+          const campos = {
+            tecnico_id: novoId,
+            dados: {...d, tecnico: novoTec ? (novoTec.nome || novoTec.email) : ''},
+          };
+          // se o técnico anterior já tinha começado, o novo começa do zero —
+          // senão a obra fica marcada "em execução" com ninguém executando.
+          if(o.status === 'em_execucao') campos.status = 'despachada';
+          const {error} = await supabaseClient.from(SUPABASE_TABLE).update(campos).eq('id', o.id);
+          tecSelect.disabled = false;
+          if(error){ showToast('Não deu pra remanejar: ' + error.message); return; }
+          showToast(novoTec ? 'Obra remanejada para ' + (novoTec.nome || novoTec.email) : 'Técnico removido da obra');
+          renderObrasAdmin();
+        });
+      }
+
       cx.appendChild(row);
     });
   }
