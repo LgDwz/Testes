@@ -1451,7 +1451,7 @@
 
   <div class="queue-banner" id="queueBanner">
     <span>&#9203;</span>
-    <span>Dados salvos no aparelho &mdash; aguardando conexão para enviar</span>
+    <span class="queue-text">Dados salvos no aparelho &mdash; aguardando conexão para enviar</span>
   </div>
 
   <div class="home-screen" id="homeScreen">
@@ -2176,7 +2176,7 @@
       </div>
       <div class="item-body">
         <div class="item-title">${item.title}</div>
-        <div class="item-meta ${s ? 'done' : 'pending'}">${s ? 'anexado &middot; ' + s.fileMeta : 'toque para anexar arquivo'}</div>
+        <div class="item-meta ${s ? 'done' : 'pending'}">${s ? 'anexado &middot; ' + esc(s.fileMeta) : 'toque para anexar arquivo'}</div>
         ${refHtml}
         ${obsHtml}
       </div>
@@ -3853,7 +3853,7 @@
     const mostrar = (el, v) => { if(el) el.style.display = v ? 'block' : 'none'; };
     mostrar(document.getElementById('newJobCard'), false);   // obra nasce no escritório
     mostrar(despacharCard, ehOperador());
-    mostrar(equipeCard,    ehOperador() && !ehAdmin());
+    mostrar(equipeCard,    false);   // tela de destino (renderUsuarios) e admin-only; card redundante com "Usuarios"
     mostrar(usersCard,     ehAdmin());
     mostrar(quadroCard,    ehOperador());
 
@@ -4158,7 +4158,7 @@
     const L = [];
     if(ehOperador()) L.push({id:'dashboard', t:'Dashboard', ic:'dashboard'});
     if(ehOperador()) L.push({id:'despacho',  t:'Despacho',  ic:'despacho'});
-    if(ehOperador()) L.push({id:'tecnicos',  t:'Técnicos',  ic:'tecnicos'});
+    if(ehAdmin())    L.push({id:'tecnicos',  t:'Técnicos',  ic:'tecnicos'});
     L.push({id:'obras',     t: ehRevisor() ? 'Obras' : 'Minhas obras', ic:'obras', badge:true});
     L.push({id:'historico', t:'Histórico', ic:'historico'});
     if(ehRevisor()) L.push({id:'relatorios', t:'Relatórios', ic:'relatorios'});
@@ -5505,8 +5505,6 @@
     const g = c.getContext('2d');
 
     // céu
-    const ceu = g.createLinearGradient(0, 0, 0, 1200);
-    ceu.addColorStop(0, '#7FB2D9'); ceu.addColorStop(0.55, '#C3D9E8'); ceu.addColorStop(1, '#8B9craft');
     g.fillStyle = '#7FB2D9'; g.fillRect(0,0,900,1200);
     const gr = g.createLinearGradient(0,0,0,1200);
     gr.addColorStop(0,'#6FA3CD'); gr.addColorStop(0.6,'#CBDDE9'); gr.addColorStop(1,'#9AA98F');
@@ -6548,7 +6546,7 @@
   showStep(0);
   history.replaceState({tela:'login'}, '');
   aplicarEstadoConexao();
-  tentarSessaoExistente().then(entrou=>{ if(entrou) restaurarRascunho(); else restaurarRascunho(); });
+  tentarSessaoExistente().then(entrou=>{ if(entrou) restaurarRascunho(); });
   console.log('Enlace Ops ' + APP_VERSION);
 })();
 </script>
