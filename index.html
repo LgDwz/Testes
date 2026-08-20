@@ -1956,7 +1956,7 @@
 (function(){
   // Marque aqui a cada build enviado ao campo. O testador informa esta
   // string ao relatar um problema, senao nao da pra saber o que ele rodou.
-  const APP_VERSION = 'Enlace Ops · alpha-10.6 · 19/08/2026';
+  const APP_VERSION = 'Enlace Ops · alpha-10.7 · 20/08/2026';
 
   // ---------- Supabase config ----------
   // Troque pelos valores reais do seu projeto (Project Settings -> API no Supabase).
@@ -4810,12 +4810,24 @@
       const row = document.createElement('div');
       row.className = 'user-row' + (!u.aprovado ? ' pendente' : '') + (souEu ? ' eu' : '');
       const nomeEmpresa = ehSuper() ? (empresasNomeMap[u.empresa_id] || (u.empresa_id ? null : 'sem empresa')) : null;
+      // na visão global (fora de qualquer instância) o dono do produto pode
+      // vincular ou trocar a empresa de alguém direto na linha — sem isso,
+      // quem se cadastra sozinho (sem convite) fica "sem empresa" pra sempre
+      // e ninguém tem como puxar essa pessoa pra dentro de uma empreiteira.
+      const podeVincularEmpresa = ehSuper() && !empresaContexto;
       row.innerHTML = `
         <div class="user-row-body">
           <div class="user-row-nome">${esc(u.nome || '(sem nome)')}${souEu ? ' · você' : ''}</div>
           <div class="user-row-mail">${esc(u.email || '')}</div>
           <div class="user-row-meta">${tempoRelativo(u.ultimo_acesso)} · ${nObras} ${nObras === 1 ? 'obra' : 'obras'}</div>
-          ${nomeEmpresa ? `<div class="user-row-meta" style="color:var(--accent);">${esc(nomeEmpresa)}</div>` : ''}
+          ${podeVincularEmpresa
+            ? `<select class="user-empresa" style="margin-top:6px;">
+                 <option value="">sem empresa</option>
+                 ${Object.keys(empresasNomeMap).map(id =>
+                   `<option value="${esc(id)}"${String(u.empresa_id) === String(id) ? ' selected' : ''}>${esc(empresasNomeMap[id])}</option>`
+                 ).join('')}
+               </select>`
+            : (nomeEmpresa ? `<div class="user-row-meta" style="color:var(--accent);">${esc(nomeEmpresa)}</div>` : '')}
         </div>
         <div class="user-acoes">
           <select class="user-papel">${
@@ -4827,6 +4839,7 @@
       `;
 
       const sel = row.querySelector('.user-papel');
+      const selEmp = row.querySelector('.user-empresa');
       const btn = row.querySelector('[data-acao="liberar"]');
       const btnDel = row.querySelector('[data-acao="excluir"]');
 
@@ -4864,19 +4877,22 @@
             return;
           }
         }
-        btn.disabled = true; sel.disabled = true;
+        btn.disabled = true; sel.disabled = true; if(selEmp) selEmp.disabled = true;
         const {error} = await supabaseClient.from('perfis').update(campos).eq('id', u.id);
-        btn.disabled = false; sel.disabled = false;
+        btn.disabled = false; sel.disabled = false; if(selEmp) selEmp.disabled = false;
         if(error){ showToast('Não deu pra salvar: ' + error.message); renderListaUsuarios(); return; }
         Object.assign(u, campos);
         showToast(campos.aprovado === true ? 'Acesso liberado'
                 : campos.aprovado === false ? 'Acesso bloqueado'
+                : campos.empresa_id !== undefined ? 'Empresa vinculada'
                 : 'Papel alterado para ' + campos.papel);
         renderFiltros(); renderListaUsuarios();
       }
 
       sel.addEventListener('change', ()=> salvar({papel: sel.value}));
       btn.addEventListener('click', ()=> salvar({aprovado: !u.aprovado}));
+      if(selEmp) selEmp.addEventListener('change', ()=>
+        salvar({empresa_id: selEmp.value ? Number(selEmp.value) : null}));
       usersList.appendChild(row);
     });
   }
