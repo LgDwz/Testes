@@ -1785,10 +1785,18 @@
     <div class="my-jobs-head">
       <span class="logout-link" id="backFromJobs">&#8592; Início</span>
       <div class="step-title" style="margin:10px 0 0;">Minhas obras</div>
+      <span class="logout-link" id="btnTrocarEmpresaJobs" style="display:none;margin-top:4px;">Trocar empresa</span>
       <button class="job-edit-btn" id="btnNovaObraJobs" type="button" style="width:100%;margin-top:12px;display:none;">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
         Adicionar obra
       </button>
+    </div>
+    <!-- dono do produto de fora de qualquer empresa não pode cair direto na
+         lista — misturaria obra de todo mundo. Escolhe aqui antes de ver. -->
+    <div id="jobsEmpresaGate" style="display:none;padding:0 16px 16px;">
+      <div class="field-label" style="margin-top:4px;">Escolha a empresa pra ver as obras dela</div>
+      <select class="field-input" id="jobsEmpresaAlvo"><option value="">Carregando...</option></select>
+      <button class="review-btn pdf" id="btnJobsEmpresaEntrar" style="width:100%;margin-top:10px;">Entrar</button>
     </div>
     <div id="jobsList" style="padding:0 16px 24px;"></div>
   </div>
@@ -1998,7 +2006,7 @@
 (function(){
   // Marque aqui a cada build enviado ao campo. O testador informa esta
   // string ao relatar um problema, senao nao da pra saber o que ele rodou.
-  const APP_VERSION = 'Enlace Ops · alpha-10.16 · 20/08/2026';
+  const APP_VERSION = 'Enlace Ops · alpha-10.18 · 20/08/2026';
 
   // ---------- Supabase config ----------
   // Troque pelos valores reais do seu projeto (Project Settings -> API no Supabase).
@@ -6212,6 +6220,7 @@
 
   // Sem dados de exemplo: a lista vem do Supabase, filtrada pelo RLS.
   let reportsList = [];
+  let tecnicosJobsCache = [];   // {id,nome,email,empresa_id} — pra remanejar direto por aqui também
 
   // ---------- Botao voltar do navegador / do Android ----------
   // Sem isto, "voltar" saía do app e o técnico perdia a tela em que
@@ -6425,7 +6434,26 @@
       } else {
         servicosHtml = '<div class="job-service-empty">Nenhum serviço lançado ainda neste rascunho.</div>';
       }
-      details.innerHTML = servicosHtml + `
+      // atribuir/remanejar o técnico direto por aqui — é aqui que todo
+      // mundo cai primeiro pelo menu, não só no painel de administração.
+      const podeRemanejar = ehOperador() && job.row;
+      const tecnicosDoJob = podeRemanejar
+        ? tecnicosJobsCache.filter(t => String(t.empresa_id) === String(job.row.empresa_id))
+        : [];
+
+      details.innerHTML = servicosHtml + (podeRemanejar ? `
+        <div class="user-empresa-wrap" style="margin-bottom:10px;">
+          <span class="user-empresa-label">${esc(job.tecnico || 'sem técnico')}</span>
+          <button type="button" class="user-empresa-edit" data-acao="remanejar-job" title="Atribuir/remanejar técnico" aria-label="Atribuir/remanejar técnico">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+          </button>
+          <select class="user-empresa job-tecnico" style="display:none;">
+            <option value="">sem técnico</option>
+            ${tecnicosDoJob.map(t =>
+              `<option value="${esc(t.id)}"${String(job.row.tecnico_id) === String(t.id) ? ' selected' : ''}>${esc(t.nome || t.email)}</option>`
+            ).join('')}
+          </select>
+        </div>` : '') + `
         <div style="display:flex;gap:8px;">
           <button class="job-edit-btn" type="button" data-acao="editar" style="flex:1;">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
@@ -6442,7 +6470,7 @@
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/></svg>
           Excluir obra
         </button>` : ''}
-        ${ehRevisor() && job.row ? `
+        ${ehRevisor() && job.row && job.status === 'enviado' ? `
         <div class="revisao-box">
           <textarea placeholder="Observação da revisão (obrigatória para reprovar)">${esc((job.row.revisao||{}).observacao || '')}</textarea>
           <div style="display:flex;gap:8px;margin-top:8px;">
@@ -6451,6 +6479,43 @@
           </div>
         </div>` : ''}
       `;
+
+      const tecEditarJob = details.querySelector('[data-acao="remanejar-job"]');
+      if(tecEditarJob){
+        const tecLabelJob = details.querySelector('.user-empresa-wrap .user-empresa-label');
+        const tecSelectJob = details.querySelector('.job-tecnico');
+        tecEditarJob.addEventListener('click', (e)=>{
+          e.stopPropagation();
+          tecLabelJob.style.display = 'none';
+          tecEditarJob.style.display = 'none';
+          tecSelectJob.style.display = '';
+          tecSelectJob.focus();
+        });
+        tecSelectJob.addEventListener('click', (e)=> e.stopPropagation());
+        tecSelectJob.addEventListener('blur', ()=>{
+          tecSelectJob.style.display = 'none';
+          tecLabelJob.style.display = '';
+          tecEditarJob.style.display = '';
+        });
+        tecSelectJob.addEventListener('change', async (e)=>{
+          e.stopPropagation();
+          const novoId = tecSelectJob.value || null;
+          const novoTec = novoId ? tecnicosDoJob.find(t => String(t.id) === String(novoId)) : null;
+          tecSelectJob.disabled = true;
+          const d = job.row.dados || {};
+          const campos = {
+            tecnico_id: novoId,
+            dados: {...d, tecnico: novoTec ? (novoTec.nome || novoTec.email) : ''},
+          };
+          if(!novoId) campos.status = 'pendente';
+          else if(job.row.status === 'em_execucao' || job.row.status === 'pendente') campos.status = 'despachada';
+          const {error} = await supabaseClient.from(SUPABASE_TABLE).update(campos).eq('id', job.row.id);
+          tecSelectJob.disabled = false;
+          if(error){ showToast('Não deu pra remanejar: ' + error.message); return; }
+          showToast(novoTec ? 'Obra remanejada para ' + (novoTec.nome || novoTec.email) : 'Obra voltou pra fila (sem técnico)');
+          refreshJobsList();
+        });
+      }
       details.querySelector('[data-acao="editar"]').addEventListener('click', (e)=>{
         e.stopPropagation();
         abrirObraDespachada(job, e.currentTarget);
@@ -6522,28 +6587,71 @@
 
   document.getElementById('btnNovaObraJobs').addEventListener('click', ()=> despacharCard.click());
 
+  document.getElementById('btnJobsEmpresaEntrar').addEventListener('click', ()=>{
+    const sel = document.getElementById('jobsEmpresaAlvo');
+    if(!sel.value){ showToast('Escolha uma empresa'); return; }
+    empresaContexto = {id: Number(sel.value), nome: sel.options[sel.selectedIndex].textContent};
+    reportsList = [];   // lista antiga pode ser de outra empresa (ou de todas)
+    refreshJobsList();
+  });
+
+  document.getElementById('btnTrocarEmpresaJobs').addEventListener('click', ()=>{
+    empresaContexto = null;
+    reportsList = [];
+    refreshJobsList();
+  });
+
   // Busca as obras lancadas no servidor e mistura com o que esta em memoria.
   async function refreshJobsList(){
+    const gate = document.getElementById('jobsEmpresaGate');
+    const listEl = document.getElementById('jobsList');
+    const btnNovaJobs = document.getElementById('btnNovaObraJobs');
+    const btnTrocar = document.getElementById('btnTrocarEmpresaJobs');
+
+    // dono do produto de fora de qualquer empresa não pode cair direto na
+    // lista — sem essa trava ele via obra de todas as empresas misturadas
+    // (o RLS deixa o superadmin enxergar tudo, então quem barra é a
+    // interface). Pede pra escolher antes de carregar qualquer coisa.
+    if(ehSuper() && !empresaContexto){
+      showAppView('myjobs');
+      document.querySelector('#myJobsScreen .step-title').textContent = 'Escolha a empresa';
+      if(btnNovaJobs) btnNovaJobs.style.display = 'none';
+      if(btnTrocar) btnTrocar.style.display = 'none';
+      listEl.innerHTML = '';
+      gate.style.display = '';
+      const sel = document.getElementById('jobsEmpresaAlvo');
+      sel.innerHTML = '<option value="">Carregando...</option>';
+      const {data: emps} = await supabaseClient.from('empresas').select('id,nome').order('nome');
+      sel.innerHTML = '<option value="">Escolha a empresa</option>'
+        + (emps || []).map(e => `<option value="${esc(e.id)}">${esc(e.nome)}</option>`).join('');
+      return;
+    }
+    gate.style.display = 'none';
+
     document.querySelector('#myJobsScreen .step-title').textContent =
-      filtroObras === 'historico' ? 'Histórico'
-      : (ehRevisor() ? 'Todas as obras' : 'Minhas obras');
+      (filtroObras === 'historico' ? 'Histórico' : (ehRevisor() ? 'Todas as obras' : 'Minhas obras'))
+      + (ehSuper() && empresaContexto ? ' · ' + empresaContexto.nome : '');
+    if(btnTrocar) btnTrocar.style.display = (ehSuper() && empresaContexto) ? '' : 'none';
     // este é o "Obras" que todo mundo acha primeiro pelo menu — o botão de
     // adicionar tem que estar aqui também, não só escondido dentro do painel
     // do administrador. O despacho agora pede a empresa no próprio
     // formulário quando precisa, então não tem mais motivo pra esconder o
     // botão do dono do produto só por ele não ter entrado numa instância.
-    const btnNovaJobs = document.getElementById('btnNovaObraJobs');
     if(btnNovaJobs) btnNovaJobs.style.display = ehOperador() ? '' : 'none';
     renderJobsList();
     showAppView('myjobs');
     if(!supabaseConfigured || !online) return;
 
     try{
-      const {data, error} = await supabaseClient
-        .from(SUPABASE_TABLE)
-        .select('*')
-        .order('id', {ascending:false})
-        .limit(100);
+      let qTecJobs = supabaseClient.from('perfis').select('id,nome,email,empresa_id')
+        .eq('papel','tecnico').eq('aprovado', true);
+      let qObrasJobs = supabaseClient.from(SUPABASE_TABLE).select('*').order('id', {ascending:false}).limit(100);
+      if(empresaContexto){
+        qTecJobs = qTecJobs.eq('empresa_id', empresaContexto.id);
+        qObrasJobs = qObrasJobs.eq('empresa_id', empresaContexto.id);
+      }
+      const [{data, error}, {data: tecsJobs}] = await Promise.all([qObrasJobs, qTecJobs]);
+      tecnicosJobsCache = tecsJobs || [];
       if(error || !data) return;
 
       const doServidor = data.map(row=>{
