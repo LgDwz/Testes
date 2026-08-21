@@ -381,6 +381,7 @@
   }
   .job-status.enviado{background:var(--success-dim);color:var(--success);}
   .job-status.rascunho{background:var(--bg-elev-2);color:var(--text-dim);}
+  .job-status.pendente{background:rgba(217,164,65,.10);color:#E0B463;}
   .papel-badge{
     font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.08em;
     text-transform:uppercase;padding:2px 6px;border-radius:4px;margin-left:6px;
@@ -471,6 +472,7 @@
     overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .obra-tag{font-size:9.5px;text-transform:uppercase;letter-spacing:0.06em;
     padding:2px 6px;border-radius:4px;border:1px solid var(--border);color:var(--text-dim);}
+  .obra-tag.pendente{color:#E0B463;border-color:rgba(217,164,65,.35);background:rgba(217,164,65,.10);}
   .barra-acao{
     position:sticky;bottom:0;background:var(--bg);border-top:1px solid var(--border);
     padding:12px 16px;display:flex;gap:8px;align-items:center;
@@ -1620,8 +1622,8 @@
   <div class="users-screen" id="despachoScreen">
     <div class="my-jobs-head">
       <span class="logout-link" id="backFromDespacho">&#8592; Voltar</span>
-      <div class="step-title" style="margin:10px 0 0;">Despachar obra</div>
-      <div class="step-sub" style="padding:0;">Os dados vão preenchidos para o técnico. Ele só executa.</div>
+      <div class="step-title" style="margin:10px 0 0;">Nova obra</div>
+      <div class="step-sub" style="padding:0;">Identifique a obra e anexe os documentos. O técnico é atribuído depois, na aba Obras.</div>
     </div>
 
     <div style="padding:0 16px 24px;">
@@ -1629,52 +1631,63 @@
         <div class="field-label" style="margin-top:4px;">Empresa *</div>
         <select class="field-input" id="dEmpresaAlvo"><option value="">Escolha a empresa</option></select>
       </div>
-      <div class="field-label" style="margin-top:4px;">Contrato *</div>
+      <div class="field-label" style="margin-top:4px;">Obra *</div>
       <input class="field-input" id="dNumero" inputmode="numeric" placeholder="Ex: 2438766" autocomplete="off">
       <div id="dLookup" style="font-size:11.5px;color:var(--text-faint);margin:4px 0 12px;"></div>
 
-      <div style="display:flex;gap:10px;">
-        <div style="flex:1;">
-          <div class="field-label">Data *</div>
-          <input class="field-input" id="dData" type="date">
+      <!-- Campos extras (data, cliente, endereço, etc.) ficam escondidos pra
+           não poluir a tela de cadastro — o essencial aqui é só identificar
+           a obra e anexar os documentos. Continuam existindo no HTML porque
+           o preenchimento automático (número já usado antes) e o envio pro
+           banco ainda usam esses campos por baixo dos panos; só não aparecem
+           mais pro usuário. Dá pra completar esses detalhes depois, na
+           execução da obra pelo técnico. -->
+      <div id="dExtrasWrap" style="display:none;">
+        <div style="display:flex;gap:10px;">
+          <div style="flex:1;">
+            <div class="field-label">Data *</div>
+            <input class="field-input" id="dData" type="date">
+          </div>
+          <div style="flex:1;">
+            <div class="field-label">CODTCOMP</div>
+            <input class="field-input" id="dCodtcomp" placeholder="COTPS130/2025">
+          </div>
         </div>
-        <div style="flex:1;">
-          <div class="field-label">CODTCOMP</div>
-          <input class="field-input" id="dCodtcomp" placeholder="COTPS130/2025">
+
+        <div class="field-label" style="margin-top:12px;">Empresa contratada</div>
+        <input class="field-input" id="dEmpresa" placeholder="Nome do cliente">
+
+        <div class="field-label" style="margin-top:12px;">Endereço</div>
+        <input class="field-input" id="dEndereco" placeholder="R IZAIR LAGO, 88">
+
+        <div style="display:flex;gap:10px;margin-top:12px;">
+          <div style="flex:1.4;">
+            <div class="field-label">Cidade</div>
+            <input class="field-input" id="dCidade" placeholder="QUATRO BARRAS">
+          </div>
+          <div style="flex:1;">
+            <div class="field-label">CEP</div>
+            <input class="field-input" id="dCep" inputmode="numeric" placeholder="83420000">
+          </div>
         </div>
+
+        <div class="field-label" style="margin-top:12px;">Coordenadas</div>
+        <input class="field-input" id="dCoord" placeholder="-25.409977, -49.238526">
+
+        <div class="field-label" style="margin-top:12px;">Observação para o técnico</div>
+        <textarea class="field-input" id="dObs" rows="2" placeholder="Opcional — o que ele precisa saber antes de ir"></textarea>
       </div>
-
-      <div class="field-label" style="margin-top:12px;">Empresa contratada</div>
-      <input class="field-input" id="dEmpresa" placeholder="Nome do cliente">
-
-      <div class="field-label" style="margin-top:12px;">Endereço</div>
-      <input class="field-input" id="dEndereco" placeholder="R IZAIR LAGO, 88">
-
-      <div style="display:flex;gap:10px;margin-top:12px;">
-        <div style="flex:1.4;">
-          <div class="field-label">Cidade</div>
-          <input class="field-input" id="dCidade" placeholder="QUATRO BARRAS">
-        </div>
-        <div style="flex:1;">
-          <div class="field-label">CEP</div>
-          <input class="field-input" id="dCep" inputmode="numeric" placeholder="83420000">
-        </div>
-      </div>
-
-      <div class="field-label" style="margin-top:12px;">Coordenadas</div>
-      <input class="field-input" id="dCoord" placeholder="-25.409977, -49.238526">
-
-      <div class="field-label" style="margin-top:12px;">Observação para o técnico</div>
-      <textarea class="field-input" id="dObs" rows="2" placeholder="Opcional — o que ele precisa saber antes de ir"></textarea>
 
       <div class="step-sub" style="padding:16px 0 8px;">Documentos do projeto</div>
       <div id="dDocs"></div>
 
-      <div class="step-sub" style="padding:16px 0 8px;">Técnico responsável *</div>
-      <select class="field-input" id="dTecnico"><option value="">Carregando...</option></select>
-      <div id="dCarga" style="font-size:11.5px;color:var(--text-faint);margin-top:6px;"></div>
+      <div id="dTecnicoWrap" style="display:none;">
+        <div class="step-sub" style="padding:16px 0 8px;">Técnico responsável (opcional — pode atribuir depois)</div>
+        <select class="field-input" id="dTecnico"><option value="">Carregando...</option></select>
+        <div id="dCarga" style="font-size:11.5px;color:var(--text-faint);margin-top:6px;"></div>
+      </div>
 
-      <button class="review-btn pdf" id="btnDespachar" style="width:100%;margin-top:20px;">Despachar</button>
+      <button class="review-btn pdf" id="btnDespachar" style="width:100%;margin-top:20px;">Cadastrar obra</button>
       <div id="dStatus" style="font-size:12px;color:var(--text-dim);margin-top:10px;text-align:center;min-height:16px;"></div>
     </div>
   </div>
@@ -1985,7 +1998,7 @@
 (function(){
   // Marque aqui a cada build enviado ao campo. O testador informa esta
   // string ao relatar um problema, senao nao da pra saber o que ele rodou.
-  const APP_VERSION = 'Enlace Ops · alpha-10.12 · 20/08/2026';
+  const APP_VERSION = 'Enlace Ops · alpha-10.16 · 20/08/2026';
 
   // ---------- Supabase config ----------
   // Troque pelos valores reais do seu projeto (Project Settings -> API no Supabase).
@@ -4601,7 +4614,7 @@
         sel.innerHTML = '<option value="">Nenhum técnico liberado ainda</option>';
         return;
       }
-      sel.innerHTML = '<option value="">Escolha o técnico</option>' + tecnicosCache.map(t=>
+      sel.innerHTML = '<option value="">Sem técnico por enquanto</option>' + tecnicosCache.map(t=>
         `<option value="${esc(t.id)}">${esc(t.nome || t.email)} — ${t.carga} em aberto (${esc(t.equipe)})</option>`
       ).join('');
     } catch(e){
@@ -4667,7 +4680,9 @@
     if(ehSuper() && !empresaContexto && !document.getElementById('dEmpresaAlvo').value){
       showToast('Escolha a empresa primeiro'); return;
     }
-    if(!tecnico){ showToast('Escolha o técnico'); return; }
+    // técnico agora é opcional: dá pra cadastrar a obra só vinculada à
+    // empresa e escolher quem vai fazer depois, na aba Obras (mesmo lápis
+    // que já existe pra remanejar).
     const faltando = docsDespacho.filter(d => d.obrig && !arquivosDespacho[d.id]);
     if(faltando.length){
       showToast('Anexe ' + faltando.map(f => f.titulo).join(' e '));
@@ -4695,7 +4710,7 @@
       // nulo) e podia vazar/misturar com outra empresa.
       const emp = empresaAlvoDespacho();
       if(!emp){ throw new Error(ehSuper() ? 'Escolha uma empresa antes de despachar' : 'Sua conta não está vinculada a uma empresa'); }
-      const base = emp + '/' + numero + '/' + tecnico + '/documentos-projeto';
+      const base = emp + '/' + numero + '/' + (tecnico || 'sem-tecnico') + '/documentos-projeto';
       const paths = {};
       for(const d of docsDespacho){
         const a = arquivosDespacho[d.id];
@@ -4708,11 +4723,15 @@
       }
 
       st.textContent = 'Criando a obra...';
+      // sem técnico ainda é fila de espera, não despacho de verdade — só vira
+      // "despachada" quando alguém é de fato atribuído (aqui ou depois, ao
+      // remanejar na aba Obras). Assim dá pra bater o olho e ver o que ainda
+      // precisa de gente vs. o que já foi mandado pra alguém.
       const {error} = await supabaseClient.from(SUPABASE_TABLE).insert({
         contrato: numero,
-        status: 'despachada',
+        status: tecnico ? 'despachada' : 'pendente',
         empresa_id: emp,
-        tecnico_id: tecnico,
+        tecnico_id: tecnico || null,
         despachado_por: perfilAtual.id,
         despachado_em: new Date().toISOString(),
         observacao_os: document.getElementById('dObs').value.trim() || null,
@@ -4721,7 +4740,7 @@
           arquivos: {photos:{}, projectDocs: paths, docsAtt:{}},
           meta: {photos:{}, projectDocs:{}, docsAtt:{}},
           materialsQty: {}, valuesQty: {},
-          tecnico: (tecnicosCache.find(t => t.id === tecnico) || {}).nome || '',
+          tecnico: tecnico ? ((tecnicosCache.find(t => t.id === tecnico) || {}).nome || '') : '',
         }
       });
       if(error) throw error;
@@ -4734,8 +4753,12 @@
         coordenadas: contrato.coordenadas, codtcomp: contrato.codtcomp
       }, {onConflict:'empresa_id,numero'}).then(()=>{}, ()=>{});
 
-      const nome = (tecnicosCache.find(t => t.id === tecnico) || {}).nome || 'o técnico';
-      showToast('Obra ' + numero + ' despachada para ' + nome);
+      if(tecnico){
+        const nome = (tecnicosCache.find(t => t.id === tecnico) || {}).nome || 'o técnico';
+        showToast('Obra ' + numero + ' despachada para ' + nome);
+      } else {
+        showToast('Obra ' + numero + ' cadastrada — atribua o técnico na aba Obras quando decidir');
+      }
       irParaInicio();
     } catch(err){
       st.textContent = 'Não deu pra despachar: ' + (err.message || err);
@@ -5229,7 +5252,7 @@
           </div>
           <div class="obra-meta">${c.data ? esc(toDateBR(c.data)) : 'sem data'} · ${nFotos} ${nFotos === 1 ? 'item' : 'itens'} com foto</div>
         </div>
-        <span class="obra-tag">${esc(o.status || '—')}</span>
+        <span class="obra-tag${o.status === 'pendente' ? ' pendente' : ''}">${esc(o.status || '—')}</span>
       `;
       const chk = row.querySelector('.obra-check');
       chk.addEventListener('change', ()=>{
@@ -5261,13 +5284,16 @@
             tecnico_id: novoId,
             dados: {...d, tecnico: novoTec ? (novoTec.nome || novoTec.email) : ''},
           };
-          // se o técnico anterior já tinha começado, o novo começa do zero —
-          // senão a obra fica marcada "em execução" com ninguém executando.
-          if(o.status === 'em_execucao') campos.status = 'despachada';
+          // sem técnico volta pra fila (pendente); ganhando um técnico sai da
+          // fila e vira despachada; se o técnico anterior já tinha começado,
+          // o novo começa do zero — senão a obra fica "em execução" com
+          // ninguém executando.
+          if(!novoId) campos.status = 'pendente';
+          else if(o.status === 'em_execucao' || o.status === 'pendente') campos.status = 'despachada';
           const {error} = await supabaseClient.from(SUPABASE_TABLE).update(campos).eq('id', o.id);
           tecSelect.disabled = false;
           if(error){ showToast('Não deu pra remanejar: ' + error.message); return; }
-          showToast(novoTec ? 'Obra remanejada para ' + (novoTec.nome || novoTec.email) : 'Técnico removido da obra');
+          showToast(novoTec ? 'Obra remanejada para ' + (novoTec.nome || novoTec.email) : 'Obra voltou pra fila (sem técnico)');
           renderObrasAdmin();
         });
       }
@@ -6325,7 +6351,11 @@
     return (job.servicos || []).reduce((sum, s) => sum + s.qtd * s.preco, 0);
   }
 
-  const ABERTAS = ['despachada','em_execucao','enviado','reprovado','rascunho'];
+  // "pendente" entra aqui pra admin/analista/revisor conseguirem abrir a
+  // obra e já anexar foto/material antes mesmo de ter técnico — técnico não
+  // vê essas porque a lista dele já é filtrada pelas obras com o tecnico_id
+  // dele (uma obra pendente não tem tecnico_id nenhum ainda).
+  const ABERTAS = ['pendente','despachada','em_execucao','enviado','reprovado','rascunho'];
 
   function obrasDoFiltro(){
     return reportsList.filter(j => filtroObras === 'historico'
@@ -6369,7 +6399,7 @@
           <div class="job-item-sub" style="color:var(--success);margin-top:2px;">${total > 0 ? formatBRL(total) : 'valor pendente'}</div>
         </div>
         <div class="job-status ${job.status}" style="${job.status === 'aprovado' ? 'color:var(--success);border-color:var(--success);' : job.status === 'reprovado' ? 'color:var(--accent);border-color:var(--accent);' : ''}">${
-          {despachada:'Despachada', em_execucao:'Em execução', enviado:'Enviado',
+          {pendente:'Pendente', despachada:'Despachada', em_execucao:'Em execução', enviado:'Enviado',
            rascunho:'Rascunho', aprovado:'Aprovado', reprovado:'Reprovado'}[job.status] || esc(job.status)
         }</div>
         <button class="job-pdf-quick" type="button" title="Baixar PDF" aria-label="Baixar PDF do contrato ${job.contrato}">
