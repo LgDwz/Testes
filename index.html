@@ -1699,9 +1699,8 @@
       <div class="step-sub" style="padding:0;" id="admSub">Libere cadastros, defina papéis e bloqueie quem sai da equipe.</div>
     </div>
 
-    <div class="adm-abas">
+    <div class="adm-abas" id="painelAbas">
       <div class="adm-aba ativo" data-aba="acessos" id="abaAcessos">Acessos</div>
-      <div class="adm-aba" data-aba="obras">Obras</div>
       <div class="adm-aba" data-aba="manutencao">Manutenção</div>
       <div class="adm-aba" data-aba="empresas" id="abaEmpresas" style="display:none;">Empresas</div>
     </div>
@@ -1719,6 +1718,9 @@
 
         <div class="conv-form" id="conviteForm" style="display:none;">
           <input id="convEmail" type="email" inputmode="email" autocomplete="off" placeholder="E-mail da pessoa">
+          <div class="step-sub" id="convEmailAjuda" style="display:none;padding:0 0 10px;margin-top:-6px;">
+            Pode deixar em branco se ainda não souber o e-mail do técnico — dá pra completar depois.
+          </div>
           <input id="convNome" placeholder="Nome (opcional)">
           <select id="convPapel">
             <option value="tecnico">Técnico</option>
@@ -1726,7 +1728,6 @@
             <option value="analista">Analista</option>
             <option value="admin">Administrador</option>
           </select>
-          <select id="convEquipe"><option value="">Sem equipe</option></select>
           <div style="display:flex;gap:8px;">
             <button class="job-edit-btn" id="convCancelar" type="button" style="flex:1;">Cancelar</button>
             <button class="job-edit-btn" id="convSalvar" type="button" style="flex:1;border-color:var(--accent);color:var(--accent);">Convidar</button>
@@ -1791,6 +1792,10 @@
         Adicionar obra
       </button>
       <input class="adm-busca" id="jobsBusca" placeholder="Buscar por contrato, cliente, técnico ou status" autocomplete="off" style="margin-top:12px;margin-bottom:0;">
+      <div class="adm-filtros" id="jobsStatusFiltro" style="margin-top:10px;margin-bottom:0;padding-bottom:0;">
+        <div class="adm-chip ativo" data-filtro="abertas">Pendentes/Rejeitadas</div>
+        <div class="adm-chip" data-filtro="historico">Aprovadas</div>
+      </div>
     </div>
     <!-- dono do produto de fora de qualquer empresa não pode cair direto na
          lista — misturaria obra de todo mundo. Escolhe aqui antes de ver. -->
@@ -2007,7 +2012,7 @@
 (function(){
   // Marque aqui a cada build enviado ao campo. O testador informa esta
   // string ao relatar um problema, senao nao da pra saber o que ele rodou.
-  const APP_VERSION = 'Enlace Ops · alpha-10.24 · 24/08/2026';
+  const APP_VERSION = 'Enlace Ops · alpha-10.25 · 24/08/2026';
 
   // ---------- Supabase config ----------
   // Troque pelos valores reais do seu projeto (Project Settings -> API no Supabase).
@@ -4383,13 +4388,13 @@
     switch(rota){
       case 'dashboard': showAppView('quadro'); renderQuadro(); break;
       case 'despacho':  despacharCard.click(); break;
-      case 'tecnicos':  showAppView('usuarios'); filtroUsuarios = 'tecnico'; renderUsuarios(); break;
+      case 'tecnicos':  showAppView('usuarios'); escopoTecnicos = true; filtroUsuarios = 'tecnico'; renderUsuarios(); break;
       case 'obras':     filtroObras = 'abertas';   refreshJobsList(); break;
       case 'historico': filtroObras = 'historico'; refreshJobsList(); break;
       case 'relatorios':
         showToast('Relatórios ainda não têm tela própria — por ora, use o Histórico');
         filtroObras = 'historico'; refreshJobsList(); break;
-      case 'config':    showAppView('usuarios'); renderUsuarios(); break;
+      case 'config':    showAppView('usuarios'); escopoTecnicos = false; filtroUsuarios = 'todos'; renderUsuarios(); break;
     }
     montarMenu();
   }
@@ -4918,10 +4923,25 @@
   let obrasPorUsuario = {};
   let empresasNomeMap = {};        // {empresa_id: nome} — só o dono do produto lê a tabela toda
   let filtroUsuarios = 'todos';
+  // true quando se entra pelo atalho "Técnicos" do menu — a tela vira só
+  // pra ver/gerenciar técnicos, sem os outros papéis nem as outras abas.
+  let escopoTecnicos = false;
   // dono do produto entrando na instância de uma empresa específica
   // (ver renderEmpresas): {id, nome} ou null quando é a visão global
   let empresaContexto = null;
   let filtroObras = 'abertas';     // 'abertas' = o que ainda dá trabalho | 'historico' = encerradas
+
+  // ---------- Convite sem e-mail ainda (técnico cadastrado só pelo nome) ----------
+  // gera um e-mail interno só pra satisfazer a chave única da tabela de
+  // convites — nunca é mostrado pro usuário, que só vê "Aguardando e-mail"
+  // até alguém preencher o de verdade.
+  const PLACEHOLDER_EMAIL_RE = /^sememail-[a-z0-9]+@enlaceops\.pendente$/;
+  function ehEmailPendente(email){ return PLACEHOLDER_EMAIL_RE.test(email || ''); }
+  function gerarEmailPendente(){
+    const base = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : ('' + Math.random() + Math.random());
+    const rand = base.replace(/[^a-z0-9]/gi, '').slice(0, 12).toLowerCase();
+    return 'sememail-' + rand + '@enlaceops.pendente';
+  }
 
   function tempoRelativo(iso){
     if(!iso) return 'nunca entrou';
@@ -4965,8 +4985,14 @@
 
   function renderFiltros(){
     const cont = document.getElementById('usersFiltros');
-    const pendentes = usuariosCache.filter(u => !u.aprovado).length;
-    const defs = [
+    const pendentes = usuariosCache.filter(u =>
+      !u.aprovado && (!escopoTecnicos || u.papel === 'tecnico')).length;
+    // a rota "Técnicos" do menu é só pra ver e gerenciar técnicos — os
+    // outros papéis (monitor/analista/admin) seguem geridos por Configurações.
+    const defs = escopoTecnicos ? [
+      {id:'tecnico',   rotulo:'Todos',     n: usuariosCache.filter(u => u.papel === 'tecnico').length},
+      {id:'pendentes', rotulo:'Pendentes', n: pendentes, alerta: pendentes > 0},
+    ] : [
       {id:'todos',     rotulo:'Todos',     n: usuariosCache.length},
       {id:'pendentes', rotulo:'Pendentes', n: pendentes, alerta: pendentes > 0},
       {id:'tecnico',   rotulo:'Técnicos',  n: usuariosCache.filter(u => u.papel === 'tecnico').length},
@@ -4988,8 +5014,9 @@
   function renderListaUsuarios(){
     const termo = (document.getElementById('usersBusca').value || '').trim().toLowerCase();
     let lista = usuariosCache.filter(u=>{
+      if(escopoTecnicos && u.papel !== 'tecnico') return false;
       if(filtroUsuarios === 'pendentes') return !u.aprovado;
-      if(filtroUsuarios !== 'todos' && u.papel !== filtroUsuarios) return false;
+      if(!escopoTecnicos && filtroUsuarios !== 'todos' && u.papel !== filtroUsuarios) return false;
       return true;
     });
     if(termo){
@@ -5002,27 +5029,64 @@
     usersList.innerHTML = '';
 
     // convites ainda não aceitos: a pessoa foi autorizada mas não se cadastrou
-    if((filtroUsuarios === 'todos' || filtroUsuarios === 'pendentes') && !termo){
-      convitesCache.forEach(cv=>{
+    if((escopoTecnicos || filtroUsuarios === 'todos' || filtroUsuarios === 'pendentes') && !termo){
+      convitesCache.filter(cv => !escopoTecnicos || cv.papel === 'tecnico').forEach(cv=>{
+        const semEmail = ehEmailPendente(cv.email);
         const row = document.createElement('div');
         row.className = 'user-row convite';
         row.innerHTML = `
           <div class="user-row-body">
             <div class="user-row-nome">${esc(cv.nome || '(convite)')}</div>
-            <div class="user-row-mail">${esc(cv.email)}</div>
-            <div class="user-row-meta">convidado como ${esc(cv.papel)} · aguardando cadastro</div>
+            <div class="user-row-mail">${semEmail ? 'Aguardando e-mail' : esc(cv.email)}</div>
+            <div class="user-row-meta">${esc(cv.papel)} · ${semEmail ? 'sem e-mail ainda' : 'aguardando cadastro'}</div>
+            ${semEmail ? `
+            <div class="conv-add-email" style="display:none;gap:6px;margin-top:8px;">
+              <input type="email" inputmode="email" placeholder="E-mail da pessoa" class="conv-email-input" style="flex:1;background:var(--bg-elev-2);color:var(--text);border:1px solid var(--accent);border-radius:6px;padding:6px 8px;font-size:12px;">
+              <button type="button" class="job-edit-btn conv-email-salvar" style="width:auto;padding:0 12px;">Salvar</button>
+            </div>` : ''}
           </div>
           <div class="user-acoes">
-            <button class="user-excluir" type="button">Cancelar</button>
+            ${semEmail ? '<button class="user-bloquear conv-add-email-btn" type="button">+ e-mail</button>' : ''}
+            <button class="user-excluir" type="button" data-acao="cancelar">Cancelar</button>
           </div>
         `;
-        row.querySelector('button').addEventListener('click', async ()=>{
-          if(!confirm('Cancelar o convite de ' + cv.email + '?')) return;
+        row.querySelector('[data-acao="cancelar"]').addEventListener('click', async ()=>{
+          if(!confirm('Cancelar o convite de ' + (cv.nome || cv.email) + '?')) return;
           const {error} = await supabaseClient.from('convites').delete().eq('email', cv.email);
           if(error){ showToast('Não deu pra cancelar: ' + error.message); return; }
           showToast('Convite cancelado');
           renderUsuarios();
         });
+        if(semEmail){
+          const addBtn  = row.querySelector('.conv-add-email-btn');
+          const addWrap = row.querySelector('.conv-add-email');
+          const input   = row.querySelector('.conv-email-input');
+          addBtn.addEventListener('click', ()=>{
+            const abrir = addWrap.style.display === 'none';
+            addWrap.style.display = abrir ? 'flex' : 'none';
+            if(abrir) input.focus();
+          });
+          row.querySelector('.conv-email-salvar').addEventListener('click', async ()=>{
+            const novoEmail = (input.value || '').trim().toLowerCase();
+            if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(novoEmail)){
+              showToast('Digite um e-mail válido');
+              return;
+            }
+            if(usuariosCache.some(u => (u.email || '').toLowerCase() === novoEmail)
+               || convitesCache.some(c => c.email === novoEmail)){
+              showToast('Já existe um cadastro com esse e-mail');
+              return;
+            }
+            const {error: errIns} = await supabaseClient.from('convites').insert({
+              email: novoEmail, nome: cv.nome, papel: cv.papel, empresa_id: cv.empresa_id,
+              equipe_id: cv.equipe_id, criado_por: cv.criado_por, usado: false,
+            });
+            if(errIns){ showToast('Não deu pra salvar: ' + errIns.message); return; }
+            await supabaseClient.from('convites').delete().eq('email', cv.email);
+            showToast('E-mail adicionado — peça pra ' + novoEmail + ' criar a conta no app');
+            renderUsuarios();
+          });
+        }
         usersList.appendChild(row);
       });
     }
@@ -5155,9 +5219,28 @@
   async function renderUsuarios(){
     if(!ehAdmin()){ irParaInicio(); return; }
 
+    // atalho "Técnicos" do menu: tela enxuta, só técnicos — as outras abas
+    // (Manutenção, Empresas) e os outros papéis ficam em Configurações.
+    const abas = document.getElementById('painelAbas');
+    if(abas) abas.style.display = escopoTecnicos ? 'none' : '';
+    const tituloAdm = document.querySelector('#usersScreen .step-title');
+    const subAdm = document.getElementById('admSub');
+    if(tituloAdm) tituloAdm.textContent = escopoTecnicos ? 'Técnicos' : 'Painel do administrador';
+    if(subAdm) subAdm.textContent = escopoTecnicos
+      ? 'Veja e gerencie os técnicos da empresa.'
+      : 'Libere cadastros, defina papéis e bloqueie quem sai da equipe.';
+    if(escopoTecnicos){
+      document.querySelectorAll('.adm-aba').forEach(a => a.classList.toggle('ativo', a.dataset.aba === 'acessos'));
+      document.getElementById('tabAcessos').style.display = 'block';
+      document.getElementById('tabManutencao').style.display = 'none';
+      document.getElementById('tabEmpresas').style.display = 'none';
+    }
+    document.getElementById('convPapel').value = escopoTecnicos ? 'tecnico' : document.getElementById('convPapel').value;
+    document.getElementById('convPapel').style.display = escopoTecnicos ? 'none' : '';
+
     // aba "Empresas" só existe pro dono do produto
     const abaEmp = document.getElementById('abaEmpresas');
-    if(abaEmp) abaEmp.style.display = ehSuper() ? '' : 'none';
+    if(abaEmp) abaEmp.style.display = (ehSuper() && !escopoTecnicos) ? '' : 'none';
 
     // banner de "dentro da instância de uma empresa" (só faz sentido pro superadmin)
     const banner = document.getElementById('empresaContextoBanner');
@@ -5184,16 +5267,22 @@
   // ---------- Convidar alguém ----------
   const conviteForm = document.getElementById('conviteForm');
 
-  document.getElementById('btnNovoConvite').addEventListener('click', async ()=>{
+  // e-mail só é dispensável quando é o próprio admin da empresa cadastrando
+  // um técnico — o dono do produto (superadmin) continua exigindo e-mail
+  // sempre, e os outros papéis (monitor/analista/admin) também, porque são
+  // contas mais formais que já deveriam ter e-mail à mão.
+  function atualizaAjudaConvite(){
+    const papel = document.getElementById('convPapel').value;
+    const opcional = !ehSuper() && papel === 'tecnico';
+    document.getElementById('convEmailAjuda').style.display = opcional ? 'block' : 'none';
+  }
+  document.getElementById('convPapel').addEventListener('change', atualizaAjudaConvite);
+
+  document.getElementById('btnNovoConvite').addEventListener('click', ()=>{
     const abrindo = conviteForm.style.display === 'none';
     conviteForm.style.display = abrindo ? 'block' : 'none';
     if(abrindo){
-      try{
-        const { data: eqs } = await supabaseClient.from('equipes').select('id,nome');
-        equipesCache = eqs || [];
-      } catch(e){ equipesCache = []; }
-      document.getElementById('convEquipe').innerHTML = '<option value="">Sem equipe</option>'
-        + equipesCache.map(e => `<option value="${e.id}">${esc(e.nome)}</option>`).join('');
+      atualizaAjudaConvite();
       document.getElementById('convEmail').focus();
     }
   });
@@ -5205,14 +5294,25 @@
   });
 
   document.getElementById('convSalvar').addEventListener('click', async ()=>{
-    const email = (document.getElementById('convEmail').value || '').trim().toLowerCase();
+    let email   = (document.getElementById('convEmail').value || '').trim().toLowerCase();
     const nome  = (document.getElementById('convNome').value || '').trim();
     const papel = document.getElementById('convPapel').value;
     const btn   = document.getElementById('convSalvar');
+    const emailOpcional = !ehSuper() && papel === 'tecnico';
 
-    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
+    if(email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
       showToast('Digite um e-mail válido');
       return;
+    }
+    if(!email && !emailOpcional){
+      showToast('Digite um e-mail válido');
+      return;
+    }
+    let semEmail = false;
+    if(!email){
+      if(!nome){ showToast('Digite ao menos o nome'); return; }
+      email = gerarEmailPendente();
+      semEmail = true;
     }
     if(usuariosCache.some(u => (u.email || '').toLowerCase() === email)){
       showToast('Essa pessoa já tem conta — use o seletor de papel na lista');
@@ -5220,13 +5320,12 @@
     }
 
     btn.disabled = true; btn.textContent = 'Salvando...';
-    const eq = document.getElementById('convEquipe').value;
     // dono do produto dentro da instância de uma empresa convida para ELA,
     // não para a empresa dele (que nem existe — ver minhaEmpresa())
     const empresaAlvo = empresaContexto ? empresaContexto.id : minhaEmpresa();
     const {error} = await supabaseClient.from('convites')
       .upsert({email, nome: nome || null, papel, empresa_id: empresaAlvo,
-               equipe_id: eq ? Number(eq) : null,
+               equipe_id: null,
                criado_por: perfilAtual.id, usado: false},
               {onConflict: 'email'});
     btn.disabled = false; btn.textContent = 'Convidar';
@@ -5236,7 +5335,9 @@
     conviteForm.style.display = 'none';
     document.getElementById('convEmail').value = '';
     document.getElementById('convNome').value = '';
-    showToast('Convite criado \u2014 peça pra ' + email + ' criar a conta no app');
+    showToast(semEmail
+      ? (nome + ' cadastrado \u2014 adicione o e-mail dele quando souber')
+      : 'Convite criado \u2014 peça pra ' + email + ' criar a conta no app');
     renderUsuarios();
   });
 
@@ -6749,6 +6850,25 @@
   });
 
   // Busca as obras lancadas no servidor e mistura com o que esta em memoria.
+  // "Pendentes/Rejeitadas" x "Aprovadas" — o mesmo lugar cobre o que antes
+  // ficava espalhado entre "Obras" e "Histórico": o título já deixa claro
+  // de quem são as obras, o chip abaixo é que diz qual recorte de status.
+  function atualizarTituloJobs(){
+    document.querySelector('#myJobsScreen .step-title').textContent =
+      (ehRevisor() ? 'Todas as obras' : 'Minhas obras')
+      + (ehSuper() && empresaContexto ? ' · ' + empresaContexto.nome : '');
+    document.querySelectorAll('#jobsStatusFiltro .adm-chip').forEach(chip=>{
+      chip.classList.toggle('ativo', chip.dataset.filtro === filtroObras);
+    });
+  }
+  document.querySelectorAll('#jobsStatusFiltro .adm-chip').forEach(chip=>{
+    chip.addEventListener('click', ()=>{
+      filtroObras = chip.dataset.filtro;
+      atualizarTituloJobs();
+      renderJobsList();
+    });
+  });
+
   async function refreshJobsList(){
     const gate = document.getElementById('jobsEmpresaGate');
     const listEl = document.getElementById('jobsList');
@@ -6775,9 +6895,7 @@
     }
     gate.style.display = 'none';
 
-    document.querySelector('#myJobsScreen .step-title').textContent =
-      (filtroObras === 'historico' ? 'Histórico' : (ehRevisor() ? 'Todas as obras' : 'Minhas obras'))
-      + (ehSuper() && empresaContexto ? ' · ' + empresaContexto.nome : '');
+    atualizarTituloJobs();
     if(btnTrocar) btnTrocar.style.display = (ehSuper() && empresaContexto) ? '' : 'none';
     // este é o "Obras" que todo mundo acha primeiro pelo menu — o botão de
     // adicionar tem que estar aqui também, não só escondido dentro do painel
