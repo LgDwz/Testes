@@ -1259,14 +1259,14 @@
     #despachoScreen #btnDespachar,
     #despachoScreen #dStatus{ grid-column:2; }
 
-    /* obras e usuários em duas colunas */
-    #jobsList{ display:grid; grid-template-columns:1fr 1fr; gap:0 16px; align-items:start; }
+    /* usuários em duas colunas; obras ficam empilhadas (uma embaixo da outra),
+       só centralizadas com largura confortável de leitura em telas largas */
+    #jobsList{ max-width:820px; margin:0 auto; }
     #usersList{ display:grid; grid-template-columns:1fr 1fr; gap:0 14px; align-items:start; }
   }
 
   @media (min-width: 1600px){
     .home-screen,.my-jobs-screen,.users-screen,#despachoScreen,#quadroScreen{ max-width:1500px; }
-    #jobsList{ grid-template-columns:repeat(3,1fr); }
   }
 </style>
 </head>
@@ -1790,6 +1790,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
         Adicionar obra
       </button>
+      <input class="adm-busca" id="jobsBusca" placeholder="Buscar por contrato, cliente, técnico ou status" autocomplete="off" style="margin-top:12px;margin-bottom:0;">
     </div>
     <!-- dono do produto de fora de qualquer empresa não pode cair direto na
          lista — misturaria obra de todo mundo. Escolhe aqui antes de ver. -->
@@ -2006,7 +2007,7 @@
 (function(){
   // Marque aqui a cada build enviado ao campo. O testador informa esta
   // string ao relatar um problema, senao nao da pra saber o que ele rodou.
-  const APP_VERSION = 'Enlace Ops · alpha-10.18 · 20/08/2026';
+  const APP_VERSION = 'Enlace Ops · alpha-10.24 · 24/08/2026';
 
   // ---------- Supabase config ----------
   // Troque pelos valores reais do seu projeto (Project Settings -> API no Supabase).
@@ -2048,6 +2049,7 @@
     {id:4, title:"Identificação do cliente dentro da caixa", needsMeter:false, multiple:true, storeKey:'photos'},
     {id:5, title:"Caixa fechada e acomodada no local", needsMeter:false, multiple:true, storeKey:'photos'},
     {id:6, title:"Cliente no local da instalação (PTO)", needsMeter:false, multiple:false, storeKey:'photos'},
+    {id:7, title:"Foto do sinal do cliente", needsMeter:false, multiple:false, storeKey:'photos'},
   ];
 
   // Documentos executados (o técnico produz, depois do serviço)
@@ -2915,18 +2917,20 @@
 
   // ---------- Textos oficiais do relatorio (modelo Ligga / CiP) ----------
   const pdfPhotoMeta = {
-    1: {titulo:'Foto do início do cabo com metragem',
-        indice:'FOTO DO INÍCIO DO CABO COM METRAGEM', captions:[]},
-    2: {titulo:'Foto do final do cabo com metragem',
-        indice:'FOTO DO FINAL DO CABO COM METRAGEM', captions:[]},
+    1: {titulo:'Início do cabo',
+        indice:'FOTOS DO INÍCIO E FIM DO CABO COM METRAGEM'},
+    2: {titulo:'Final do cabo',
+        indice:'FOTOS DO INÍCIO E FIM DO CABO COM METRAGEM'},
     3: {titulo:'Foto da caixa aberta',
-        indice:'FOTO DA CAIXA ABERTA', captions:['1- abertura e fechamento','1\u2013 fusão']},
+        indice:'FOTO DA CAIXA ABERTA'},
     4: {titulo:'Foto da Identificação do cliente dentro da caixa',
-        indice:'FOTO DA IDENTIFICAÇÃO DO CLIENTE DENTRO DA CAIXA', captions:[]},
+        indice:'FOTO DA IDENTIFICAÇÃO DO CLIENTE DENTRO DA CAIXA'},
     5: {titulo:'Caixa fechada e acomodada no local de origem após fechamento',
-        indice:'CAIXA FECHADA E ACOMODADA NO LOCAL DE ORIGEM APÓS FECHAMENTO', captions:[]},
+        indice:'CAIXA FECHADA E ACOMODADA NO LOCAL DE ORIGEM APÓS FECHAMENTO'},
     6: {titulo:'Cliente no local da instalação (cabo acomodado, PTO)',
-        indice:'CLIENTE NO LOCAL DA INSTALAÇÃO', captions:['1 - Fusão','1 - Interna concluída','1 \u2013 PTO']},
+        indice:'CLIENTE NO LOCAL DA INSTALAÇÃO E SINAL DO CLIENTE'},
+    7: {titulo:'Foto do sinal do cliente',
+        indice:'CLIENTE NO LOCAL DA INSTALAÇÃO E SINAL DO CLIENTE'},
   };
 
   function toDateBR(iso){
@@ -3088,12 +3092,68 @@
     doc.setLineWidth(0.35);
 
     // ================= PAGINA 2 - INDICE =================
+    // Início/fim do cabo viram uma seção só (lado a lado, com a metragem
+    // calculada automaticamente). As demais seções com múltiplas fotos
+    // ganham 2 fotos por página, lado a lado, em vez de 1 por página —
+    // e nenhuma foto leva legenda/observação impressa embaixo.
+    const itemIni = photoItems.find(i => i.id === 1);
+    const itemFim = photoItems.find(i => i.id === 2);
+    const itemAberta = photoItems.find(i => i.id === 3);
+    const itemFechada = photoItems.find(i => i.id === 5);
+    const itemPto = photoItems.find(i => i.id === 6);
+    const itemSinal = photoItems.find(i => i.id === 7);
+    const outrosItems = photoItems.filter(i => ![1,2,3,5,6,7].includes(i.id));
+
+    const secoes = [];
+    secoes.push({
+      tipo: 'cabo',
+      indiceLabel: pdfPhotoMeta[1].indice,
+      paginas: [{
+        ini: entriesOf(itemIni, st)[0] || null,
+        fim: entriesOf(itemFim, st)[0] || null,
+      }],
+    });
+
+    // caixa aberta e caixa fechada viram uma seção só, lado a lado — a
+    // foto N de "aberta" pareia com a foto N de "fechada" (mesma caixa).
+    const fotosAberta = entriesOf(itemAberta, st);
+    const fotosFechada = entriesOf(itemFechada, st);
+    const nCaixas = Math.max(fotosAberta.length, fotosFechada.length, 1);
+    const paginasCaixa = [];
+    for(let i=0; i<nCaixas; i++){
+      paginasCaixa.push({aberta: fotosAberta[i] || null, fechada: fotosFechada[i] || null});
+    }
+    secoes.push({
+      tipo: 'caixa',
+      indiceLabel: 'FOTO DA CAIXA ABERTA E FECHADA',
+      paginas: paginasCaixa,
+    });
+
+    // cliente no local da instalação (PTO) e o sinal do cliente também
+    // ficam lado a lado, na mesma página.
+    secoes.push({
+      tipo: 'pto',
+      indiceLabel: pdfPhotoMeta[6].indice,
+      paginas: [{
+        pto: entriesOf(itemPto, st)[0] || null,
+        sinal: entriesOf(itemSinal, st)[0] || null,
+      }],
+    });
+
+    outrosItems.forEach(item=>{
+      const fotos = entriesOf(item, st);
+      const lista = fotos.length ? fotos : [null];
+      const porPagina = 2;
+      const paginas = [];
+      for(let i=0; i<lista.length; i+=porPagina) paginas.push(lista.slice(i, i+porPagina));
+      secoes.push({tipo:'grade', item, indiceLabel: pdfPhotoMeta[item.id].indice, paginas});
+    });
+
     let cursor = 3;
-    const indice = photoItems.map(item=>{
-      const qtd = Math.max(1, entriesOf(item, st).length);
+    const indice = secoes.map((sec, i)=>{
       const inicio = cursor;
-      cursor += qtd;
-      return {n:item.id, label:pdfPhotoMeta[item.id].indice, page:inicio};
+      cursor += sec.paginas.length;
+      return {n: i+1, label: sec.indiceLabel, page: inicio};
     });
 
     doc.addPage(); header();
@@ -3124,60 +3184,126 @@
       });
     });
 
-    // ================= PAGINAS DE FOTOS =================
-    photoItems.forEach(item=>{
-      const meta = pdfPhotoMeta[item.id];
-      const fotos = entriesOf(item, st);
-      const lista = fotos.length ? fotos : [null];
+    // ---- desenha uma foto (ou o aviso/anexo no lugar dela) numa coluna ----
+    function desenharFotoNaColuna(s, colX, colW, topoY, maxH){
+      let imgX = colX, imgW = 0, imgH = 0;
+      if(s && isImageDataUrl(s.imgSrc)){
+        try{
+          const props = doc.getImageProperties(s.imgSrc);
+          imgW = colW;
+          imgH = (props.height / props.width) * imgW;
+          if(imgH > maxH){ imgH = maxH; imgW = (props.width / props.height) * imgH; }
+          imgX = colX + (colW - imgW) / 2;
+          doc.addImage(s.imgSrc, 'JPEG', imgX, topoY, imgW, imgH);
+        } catch(e){
+          doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(0,0,0);
+          doc.text('Não foi possível exibir a imagem.', colX, topoY + 6);
+          imgH = 6;
+        }
+      } else if(s && s.fileMeta){
+        doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(0,0,0);
+        doc.text('Anexo: ' + s.fileMeta, colX, topoY + 6);
+        imgH = 6;
+      } else {
+        doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(0,0,0);
+        doc.text('Sem foto anexada.', colX, topoY + 6);
+        imgH = 6;
+      }
+      return {imgX, imgW, imgH};
+    }
 
-      lista.forEach(s=>{
+    // ================= PAGINAS DE FOTOS =================
+    secoes.forEach((sec, secIdx)=>{
+      const numSecao = secIdx + 1;
+
+      if(sec.tipo === 'cabo'){
+        const pag = sec.paginas[0];
         doc.addPage(); header();
         let py = CONTENT_TOP + 4;
         doc.setFont('helvetica','normal'); doc.setFontSize(12); doc.setTextColor(0,0,0);
-        doc.text(item.id + '. ' + meta.titulo, M+7, py);
+        doc.text(numSecao + '. Fotos do início e fim do cabo com metragem', M+7, py);
         py += 10;
 
-        if(!s){
-          doc.setFontSize(10);
-          doc.text('Sem foto anexada.', M+7, py);
-          return;
-        }
+        const gap = 8, colW = (CW - gap) / 2, maxH = 178;
+        const colEsq = M, colDir = M + colW + gap;
+        const rIni = desenharFotoNaColuna(pag.ini, colEsq, colW, py, maxH);
+        const rFim = desenharFotoNaColuna(pag.fim, colDir, colW, py, maxH);
 
-        const legendas = (s.legend && s.legend.trim())
-          ? s.legend.split('\n').filter(Boolean)
-          : meta.captions;
+        const labelY = py + Math.max(rIni.imgH, rFim.imgH, 6) + 7;
+        doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(0,0,0);
+        doc.text('Início do cabo' + (pag.ini && pag.ini.meter ? ' — ' + pag.ini.meter + 'm' : ''), colEsq, labelY);
+        doc.text('Final do cabo' + (pag.fim && pag.fim.meter ? ' — ' + pag.fim.meter + 'm' : ''), colDir, labelY);
 
-        let imgX = M, imgY = py, imgW = 0, imgH = 0;
-
-        if(isImageDataUrl(s.imgSrc)){
-          try{
-            const props = doc.getImageProperties(s.imgSrc);
-            const maxW = 140, maxH = legendas.length ? 168 : 178;
-            imgW = maxW;
-            imgH = (props.height / props.width) * imgW;
-            if(imgH > maxH){ imgH = maxH; imgW = (props.width / props.height) * imgH; }
-            imgX = (PW - imgW) / 2;
-            doc.addImage(s.imgSrc, 'JPEG', imgX, imgY, imgW, imgH);
-          } catch(e){
-            doc.setFontSize(9);
-            doc.text('Não foi possível exibir a imagem.', M+7, py);
-            imgH = 6;
+        if(pag.ini && pag.ini.meter && pag.fim && pag.fim.meter){
+          const a = Number(pag.ini.meter), b = Number(pag.fim.meter);
+          if(!isNaN(a) && !isNaN(b)){
+            const maior = Math.max(a,b), menor = Math.min(a,b), delta = maior - menor;
+            doc.setFont('helvetica','bold'); doc.setFontSize(12);
+            doc.text(maior + ' - ' + menor + ' = ' + delta + 'm', PW/2, labelY + 11, {align:'center'});
           }
+        }
+        return;
+      }
+
+      if(sec.tipo === 'caixa'){
+        sec.paginas.forEach((pag, i)=>{
+          doc.addPage(); header();
+          let py = CONTENT_TOP + 4;
+          doc.setFont('helvetica','normal'); doc.setFontSize(12); doc.setTextColor(0,0,0);
+          const titulo = sec.paginas.length > 1
+            ? numSecao + '. Caixa ' + (i+1) + ' — aberta e fechada'
+            : numSecao + '. Foto da caixa aberta e fechada';
+          doc.text(titulo, M+7, py);
+          py += 10;
+
+          const gap = 8, colW = (CW - gap) / 2, maxH = 178;
+          const colEsq = M, colDir = M + colW + gap;
+          const rAberta = desenharFotoNaColuna(pag.aberta, colEsq, colW, py, maxH);
+          const rFechada = desenharFotoNaColuna(pag.fechada, colDir, colW, py, maxH);
+
+          const labelY = py + Math.max(rAberta.imgH, rFechada.imgH, 6) + 7;
+          doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(0,0,0);
+          doc.text('Caixa aberta', colEsq, labelY);
+          doc.text('Caixa fechada', colDir, labelY);
+        });
+        return;
+      }
+
+      if(sec.tipo === 'pto'){
+        const pag = sec.paginas[0];
+        doc.addPage(); header();
+        let py = CONTENT_TOP + 4;
+        doc.setFont('helvetica','normal'); doc.setFontSize(12); doc.setTextColor(0,0,0);
+        doc.text(numSecao + '. Cliente no local da instalação e sinal do cliente', M+7, py);
+        py += 10;
+
+        const gap = 8, colW = (CW - gap) / 2, maxH = 178;
+        const colEsq = M, colDir = M + colW + gap;
+        const rPto = desenharFotoNaColuna(pag.pto, colEsq, colW, py, maxH);
+        const rSinal = desenharFotoNaColuna(pag.sinal, colDir, colW, py, maxH);
+
+        const labelY = py + Math.max(rPto.imgH, rSinal.imgH, 6) + 7;
+        doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(0,0,0);
+        doc.text('Cliente no local da instalação', colEsq, labelY);
+        doc.text('Sinal do cliente', colDir, labelY);
+        return;
+      }
+
+      // seções em grade: 1 foto = página inteira, 2 fotos = lado a lado
+      sec.paginas.forEach(fotosDaPagina=>{
+        doc.addPage(); header();
+        let py = CONTENT_TOP + 4;
+        doc.setFont('helvetica','normal'); doc.setFontSize(12); doc.setTextColor(0,0,0);
+        doc.text(numSecao + '. ' + pdfPhotoMeta[sec.item.id].titulo, M+7, py);
+        py += 10;
+
+        if(fotosDaPagina.length === 1){
+          desenharFotoNaColuna(fotosDaPagina[0], M, CW, py, 178);
         } else {
-          doc.setFontSize(9);
-          doc.text('Anexo: ' + (s.fileMeta || 'arquivo'), M+7, py);
-          imgH = 6;
-        }
-
-        if(item.needsMeter && s.meter){
-          doc.setFont('helvetica','normal'); doc.setFontSize(11);
-          doc.text(String(s.meter) + 'm', imgX + imgW + 3, imgY + imgH - 1);
-        }
-
-        if(legendas.length){
-          doc.setFont('helvetica','normal'); doc.setFontSize(11);
-          let cy = imgY + imgH + 9;
-          legendas.forEach(l=>{ doc.text(l, imgX+3, cy); cy += 7; });
+          const gap = 8, colW = (CW - gap) / 2;
+          fotosDaPagina.forEach((s, i)=>{
+            desenharFotoNaColuna(s, M + i*(colW + gap), colW, py, 178);
+          });
         }
       });
     });
@@ -4528,6 +4654,7 @@
   ];
   let arquivosDespacho = {};       // {id: {dataUrl, nome, mime}}
   let tecnicosCache = [];
+  let equipesCache = [];
 
   function renderDocsDespacho(){
     const cx = document.getElementById('dDocs');
@@ -4786,7 +4913,7 @@
   // ---------- Painel de controle de acessos (somente admin) ----------
   // A checagem aqui e de interface. Quem realmente barra e o RLS: as
   // policies de "perfis" so aceitam escrita de quem e admin de verdade.
-  const PAPEIS = ['tecnico', 'monitor', 'admin'];
+  const PAPEIS = ['tecnico', 'monitor', 'analista', 'admin', 'superadmin'];
   let usuariosCache = [];
   let obrasPorUsuario = {};
   let empresasNomeMap = {};        // {empresa_id: nome} — só o dono do produto lê a tabela toda
@@ -5057,10 +5184,14 @@
   // ---------- Convidar alguém ----------
   const conviteForm = document.getElementById('conviteForm');
 
-  document.getElementById('btnNovoConvite').addEventListener('click', ()=>{
+  document.getElementById('btnNovoConvite').addEventListener('click', async ()=>{
     const abrindo = conviteForm.style.display === 'none';
     conviteForm.style.display = abrindo ? 'block' : 'none';
     if(abrindo){
+      try{
+        const { data: eqs } = await supabaseClient.from('equipes').select('id,nome');
+        equipesCache = eqs || [];
+      } catch(e){ equipesCache = []; }
       document.getElementById('convEquipe').innerHTML = '<option value="">Sem equipe</option>'
         + equipesCache.map(e => `<option value="${e.id}">${esc(e.nome)}</option>`).join('');
       document.getElementById('convEmail').focus();
@@ -5397,6 +5528,10 @@
       // ser de outra empresa, ou de todas, dependendo de por onde a pessoa
       // entrou — cache velho aqui é exatamente o tipo de mistura entre
       // empresas que a gente não pode deixar acontecer.
+      // "Acessos" também precisa recarregar sozinho: clicar direto nessa aba
+      // (sem passar por "Gerenciar acessos") não deve deixar o botão de
+      // convite/banner mostrando o estado de uma empresa que a pessoa já saiu.
+      if(alvo === 'acessos') renderUsuarios();
       if(alvo === 'obras') renderObrasAdmin();
     });
   });
@@ -5601,7 +5736,7 @@
 
     // céu
     const ceu = g.createLinearGradient(0, 0, 0, 1200);
-    ceu.addColorStop(0, '#7FB2D9'); ceu.addColorStop(0.55, '#C3D9E8'); ceu.addColorStop(1, '#8B9craft');
+    ceu.addColorStop(0, '#7FB2D9'); ceu.addColorStop(0.55, '#C3D9E8'); ceu.addColorStop(1, '#8B9AAF');
     g.fillStyle = '#7FB2D9'; g.fillRect(0,0,900,1200);
     const gr = g.createLinearGradient(0,0,0,1200);
     gr.addColorStop(0,'#6FA3CD'); gr.addColorStop(0.6,'#CBDDE9'); gr.addColorStop(1,'#9AA98F');
@@ -6217,6 +6352,9 @@
   const homeLink = document.getElementById('homeLink');
   const backFromJobs = document.getElementById('backFromJobs');
   const jobsList = document.getElementById('jobsList');
+  document.getElementById('jobsBusca').addEventListener('input', ()=>{
+    if(reportsList.length) renderJobsList();
+  });
 
   // Sem dados de exemplo: a lista vem do Supabase, filtrada pelo RLS.
   let reportsList = [];
@@ -6374,14 +6512,23 @@
 
   function renderJobsList(){
     jobsList.innerHTML = '';
-    const lista = obrasDoFiltro();
+    const termoJobs = (document.getElementById('jobsBusca').value || '').trim().toLowerCase();
+    const lista = obrasDoFiltro().filter(job=>{
+      if(!termoJobs) return true;
+      const statusLabel = {pendente:'Pendente', despachada:'Despachada', em_execucao:'Em execução',
+        enviado:'Enviado', rascunho:'Rascunho', aprovado:'Aprovado', reprovado:'Reprovado'}[job.status] || job.status;
+      return [job.contrato, job.cliente, job.tecnico, job.status, statusLabel]
+        .some(v => String(v || '').toLowerCase().includes(termoJobs));
+    });
 
     if(!lista.length){
       jobsList.innerHTML = '<div class="job-service-empty" style="padding:24px 4px;">'
-        + (filtroObras === 'historico'
-             ? 'Nenhuma obra aprovada ainda.'
-             : (ehRevisor() ? 'Nenhuma obra em aberto no momento.'
-                            : 'Nenhuma obra despachada para você no momento.'))
+        + (termoJobs
+             ? 'Nada encontrado com esse termo.'
+             : (filtroObras === 'historico'
+                  ? 'Nenhuma obra aprovada ainda.'
+                  : (ehRevisor() ? 'Nenhuma obra em aberto no momento.'
+                                 : 'Nenhuma obra despachada para você no momento.')))
         + '</div>';
       return;
     }
