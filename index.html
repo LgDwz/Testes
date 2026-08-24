@@ -796,6 +796,18 @@
   }
   .datebox:hover{ border-color:var(--accent); }
 
+  .valdrop{ position:relative; }
+  .valdrop-panel{
+    display:none; position:absolute; top:calc(100% + 6px); right:0; z-index:20;
+    min-width:220px; background:var(--surf); border:1px solid var(--line2);
+    border-radius:var(--r-md); padding:var(--sp3) var(--sp3); box-shadow:0 10px 26px rgba(0,0,0,.4);
+  }
+  .valdrop-panel.aberto{ display:block; }
+  .valdrop-row{ display:flex; align-items:baseline; justify-content:space-between; gap:var(--sp3); padding:8px 0; }
+  .valdrop-row + .valdrop-row{ border-top:1px solid var(--line); }
+  .valdrop-row .lbl{ font-size:12px; color:var(--text-dim); }
+  .valdrop-row .val{ font-family:'Barlow Condensed',sans-serif; font-size:19px; font-weight:700; white-space:nowrap; }
+
   /* ---------- KPI ---------- */
   .kpis{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:var(--sp3);
     margin-bottom:var(--sp5); }
@@ -1576,6 +1588,23 @@
       </div>
       <div class="ph-r">
         <span class="logout-link" id="btnTrocarEmpresaQuadro" style="display:none;margin-right:12px;">Trocar empresa</span>
+        <div class="valdrop" id="valDrop">
+          <div class="datebox" id="valDropTrigger">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 6.5v11M15 9.3c0-1.3-1.3-2.3-3-2.3s-3 .9-3 2.1c0 2.8 6 1.6 6 4.4 0 1.2-1.3 2.1-3 2.1s-3-1-3-2.3"/></svg>
+            <span>Valores</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity:.6"><path d="M6 9l6 6 6-6"/></svg>
+          </div>
+          <div class="valdrop-panel" id="valDropPanel">
+            <div class="valdrop-row">
+              <span class="lbl">Em andamento</span>
+              <span class="val" id="valDropAndamento">&mdash;</span>
+            </div>
+            <div class="valdrop-row">
+              <span class="lbl">Aprovado (mês)</span>
+              <span class="val" id="valDropAprovado">&mdash;</span>
+            </div>
+          </div>
+        </div>
         <div class="datebox" id="dateBox">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4.5" width="18" height="17" rx="2"/><path d="M3 9.5h18"/><path d="M8 2.5v4M16 2.5v4"/></svg>
           <span id="dateTxt">&mdash;</span>
@@ -2023,7 +2052,7 @@
 (function(){
   // Marque aqui a cada build enviado ao campo. O testador informa esta
   // string ao relatar um problema, senao nao da pra saber o que ele rodou.
-  const APP_VERSION = 'Enlace Ops · alpha-10.27 · 24/08/2026';
+  const APP_VERSION = 'Enlace Ops · alpha-10.29 · 24/08/2026';
 
   // ---------- Supabase config ----------
   // Troque pelos valores reais do seu projeto (Project Settings -> API no Supabase).
@@ -2944,9 +2973,9 @@
     5: {titulo:'Caixa fechada e acomodada no local de origem após fechamento',
         indice:'CAIXA FECHADA E ACOMODADA NO LOCAL DE ORIGEM APÓS FECHAMENTO'},
     6: {titulo:'Cliente no local da instalação (cabo acomodado, PTO)',
-        indice:'CLIENTE NO LOCAL DA INSTALAÇÃO E SINAL DO CLIENTE'},
+        indice:'CLIENTE NO LOCAL DA INSTALAÇÃO (PTO)'},
     7: {titulo:'Foto do sinal do cliente',
-        indice:'CLIENTE NO LOCAL DA INSTALAÇÃO E SINAL DO CLIENTE'},
+        indice:'FOTO DO SINAL DO CLIENTE'},
   };
 
   function toDateBR(iso){
@@ -3109,18 +3138,34 @@
 
     // ================= PAGINA 2 - INDICE =================
     // Início/fim do cabo viram uma seção só (lado a lado, com a metragem
-    // calculada automaticamente). As demais seções com múltiplas fotos
-    // ganham 2 fotos por página, lado a lado, em vez de 1 por página —
-    // e nenhuma foto leva legenda/observação impressa embaixo.
+    // calculada automaticamente). Fluxo do relatório: cabo -> identificação
+    // do cliente -> caixa aberta/fechada -> sinal do cliente -> PTO. As
+    // demais seções com múltiplas fotos ganham 2 fotos por página, lado a
+    // lado, em vez de 1 por página — e a observação/legenda digitada pelo
+    // técnico em cada foto é impressa embaixo dela.
     const itemIni = photoItems.find(i => i.id === 1);
     const itemFim = photoItems.find(i => i.id === 2);
     const itemAberta = photoItems.find(i => i.id === 3);
+    const itemIdent = photoItems.find(i => i.id === 4);
     const itemFechada = photoItems.find(i => i.id === 5);
     const itemPto = photoItems.find(i => i.id === 6);
     const itemSinal = photoItems.find(i => i.id === 7);
-    const outrosItems = photoItems.filter(i => ![1,2,3,5,6,7].includes(i.id));
+    const outrosItems = photoItems.filter(i => ![1,2,3,4,5,6,7].includes(i.id));
+
+    // seção em grade: 1 foto = página inteira, 2 fotos = lado a lado
+    // (usada pra identificação do cliente, sinal e PTO)
+    function secaoGrade(item){
+      const fotos = entriesOf(item, st);
+      const lista = fotos.length ? fotos : [null];
+      const porPagina = 2;
+      const paginas = [];
+      for(let i=0; i<lista.length; i+=porPagina) paginas.push(lista.slice(i, i+porPagina));
+      return {tipo:'grade', item, indiceLabel: pdfPhotoMeta[item.id].indice, paginas};
+    }
 
     const secoes = [];
+
+    // 1. cabo
     secoes.push({
       tipo: 'cabo',
       indiceLabel: pdfPhotoMeta[1].indice,
@@ -3130,7 +3175,10 @@
       }],
     });
 
-    // caixa aberta e caixa fechada viram uma seção só, lado a lado — a
+    // 2. identificação do cliente — logo após as metragens do cabo
+    secoes.push(secaoGrade(itemIdent));
+
+    // 3. caixa aberta e caixa fechada viram uma seção só, lado a lado — a
     // foto N de "aberta" pareia com a foto N de "fechada" (mesma caixa).
     const fotosAberta = entriesOf(itemAberta, st);
     const fotosFechada = entriesOf(itemFechada, st);
@@ -3145,24 +3193,12 @@
       paginas: paginasCaixa,
     });
 
-    // cliente no local da instalação (PTO) e o sinal do cliente também
-    // ficam lado a lado, na mesma página.
-    secoes.push({
-      tipo: 'pto',
-      indiceLabel: pdfPhotoMeta[6].indice,
-      paginas: [{
-        pto: entriesOf(itemPto, st)[0] || null,
-        sinal: entriesOf(itemSinal, st)[0] || null,
-      }],
-    });
+    // 4. sinal do cliente, depois 5. PTO — nessa ordem
+    secoes.push(secaoGrade(itemSinal));
+    secoes.push(secaoGrade(itemPto));
 
     outrosItems.forEach(item=>{
-      const fotos = entriesOf(item, st);
-      const lista = fotos.length ? fotos : [null];
-      const porPagina = 2;
-      const paginas = [];
-      for(let i=0; i<lista.length; i+=porPagina) paginas.push(lista.slice(i, i+porPagina));
-      secoes.push({tipo:'grade', item, indiceLabel: pdfPhotoMeta[item.id].indice, paginas});
+      secoes.push(secaoGrade(item));
     });
 
     let cursor = 3;
@@ -3228,6 +3264,18 @@
       return {imgX, imgW, imgH};
     }
 
+    // observação/legenda que o técnico digitou embaixo da foto — impressa
+    // em itálico, menor, quebrando linha dentro da coluna. Retorna a altura
+    // usada (0 se não tinha nada pra imprimir).
+    function desenharLegenda(texto, x, y, maxW){
+      if(!texto) return 0;
+      doc.setFont('helvetica','italic'); doc.setFontSize(9); doc.setTextColor(90,90,90);
+      const linhas = doc.splitTextToSize(texto, maxW);
+      doc.text(linhas, x, y);
+      doc.setTextColor(0,0,0);
+      return linhas.length * 4.5;
+    }
+
     // ================= PAGINAS DE FOTOS =================
     secoes.forEach((sec, secIdx)=>{
       const numSecao = secIdx + 1;
@@ -3250,12 +3298,17 @@
         doc.text('Início do cabo' + (pag.ini && pag.ini.meter ? ' — ' + pag.ini.meter + 'm' : ''), colEsq, labelY);
         doc.text('Final do cabo' + (pag.fim && pag.fim.meter ? ' — ' + pag.fim.meter + 'm' : ''), colDir, labelY);
 
+        const legY = labelY + 6;
+        const hEsq = desenharLegenda(pag.ini && pag.ini.legend, colEsq, legY, colW);
+        const hDir = desenharLegenda(pag.fim && pag.fim.legend, colDir, legY, colW);
+        const deltaY = legY + Math.max(hEsq, hDir) + (Math.max(hEsq, hDir) ? 6 : 5);
+
         if(pag.ini && pag.ini.meter && pag.fim && pag.fim.meter){
           const a = Number(pag.ini.meter), b = Number(pag.fim.meter);
           if(!isNaN(a) && !isNaN(b)){
             const maior = Math.max(a,b), menor = Math.min(a,b), delta = maior - menor;
             doc.setFont('helvetica','bold'); doc.setFontSize(12);
-            doc.text(maior + ' - ' + menor + ' = ' + delta + 'm', PW/2, labelY + 11, {align:'center'});
+            doc.text(maior + ' - ' + menor + ' = ' + delta + 'm', PW/2, deltaY, {align:'center'});
           }
         }
         return;
@@ -3281,27 +3334,11 @@
           doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(0,0,0);
           doc.text('Caixa aberta', colEsq, labelY);
           doc.text('Caixa fechada', colDir, labelY);
+
+          const legY = labelY + 6;
+          desenharLegenda(pag.aberta && pag.aberta.legend, colEsq, legY, colW);
+          desenharLegenda(pag.fechada && pag.fechada.legend, colDir, legY, colW);
         });
-        return;
-      }
-
-      if(sec.tipo === 'pto'){
-        const pag = sec.paginas[0];
-        doc.addPage(); header();
-        let py = CONTENT_TOP + 4;
-        doc.setFont('helvetica','normal'); doc.setFontSize(12); doc.setTextColor(0,0,0);
-        doc.text(numSecao + '. Cliente no local da instalação e sinal do cliente', M+7, py);
-        py += 10;
-
-        const gap = 8, colW = (CW - gap) / 2, maxH = 178;
-        const colEsq = M, colDir = M + colW + gap;
-        const rPto = desenharFotoNaColuna(pag.pto, colEsq, colW, py, maxH);
-        const rSinal = desenharFotoNaColuna(pag.sinal, colDir, colW, py, maxH);
-
-        const labelY = py + Math.max(rPto.imgH, rSinal.imgH, 6) + 7;
-        doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(0,0,0);
-        doc.text('Cliente no local da instalação', colEsq, labelY);
-        doc.text('Sinal do cliente', colDir, labelY);
         return;
       }
 
@@ -3314,11 +3351,15 @@
         py += 10;
 
         if(fotosDaPagina.length === 1){
-          desenharFotoNaColuna(fotosDaPagina[0], M, CW, py, 178);
+          const s = fotosDaPagina[0];
+          const r = desenharFotoNaColuna(s, M, CW, py, 178);
+          desenharLegenda(s && s.legend, M, py + r.imgH + 6, CW);
         } else {
           const gap = 8, colW = (CW - gap) / 2;
+          const rs = fotosDaPagina.map((s, i)=> desenharFotoNaColuna(s, M + i*(colW + gap), colW, py, 178));
+          const maxImgH = Math.max(rs[0] ? rs[0].imgH : 0, rs[1] ? rs[1].imgH : 0, 0);
           fotosDaPagina.forEach((s, i)=>{
-            desenharFotoNaColuna(s, M + i*(colW + gap), colW, py, 178);
+            desenharLegenda(s && s.legend, M + i*(colW + gap), py + maxImgH + 6, colW);
           });
         }
       });
@@ -4489,6 +4530,8 @@
       document.getElementById('quadroKpis').innerHTML = '';
       document.getElementById('quadroLista').innerHTML = '';
       if(btnTrocarQuadro) btnTrocarQuadro.style.display = 'none';
+      document.getElementById('valDrop').style.display = 'none';
+      document.getElementById('valDropPanel').classList.remove('aberto');
       gate.style.display = '';
       const sel = document.getElementById('quadroEmpresaAlvo');
       sel.innerHTML = '<option value="">Carregando...</option>';
@@ -4499,6 +4542,7 @@
     }
     gate.style.display = 'none';
     if(btnTrocarQuadro) btnTrocarQuadro.style.display = (ehSuper() && empresaContexto) ? '' : 'none';
+    document.getElementById('valDrop').style.display = '';
 
     const cx = document.getElementById('quadroLista');
     cx.innerHTML = '<div class="empty">Carregando...</div>';
@@ -4543,14 +4587,18 @@
       const devolvidas = conta('reprovado');
       const livres = (tecs||[]).filter(t =>
         !(porTec[t.id]||[]).some(o => abertas.includes(o.status))).length;
-      // valor de tudo que ainda não foi aprovado — o que ainda está "no
-      // pipeline", não o que já foi faturado de fato.
-      const emPipeline = ['pendente','rascunho','despachada','em_execucao','enviado','reprovado'];
-      const valorEmAberto = (obras||[])
-        .filter(o => emPipeline.includes(o.status))
-        .reduce((sum, o) => sum + valorObraRow(o), 0);
-
       const mes = new Date(); mes.setDate(1); mes.setHours(0,0,0,0);
+
+      // valor do que já tem técnico e está em andamento (pendente fica de
+      // fora — sem técnico despachado ainda não tem valor real nenhum).
+      const emAndamento = ['rascunho','despachada','em_execucao','enviado','reprovado'];
+      const valorEmAndamento = (obras||[])
+        .filter(o => emAndamento.includes(o.status))
+        .reduce((sum, o) => sum + valorObraRow(o), 0);
+      // valor já aprovado neste mês.
+      const valorAprovadoMes = (obras||[])
+        .filter(o => o.status === 'aprovado' && o.criado_em && new Date(o.criado_em) >= mes)
+        .reduce((sum, o) => sum + valorObraRow(o), 0);
 
       // ---- indicadores ----
       document.getElementById('quadroKpis').innerHTML = [
@@ -4559,7 +4607,6 @@
         ['amber','revisar', aRevisar, aRevisar, 'Aguardando revisão', 'Aguardando análise'],
         ['red',  'alerta',  devolvidas, devolvidas, 'Devolvidas', 'Precisam de atenção'],
         ['green','livre',   livres, livres, 'Técnicos livres', 'Disponíveis para despacho'],
-        ['', 'valor', valorEmAberto, formatBRL(valorEmAberto), 'Em aberto (R$)', 'Valor das obras ainda não aprovadas'],
       ].map(([cls, ic, n, disp, rot, ajuda]) => `
         <div class="kpi ${cls}${n ? '' : ' zero'}${(ic==='alerta'&&n)?' hot':''}">
           <div class="kpi-ic">${ICO_KPI[ic]}</div>
@@ -4573,6 +4620,9 @@
       document.getElementById('phSub').textContent =
         (tecs||[]).length + ' técnico(s) · ' + (emCampo + aRevisar + devolvidas) + ' obra(s) em aberto'
         + (ehSuper() && empresaContexto ? ' · ' + empresaContexto.nome : '');
+
+      document.getElementById('valDropAndamento').textContent = formatBRL(valorEmAndamento);
+      document.getElementById('valDropAprovado').textContent = formatBRL(valorAprovadoMes);
 
       // ---- técnicos ----
       tecCache = (tecs || []).map(t=>{
@@ -4766,6 +4816,15 @@
   document.getElementById('btnTrocarEmpresaQuadro').addEventListener('click', ()=>{
     empresaContexto = null;
     renderQuadro();
+  });
+
+  document.getElementById('valDropTrigger').addEventListener('click', (e)=>{
+    e.stopPropagation();
+    document.getElementById('valDropPanel').classList.toggle('aberto');
+  });
+  document.addEventListener('click', (e)=>{
+    const drop = document.getElementById('valDrop');
+    if(drop && !drop.contains(e.target)) document.getElementById('valDropPanel').classList.remove('aberto');
   });
 
   // ---------- Despacho de obra (analista e admin) ----------
@@ -5408,13 +5467,13 @@
   // ---------- Convidar alguém ----------
   const conviteForm = document.getElementById('conviteForm');
 
-  // e-mail só é dispensável quando é o próprio admin da empresa cadastrando
-  // um técnico — o dono do produto (superadmin) continua exigindo e-mail
-  // sempre, e os outros papéis (monitor/analista/admin) também, porque são
-  // contas mais formais que já deveriam ter e-mail à mão.
+  // e-mail é dispensável ao cadastrar um técnico (por qualquer admin,
+  // inclusive o superadmin) — os outros papéis (monitor/analista/admin)
+  // continuam exigindo e-mail, porque são contas mais formais que já
+  // deveriam ter e-mail à mão.
   function atualizaAjudaConvite(){
     const papel = document.getElementById('convPapel').value;
-    const opcional = !ehSuper() && papel === 'tecnico';
+    const opcional = papel === 'tecnico';
     document.getElementById('convEmailAjuda').style.display = opcional ? 'block' : 'none';
   }
   document.getElementById('convPapel').addEventListener('change', atualizaAjudaConvite);
@@ -5439,7 +5498,7 @@
     const nome  = (document.getElementById('convNome').value || '').trim();
     const papel = document.getElementById('convPapel').value;
     const btn   = document.getElementById('convSalvar');
-    const emailOpcional = !ehSuper() && papel === 'tecnico';
+    const emailOpcional = papel === 'tecnico';
 
     if(email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
       showToast('Digite um e-mail válido');
