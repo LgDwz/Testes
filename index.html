@@ -870,7 +870,7 @@
   .tec-st.free{ color:#3ED08A; } .tec-st.busy{ color:#E0B463; } .tec-st.over{ color:#EE7A7B; }
   .tec-sub{ font-size:11.5px; color:var(--text-faint); margin-top:3px;
     overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .tec-cols{ flex:1; display:grid; grid-template-columns:repeat(4,1fr); gap:var(--sp3);
+  .tec-cols{ flex:1; display:grid; grid-template-columns:repeat(3,1fr); gap:var(--sp3);
     min-width:0; }
   .tec-c{ min-width:0; padding-left:var(--sp3); border-left:1px solid var(--line); }
   .tec-cl{ display:flex; align-items:center; gap:6px; font-size:10.5px;
@@ -1714,7 +1714,6 @@
     <div class="adm-abas" id="painelAbas">
       <div class="adm-aba ativo" data-aba="acessos" id="abaAcessos">Acessos</div>
       <div class="adm-aba" data-aba="manutencao">Manutenção</div>
-      <div class="adm-aba" data-aba="empresas" id="abaEmpresas" style="display:none;">Empresas</div>
     </div>
 
     <div id="tabAcessos">
@@ -2024,7 +2023,7 @@
 (function(){
   // Marque aqui a cada build enviado ao campo. O testador informa esta
   // string ao relatar um problema, senao nao da pra saber o que ele rodou.
-  const APP_VERSION = 'Enlace Ops · alpha-10.26 · 24/08/2026';
+  const APP_VERSION = 'Enlace Ops · alpha-10.27 · 24/08/2026';
 
   // ---------- Supabase config ----------
   // Troque pelos valores reais do seu projeto (Project Settings -> API no Supabase).
@@ -4144,8 +4143,7 @@
         // só que escopados nela — sem misturar com as outras empreiteiras
         row.querySelector('[data-acao="gerenciar"]').addEventListener('click', ()=>{
           empresaContexto = {id: e.id, nome: e.nome};
-          document.getElementById('abaAcessos').click();
-          renderUsuarios();
+          navegarMenu('config');
         });
 
         // desativar: reversível, mantém o histórico e barra o login de todos
@@ -4337,6 +4335,7 @@
     historico:'<path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 7.5V12l3 2"/>',
     relatorios:'<path d="M5 21V9"/><path d="M12 21V4"/><path d="M19 21v-7"/>',
     config   :'<circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.6 1.6 0 0 0-1-1.5 1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.6 1.6 0 0 0 1.5-1 1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"/>',
+    empresas :'<rect x="4" y="3" width="16" height="18" rx="1.5"/><path d="M9 21v-4h6v4"/><path d="M9 7h.01M15 7h.01M9 11h.01M15 11h.01"/>',
     sair     :'<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/>',
   };
 
@@ -4351,6 +4350,7 @@
     L.push({id:'historico', t:'Histórico', ic:'historico'});
     if(ehRevisor()) L.push({id:'relatorios', t:'Relatórios', ic:'relatorios'});
     if(ehAdmin())   L.push({id:'config',     t:'Configurações', ic:'config'});
+    if(ehSuper())   L.push({id:'empresas',   t:'Empresas', ic:'empresas'});
     return L;
   }
 
@@ -4389,7 +4389,7 @@
   const TITULOS = {
     dashboard:'Dashboard', despacho:'Despacho', tecnicos:'Técnicos',
     obras:'Obras', historico:'Histórico', relatorios:'Relatórios',
-    config:'Configurações',
+    config:'Configurações', empresas:'Empresas',
   };
 
   function navegarMenu(rota){
@@ -4400,13 +4400,23 @@
     switch(rota){
       case 'dashboard': showAppView('quadro'); renderQuadro(); break;
       case 'despacho':  despacharCard.click(); break;
-      case 'tecnicos':  showAppView('usuarios'); escopoTecnicos = true; filtroUsuarios = 'tecnico'; renderUsuarios(); break;
+      case 'tecnicos':  showAppView('usuarios'); escopoTecnicos = true; escopoEmpresas = false; filtroUsuarios = 'tecnico'; renderUsuarios(); break;
       case 'obras':     filtroObras = 'abertas';   refreshJobsList(); break;
       case 'historico': filtroObras = 'historico'; refreshJobsList(); break;
       case 'relatorios':
         showToast('Relatórios ainda não têm tela própria — por ora, use o Histórico');
         filtroObras = 'historico'; refreshJobsList(); break;
-      case 'config':    showAppView('usuarios'); escopoTecnicos = false; filtroUsuarios = 'todos'; renderUsuarios(); break;
+      case 'config':
+        showAppView('usuarios');
+        escopoTecnicos = false; escopoEmpresas = false; filtroUsuarios = 'todos';
+        // entrar em Configurações sempre cai em Acessos — a aba Empresas
+        // pode ter deixado escondida na visita anterior.
+        document.querySelectorAll('.adm-aba').forEach(a => a.classList.toggle('ativo', a.dataset.aba === 'acessos'));
+        document.getElementById('tabAcessos').style.display = 'block';
+        document.getElementById('tabManutencao').style.display = 'none';
+        renderUsuarios();
+        break;
+      case 'empresas':  showAppView('usuarios'); escopoEmpresas = true; escopoTecnicos = false; empresaContexto = null; renderUsuarios(); break;
     }
     montarMenu();
   }
@@ -4642,10 +4652,6 @@
           </div>
         </div>
         <div class="tec-cols">
-          <div class="tec-c">
-            <div class="tec-cl">${ICO_COL.reg} Equipe</div>
-            <div class="tec-cv">${esc(t.equipe)}</div>
-          </div>
           <div class="tec-c">
             <div class="tec-cl">${ICO_COL.hora} Última atividade</div>
             <div class="tec-cv">${esc(tempoRelativo(t.ultimo))}</div>
@@ -5042,6 +5048,9 @@
   // true quando se entra pelo atalho "Técnicos" do menu — a tela vira só
   // pra ver/gerenciar técnicos, sem os outros papéis nem as outras abas.
   let escopoTecnicos = false;
+  // true quando se entra pelo atalho "Empresas" do menu (só o dono do
+  // produto vê) — a tela vira só a navegação entre empreiteiras.
+  let escopoEmpresas = false;
   // dono do produto entrando na instância de uma empresa específica
   // (ver renderEmpresas): {id, nome} ou null quando é a visão global
   let empresaContexto = null;
@@ -5334,13 +5343,34 @@
 
   async function renderUsuarios(){
     if(!ehAdmin()){ irParaInicio(); return; }
+    if(escopoEmpresas && !ehSuper()){ irParaInicio(); return; }
 
-    // atalho "Técnicos" do menu: tela enxuta, só técnicos — as outras abas
-    // (Manutenção, Empresas) e os outros papéis ficam em Configurações.
-    const abas = document.getElementById('painelAbas');
-    if(abas) abas.style.display = escopoTecnicos ? 'none' : '';
     const tituloAdm = document.querySelector('#usersScreen .step-title');
     const subAdm = document.getElementById('admSub');
+
+    // atalho "Empresas" do menu (só o dono do produto vê): tela dedicada a
+    // navegar entre as empreiteiras, sem as outras abas do painel.
+    if(escopoEmpresas){
+      const abas = document.getElementById('painelAbas');
+      if(abas) abas.style.display = 'none';
+      if(tituloAdm) tituloAdm.textContent = 'Empresas';
+      if(subAdm) subAdm.textContent = 'Cada empreiteira que usa a ferramenta.';
+      document.getElementById('tabAcessos').style.display = 'none';
+      document.getElementById('tabManutencao').style.display = 'none';
+      document.getElementById('tabEmpresas').style.display = 'block';
+      const bannerEmp = document.getElementById('empresaContextoBanner');
+      if(bannerEmp) bannerEmp.style.display = 'none';
+      await renderEmpresas();
+      return;
+    }
+    // fora do modo Empresas essa aba não existe mais nessa tela — evita
+    // deixar visível se alguém tinha ficado nela antes.
+    document.getElementById('tabEmpresas').style.display = 'none';
+
+    // atalho "Técnicos" do menu: tela enxuta, só técnicos — as outras abas
+    // (Manutenção) e os outros papéis ficam em Configurações.
+    const abas = document.getElementById('painelAbas');
+    if(abas) abas.style.display = escopoTecnicos ? 'none' : '';
     if(tituloAdm) tituloAdm.textContent = escopoTecnicos ? 'Técnicos' : 'Painel do administrador';
     if(subAdm) subAdm.textContent = escopoTecnicos
       ? 'Veja e gerencie os técnicos da empresa.'
@@ -5349,14 +5379,9 @@
       document.querySelectorAll('.adm-aba').forEach(a => a.classList.toggle('ativo', a.dataset.aba === 'acessos'));
       document.getElementById('tabAcessos').style.display = 'block';
       document.getElementById('tabManutencao').style.display = 'none';
-      document.getElementById('tabEmpresas').style.display = 'none';
     }
     document.getElementById('convPapel').value = escopoTecnicos ? 'tecnico' : document.getElementById('convPapel').value;
     document.getElementById('convPapel').style.display = escopoTecnicos ? 'none' : '';
-
-    // aba "Empresas" só existe pro dono do produto
-    const abaEmp = document.getElementById('abaEmpresas');
-    if(abaEmp) abaEmp.style.display = (ehSuper() && !escopoTecnicos) ? '' : 'none';
 
     // banner de "dentro da instância de uma empresa" (só faz sentido pro superadmin)
     const banner = document.getElementById('empresaContextoBanner');
@@ -5754,8 +5779,7 @@
   });
 
   document.getElementById('btnVoltarEmpresas').addEventListener('click', ()=>{
-    empresaContexto = null;
-    document.getElementById('abaEmpresas').click();
+    navegarMenu('empresas');
   });
 
   document.getElementById('btnFaxina').addEventListener('click', procurarOrfaos);
