@@ -2048,11 +2048,12 @@
 
 <script src="lib/supabase.js"></script>
 <script src="lib/jspdf.umd.min.js"></script>
+<script src="lib/pdf.min.js"></script>
 <script>
 (function(){
   // Marque aqui a cada build enviado ao campo. O testador informa esta
   // string ao relatar um problema, senao nao da pra saber o que ele rodou.
-  const APP_VERSION = 'Enlace Ops · alpha-10.29 · 24/08/2026';
+  const APP_VERSION = 'Enlace Ops · alpha-10.31 · 24/08/2026';
 
   // ---------- Supabase config ----------
   // Troque pelos valores reais do seu projeto (Project Settings -> API no Supabase).
@@ -3748,6 +3749,32 @@
     }
   }
 
+  // Baixa direto do Storage um dos documentos executados (asbuilt ou
+  // diagrama unifilar atualizados) que o técnico anexou no passo 4. Não
+  // passa pelo jsPDF — é o arquivo original (PDF/imagem) como foi enviado.
+  async function baixarDocExecutado(job, itemId, nomeBase, btn){
+    const path = job.row && job.row.dados && job.row.dados.arquivos
+      && job.row.dados.arquivos.docsAtt && job.row.dados.arquivos.docsAtt[itemId];
+    if(!path){ showToast('Esse documento ainda não foi anexado pelo técnico'); return; }
+    if(!online){ showToast('Sem conexão — esse arquivo precisa ser baixado do servidor'); return; }
+    const rotulo = btn ? btn.textContent : '';
+    if(btn){ btn.disabled = true; btn.textContent = 'Baixando...'; }
+    try{
+      const {data, error} = await supabaseClient.storage.from(SUPABASE_BUCKET).download(path);
+      if(error) throw error;
+      const ext = (path.split('.').pop() || 'pdf').toLowerCase();
+      const url = URL.createObjectURL(data);
+      const a = document.createElement('a');
+      a.href = url; a.download = nomeBase + '.' + ext;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(()=> URL.revokeObjectURL(url), 4000);
+    } catch(err){
+      showToast('Não deu pra baixar: ' + (err.message || err));
+    } finally {
+      if(btn){ btn.disabled = false; btn.textContent = rotulo; }
+    }
+  }
+
   const reviewSendBtn = document.getElementById('reviewSendBtn');
   const sendStatus = document.getElementById('sendStatus');
 
@@ -4842,6 +4869,61 @@
   let tecnicosCache = [];
   let equipesCache = [];
 
+  // ---------- Extração automática de dados a partir da OS (PDF) ----------
+  // A Ordem de Serviço da operadora (ex.: Copel) já vem com o código do
+  // circuito, o cliente, o endereço e as coordenadas em texto — em vez do
+  // admin redigitar tudo, a gente lê o texto real do PDF (sem OCR, sem
+  // mandar nada pra fora) e tenta puxar esses campos sozinho. Só preenche o
+  // que estiver vazio; nunca sobrescreve o que já foi digitado.
+  async function extrairDadosDaOS(dataUrl){
+    if(typeof pdfjsLib === 'undefined') return null;
+    try{
+      if(!pdfjsLib.GlobalWorkerOptions.workerSrc){
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'lib/pdf.worker.min.js';
+      }
+      const base64 = dataUrl.split(',')[1];
+      const bin = atob(base64);
+      const bytes = new Uint8Array(bin.length);
+      for(let i=0; i<bin.length; i++) bytes[i] = bin.charCodeAt(i);
+
+      const pdf = await pdfjsLib.getDocument({data: bytes}).promise;
+      let texto = '';
+      for(let p=1; p<=Math.min(pdf.numPages, 3); p++){
+        const page = await pdf.getPage(p);
+        const content = await page.getTextContent();
+        texto += '\n' + content.items.map(it => it.str).join(' ');
+      }
+
+      const dados = {};
+
+      const mNumero = texto.match(/C[oó]digo\s+circuito\s*:?\s*(\d{4,})/i);
+      if(mNumero) dados.numero = mNumero[1];
+
+      const mCliente = texto.match(/\bCliente\s+(.+?)\s+Servi[çc]o\b/i);
+      if(mCliente) dados.empresa = mCliente[1].trim().replace(/\s{2,}/g, ' ');
+
+      // O endereço costuma vir como uma linha só, sempre começando com o
+      // tipo de logradouro: "R ARGENTINA, 360 / 83501-530 ALMIRANTE
+      // TAMANDARE - PR". A extração do PDF às vezes quebra números e
+      // coordenadas com espaços extras no meio (ex.: "83501 - 530",
+      // "- 25.308..."), então os padrões abaixo toleram esse ruído.
+      const mEnd = texto.match(/\b((?:R|RUA|AV|AVENIDA|AL|ALAMEDA|TRAV|TRAVESSA|ESTR|ESTRADA|ROD|RODOVIA|PC|PRACA|PRA[ÇC]A)\.?\s+[^,\n]{1,60},\s*\d+[A-Za-z]?)\s*\/\s*(\d{5})\s*-?\s*(\d{3})\s+([^\n\-\/]+?)\s*-\s*([A-Z]{2})\b/i);
+      if(mEnd){
+        dados.endereco = mEnd[1].trim().replace(/\s{2,}/g, ' ');
+        dados.cep = mEnd[2] + mEnd[3];
+        dados.cidade = mEnd[4].trim().replace(/\s{2,}/g, ' ');
+      }
+
+      const mCoord = texto.match(/COORDENADAS:\s*(?:COORDENADAS:\s*)?(-\s*\d{1,3}\.\d+)\s*,\s*(-\s*\d{1,3}\.\d+)/i);
+      if(mCoord) dados.coordenadas = mCoord[1].replace(/\s+/g, '') + ', ' + mCoord[2].replace(/\s+/g, '');
+
+      return Object.keys(dados).length ? dados : null;
+    } catch(e){
+      console.log('Não deu pra ler a OS automaticamente: ' + (e.message || e));
+      return null;
+    }
+  }
+
   function renderDocsDespacho(){
     const cx = document.getElementById('dDocs');
     cx.innerHTML = '';
@@ -4873,6 +4955,31 @@
               mime: ehPdfArq ? 'application/pdf' : 'image/jpeg',
             };
             renderDocsDespacho();
+
+            if(d.id === 'os_doc' && ehPdfArq){
+              const extraidos = await extrairDadosDaOS(e.target.result);
+              if(extraidos){
+                const campoPorChave = {
+                  numero:'dNumero', empresa:'dEmpresa', endereco:'dEndereco',
+                  cidade:'dCidade', cep:'dCep', coordenadas:'dCoord',
+                };
+                let preenchidos = 0;
+                Object.keys(extraidos).forEach(chave=>{
+                  const input = document.getElementById(campoPorChave[chave]);
+                  if(input && !input.value.trim()){ input.value = extraidos[chave]; preenchidos++; }
+                });
+                if(preenchidos){
+                  // esses campos normalmente ficam escondidos (só usados por
+                  // baixo dos panos); quando a OS preenche algo sozinha, vale
+                  // a pena mostrar pro admin poder conferir antes de despachar.
+                  document.getElementById('dExtrasWrap').style.display = '';
+                  showToast('Dados identificados na OS — confira antes de despachar');
+                  // se esse número já tiver contrato salvo, deixa o cadastro
+                  // existente completar/corrigir o que a OS não trouxe.
+                  document.getElementById('dNumero').dispatchEvent(new Event('blur'));
+                }
+              }
+            }
           };
           r.readAsDataURL(f);
         });
@@ -6888,6 +6995,24 @@
         ? tecnicosJobsCache.filter(t => String(t.empresa_id) === String(job.row.empresa_id))
         : [];
 
+      // asbuilt e diagrama unifilar ATUALIZADOS — os que o técnico anexa no
+      // passo 4 (Docs executados), não os originais do despacho. Só aparecem
+      // se o técnico já anexou.
+      const docsAttPaths = (job.row && job.row.dados && job.row.dados.arquivos && job.row.dados.arquivos.docsAtt) || {};
+      const execDocsHtml = (docsAttPaths.asbuilt || docsAttPaths.diagrama_att) ? `
+        <div style="display:flex;gap:8px;margin-top:8px;">
+          ${docsAttPaths.asbuilt ? `
+          <button class="job-edit-btn" type="button" data-acao="asbuilt" style="flex:1;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 21h16"/></svg>
+            Asbuilt atualizado
+          </button>` : ''}
+          ${docsAttPaths.diagrama_att ? `
+          <button class="job-edit-btn" type="button" data-acao="diagrama" style="flex:1;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 21h16"/></svg>
+            Diagrama atualizado
+          </button>` : ''}
+        </div>` : '';
+
       details.innerHTML = servicosHtml + (podeRemanejar ? `
         <div class="user-empresa-wrap" style="margin-bottom:10px;">
           <span class="user-empresa-label">${esc(job.tecnico || 'sem técnico')}</span>
@@ -6911,6 +7036,7 @@
             Baixar PDF
           </button>
         </div>
+        ${execDocsHtml}
         ${ehAdmin() && job.row ? `
         <button class="job-edit-btn" type="button" data-acao="excluir"
                 style="width:100%;margin-top:8px;border-color:var(--danger,var(--danger));color:var(--danger,var(--danger));">
@@ -6971,6 +7097,21 @@
         e.stopPropagation();
         gerarPdfDaObra(job, e.currentTarget);
       });
+
+      const btnAsbuilt = details.querySelector('[data-acao="asbuilt"]');
+      if(btnAsbuilt){
+        btnAsbuilt.addEventListener('click', (e)=>{
+          e.stopPropagation();
+          baixarDocExecutado(job, 'asbuilt', 'Asbuilt-' + job.contrato, e.currentTarget);
+        });
+      }
+      const btnDiagrama = details.querySelector('[data-acao="diagrama"]');
+      if(btnDiagrama){
+        btnDiagrama.addEventListener('click', (e)=>{
+          e.stopPropagation();
+          baixarDocExecutado(job, 'diagrama_att', 'Diagrama-unifilar-' + job.contrato, e.currentTarget);
+        });
+      }
 
       const btnExcluir = details.querySelector('[data-acao="excluir"]');
       if(btnExcluir){
