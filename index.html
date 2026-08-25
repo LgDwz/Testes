@@ -1903,7 +1903,7 @@
       <span class="logout-link" id="btnTrocarEmpresaJobs" style="display:none;margin-top:4px;">Trocar empresa</span>
       <button class="job-edit-btn" id="btnNovaObraJobs" type="button" style="width:100%;margin-top:12px;display:none;">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
-        Adicionar obra
+        <span>Adicionar obra</span>
       </button>
       <input class="adm-busca" id="jobsBusca" placeholder="Buscar por contrato, cliente, técnico ou status" autocomplete="off" style="margin-top:12px;margin-bottom:0;">
       <div class="adm-filtros" id="jobsStatusFiltro" style="margin-top:10px;margin-bottom:0;padding-bottom:0;">
@@ -2143,7 +2143,7 @@
 (function(){
   // Marque aqui a cada build enviado ao campo. O testador informa esta
   // string ao relatar um problema, senao nao da pra saber o que ele rodou.
-  const APP_VERSION = 'Enlace Ops · alpha-10.38 · 25/08/2026';
+  const APP_VERSION = 'Enlace Ops · alpha-10.41 · 25/08/2026';
 
   // ---------- Supabase config ----------
   // Troque pelos valores reais do seu projeto (Project Settings -> API no Supabase).
@@ -2180,6 +2180,7 @@
 
   const photoItems = [
     {id:1, title:"Início do cabo com metragem", needsMeter:true, multiple:false, storeKey:'photos'},
+    {id:8, title:"Chegada no poste do cliente", needsMeter:false, multiple:false, storeKey:'photos'},
     {id:2, title:"Final do cabo com metragem", needsMeter:true, multiple:false, storeKey:'photos'},
     {id:3, title:"Caixa aberta", needsMeter:false, multiple:true, storeKey:'photos'},
     {id:4, title:"Identificação do cliente dentro da caixa", needsMeter:false, multiple:true, storeKey:'photos'},
@@ -2726,22 +2727,31 @@
     if(catalogoEmpresaCarregada === empId || catalogoCarregando === empId) return;
     catalogoCarregando = empId;
     try{
-      const [{data:mats}, {data:servs}] = await Promise.all([
+      const [matsResp, servsResp] = await Promise.all([
         supabaseClient.from('materiais_catalogo').select('*').eq('empresa_id', empId).order('ordem'),
         supabaseClient.from('servicos_catalogo').select('*').eq('empresa_id', empId).order('ordem'),
       ]);
-      if(mats && mats.length){
+      const {data:mats, error:errMats} = matsResp;
+      const {data:servs, error:errServs} = servsResp;
+      if(errMats) console.warn('catálogo: falha ao buscar materiais_catalogo, mantendo lista anterior:', errMats);
+      if(errServs) console.warn('catálogo: falha ao buscar servicos_catalogo, mantendo lista anterior:', errServs);
+      if(!errMats && mats && mats.length){
         materials.length = 0;
         mats.forEach(m => materials.push({id: m.item_id, name: m.nome}));
       }
-      if(servs && servs.length){
+      if(!errServs && servs && servs.length){
         valuesItems.length = 0;
         servs.forEach(s => valuesItems.push({code: s.code, desc: s.descricao, price: Number(s.preco)}));
       }
-      catalogoEmpresaCarregada = empId;
+      // só marca como "carregado" (e para de tentar de novo) se as DUAS consultas
+      // deram certo — antes, uma falha isolada numa das duas tabelas (ex.: uma
+      // instabilidade momentânea de rede) já travava o catálogo inteiro na
+      // lista antiga até a pessoa fechar e abrir o app de novo, mesmo que os
+      // dados corretos já estivessem no banco.
+      if(!errMats && !errServs) catalogoEmpresaCarregada = empId;
       if(steps[currentStep] === 'materiais') renderMateriais();
       if(steps[currentStep] === 'valores') renderValores();
-    } catch(e){ /* mantém os itens padrão embutidos no app */ }
+    } catch(e){ console.warn('catálogo: erro ao buscar catálogo da empresa, mantendo itens padrão:', e); }
     finally { catalogoCarregando = null; }
   }
 
@@ -3311,6 +3321,8 @@
         indice:'CLIENTE NO LOCAL DA INSTALAÇÃO (PTO)'},
     7: {titulo:'Foto do sinal do cliente',
         indice:'FOTO DO SINAL DO CLIENTE'},
+    8: {titulo:'Chegada no poste do cliente',
+        indice:'CHEGADA NO POSTE DO CLIENTE'},
   };
 
   function toDateBR(iso){
@@ -3485,7 +3497,8 @@
     const itemFechada = photoItems.find(i => i.id === 5);
     const itemPto = photoItems.find(i => i.id === 6);
     const itemSinal = photoItems.find(i => i.id === 7);
-    const outrosItems = photoItems.filter(i => ![1,2,3,4,5,6,7].includes(i.id));
+    const itemPoste = photoItems.find(i => i.id === 8);
+    const outrosItems = photoItems.filter(i => ![1,2,3,4,5,6,7,8].includes(i.id));
 
     // seção em grade: 1 foto = página inteira, 2 fotos = lado a lado
     // (usada pra identificação do cliente, sinal e PTO)
@@ -3510,7 +3523,12 @@
       }],
     });
 
-    // 2. identificação do cliente — logo após as metragens do cabo
+    // 2. chegada no poste do cliente — o técnico às vezes sai do cabo, passa
+    // pelo poste do cliente e só depois faz a rede interna, então essa foto
+    // fica entre o início e o final do cabo no relatório também.
+    secoes.push(secaoGrade(itemPoste));
+
+    // 3. identificação do cliente — logo após as metragens do cabo
     secoes.push(secaoGrade(itemIdent));
 
     // 3. caixa aberta e caixa fechada viram uma seção só, lado a lado — a
@@ -4786,6 +4804,7 @@
     config   :'<circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.6 1.6 0 0 0-1-1.5 1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.6 1.6 0 0 0 1.5-1 1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"/>',
     empresas :'<rect x="4" y="3" width="16" height="18" rx="1.5"/><path d="M9 21v-4h6v4"/><path d="M9 7h.01M15 7h.01M9 11h.01M15 11h.01"/>',
     sair     :'<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/>',
+    nova     :'<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/><path d="M12 11v6"/><path d="M9 14h6"/>',
   };
 
   let rotaAtual = '';
@@ -4795,6 +4814,9 @@
     if(ehOperador()) L.push({id:'dashboard', t:'Dashboard', ic:'dashboard'});
     if(ehOperador()) L.push({id:'despacho',  t:'Despacho',  ic:'despacho'});
     if(ehOperador()) L.push({id:'tecnicos',  t:'Técnicos',  ic:'tecnicos'});
+    // o técnico cria a própria obra: sem esta entrada ele não tinha caminho
+    // nenhum até o assistente (o cartão antigo saiu do ar com a barra lateral).
+    if(ehTecnico()) L.push({id:'nova', t:'Nova obra', ic:'nova'});
     L.push({id:'obras',     t: ehRevisor() ? 'Obras' : 'Minhas obras', ic:'obras', badge:true});
     L.push({id:'historico', t:'Histórico', ic:'historico'});
     if(ehRevisor()) L.push({id:'relatorios', t:'Relatórios', ic:'relatorios'});
@@ -4838,7 +4860,7 @@
   const TITULOS = {
     dashboard:'Dashboard', despacho:'Despacho', tecnicos:'Técnicos',
     obras:'Obras', historico:'Histórico', relatorios:'Relatórios',
-    config:'Configurações', empresas:'Empresas',
+    config:'Configurações', empresas:'Empresas', nova:'Nova obra',
   };
 
   function navegarMenu(rota){
@@ -4855,6 +4877,7 @@
     switch(rota){
       case 'dashboard': showAppView('quadro'); renderQuadro(); break;
       case 'despacho':  despacharCard.click(); break;
+      case 'nova':      abrirObraNova(); break;
       case 'tecnicos':  showAppView('usuarios'); escopoTecnicos = true; escopoEmpresas = false; filtroUsuarios = 'tecnico'; renderUsuarios(); break;
       case 'obras':     filtroObras = 'abertas';   refreshJobsList(); break;
       case 'historico': filtroObras = 'historico'; refreshJobsList(); break;
@@ -7705,7 +7728,11 @@
     });
   }
 
-  newJobCard.addEventListener('click', ()=>{
+  // Abrir o assistente numa obra nova, do zero. Ficava só no clique do
+  // cartão da tela inicial antiga — que a barra lateral aposentou, e por
+  // isso o técnico não tinha caminho nenhum até aqui. Agora é uma função
+  // com nome, chamada pelo menu, pelo botão da lista e pelo cartão.
+  function abrirObraNova(){
     resetDataState();
     obraEditandoId = null;
     obraDonoId = null;
@@ -7714,9 +7741,16 @@
     aplicarModoLeitura();   // limpa o modo-leitura/aviso de uma obra aberta antes
     showAppView('wizard');
     showStep(0);
-  });
+  }
 
-  document.getElementById('btnNovaObraJobs').addEventListener('click', ()=> despacharCard.click());
+  newJobCard.addEventListener('click', abrirObraNova);
+
+  // O escritório cria obra pelo Despacho (que já anexa OS/projeto e escolhe
+  // o técnico). O técnico cria pra ele mesmo, direto no assistente.
+  document.getElementById('btnNovaObraJobs').addEventListener('click', ()=>{
+    if(ehTecnico()) abrirObraNova();
+    else despacharCard.click();
+  });
 
   document.getElementById('btnJobsEmpresaEntrar').addEventListener('click', ()=>{
     const sel = document.getElementById('jobsEmpresaAlvo');
@@ -7785,7 +7819,13 @@
     // do administrador. O despacho agora pede a empresa no próprio
     // formulário quando precisa, então não tem mais motivo pra esconder o
     // botão do dono do produto só por ele não ter entrado numa instância.
-    if(btnNovaJobs) btnNovaJobs.style.display = ehOperador() ? '' : 'none';
+    // técnico também cria obra pra ele mesmo — o texto muda porque o
+    // caminho é outro: o escritório despacha, o técnico abre direto.
+    if(btnNovaJobs){
+      btnNovaJobs.style.display = (ehOperador() || ehTecnico()) ? '' : 'none';
+      const rot = btnNovaJobs.querySelector('span');
+      if(rot) rot.textContent = ehTecnico() ? 'Nova obra' : 'Adicionar obra';
+    }
     renderJobsList();
     showAppView('myjobs');
     if(!supabaseConfigured || !online) return;
