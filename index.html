@@ -197,6 +197,21 @@
   .multi-entry-remove{background:none;border:none;color:var(--text-faint);cursor:pointer;font-size:16px;
     width:26px;height:26px;flex-shrink:0;border-radius:5px;}
   .multi-entry-remove:hover{color:var(--warning);background:var(--warning-dim);}
+  .tec-obras-secao{margin-bottom:18px;}
+  .tec-obras-secao-t{display:flex;align-items:center;gap:8px;font-family:'IBM Plex Mono',monospace;font-size:11.5px;
+    text-transform:uppercase;letter-spacing:.04em;color:var(--text-dim);margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border);}
+  .tec-obras-secao-t span{margin-left:auto;background:var(--bg-elev);border-radius:20px;padding:1px 9px;font-size:11px;color:var(--text);}
+  .tec-obras-secao-t.pend{color:var(--warning);}
+  .tec-obras-secao-t.rej{color:var(--danger);}
+  .tec-obras-secao-t.apr{color:var(--success);}
+  .tec-obras-item{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);font-size:13px;}
+  .tec-obras-item:last-child{border-bottom:none;}
+  .tec-obras-contrato{color:var(--text);}
+  .tec-obras-status{font-size:11px;padding:2px 8px;border-radius:20px;background:var(--bg-elev);color:var(--text-dim);flex-shrink:0;}
+  .tec-obras-vazio{color:var(--text-faint);font-size:12.5px;padding:6px 0;}
+  .user-ver-obras{background:none;border:1px solid var(--border);color:var(--text-dim);cursor:pointer;
+    font-size:11.5px;padding:5px 10px;border-radius:6px;display:flex;align-items:center;gap:5px;}
+  .user-ver-obras:hover{color:var(--accent);border-color:var(--accent);}
   .multi-add-btn{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;margin-top:10px;
     padding:10px;border-radius:6px;border:1px dashed var(--border);background:transparent;color:var(--text-dim);
     font-family:'IBM Plex Mono',monospace;font-size:12px;cursor:pointer;text-transform:uppercase;letter-spacing:0.03em;}
@@ -875,11 +890,18 @@
   }
   .tec-av i.free{ background:#3ED08A; } .tec-av i.busy{ background:#E0B463; }
   .tec-av i.over{ background:#EE7A7B; }
+  .tec-av i.falta{ background:#E4585A; } .tec-av i.folga{ background:#8FA3BE; }
+  .tec-av i.ausencia{ background:#E0A03C; }
   .tec-n{ font-size:15px; font-weight:600; overflow:hidden;
     text-overflow:ellipsis; white-space:nowrap; }
   .tec-st{ font-size:11px; letter-spacing:.08em; text-transform:uppercase; margin-top:3px;
     font-family:'IBM Plex Mono',monospace; }
   .tec-st.free{ color:#3ED08A; } .tec-st.busy{ color:#E0B463; } .tec-st.over{ color:#EE7A7B; }
+  .tec-st.falta{ color:#E4585A; } .tec-st.folga{ color:#8FA3BE; } .tec-st.ausencia{ color:#E0A03C; }
+  .tec-status-sel{ background:var(--bg-elev); border:1px solid var(--border); color:var(--text-dim);
+    font-size:11px; border-radius:6px; padding:4px 6px; margin-top:6px; font-family:'Inter',sans-serif;
+    max-width:170px; }
+  .tec-status-sel:focus{ outline:none; border-color:var(--accent); }
   .tec-sub{ font-size:11.5px; color:var(--text-faint); margin-top:3px;
     overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .tec-cols{ flex:1; display:grid; grid-template-columns:repeat(3,1fr); gap:var(--sp3);
@@ -1992,6 +2014,11 @@
       <div class="capture-head-title" id="captureTitle">Anexar</div>
       <button class="close-btn" id="closeCapture">&#10005;</button>
     </div>
+    <div class="capture-obs-field" id="captureObsField" style="display:none;padding:10px 20px 0;">
+      <input type="text" id="captureObsInput" placeholder="Identificação da caixa / observação..."
+        style="width:100%;background:var(--bg-elev);border:1px solid var(--border);color:var(--text);
+        border-radius:8px;padding:10px 12px;font-size:13px;font-family:'Inter',sans-serif;">
+    </div>
     <div class="viewfinder" id="viewfinder">
       <div class="geo-status" id="geoStatus"><span>&#9679;</span><span id="geoStatusText">Obtendo localização...</span></div>
       <div id="captureChoice" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:0 24px;">
@@ -2037,6 +2064,16 @@
     </div>
   </div>
 
+  <div class="capture-overlay" id="tecObrasOverlay">
+    <div class="capture-head">
+      <div class="capture-head-title" id="tecObrasTitle">Obras do técnico</div>
+      <button class="close-btn" id="closeTecObras">&#10005;</button>
+    </div>
+    <div style="flex:1;overflow-y:auto;padding:14px 16px;">
+      <div id="tecObrasBody"></div>
+    </div>
+  </div>
+
 
         </div>
       </div>
@@ -2055,7 +2092,7 @@
 (function(){
   // Marque aqui a cada build enviado ao campo. O testador informa esta
   // string ao relatar um problema, senao nao da pra saber o que ele rodou.
-  const APP_VERSION = 'Enlace Ops · alpha-10.32 · 24/08/2026';
+  const APP_VERSION = 'Enlace Ops · alpha-10.33 · 25/08/2026';
 
   // ---------- Supabase config ----------
   // Troque pelos valores reais do seu projeto (Project Settings -> API no Supabase).
@@ -2498,6 +2535,8 @@
   const shutterBtn = document.getElementById('shutterBtn');
   const geoStatus = document.getElementById('geoStatus');
   const geoStatusText = document.getElementById('geoStatusText');
+  const captureObsField = document.getElementById('captureObsField');
+  const captureObsInput = document.getElementById('captureObsInput');
 
   let activeItem = null, activeMultiIdx = null, photoStaged = false, stagedFileMeta = null;
   let stagedMime = null, stagedCoords = null;
@@ -2703,6 +2742,13 @@
       ? item.title + (activeMultiIdx !== null ? ' \u2014 caixa ' + (activeMultiIdx+1) : ' \u2014 nova caixa')
       : item.title;
     fileInput.value = '';
+    // pra caixa nova (n\u00e3o edi\u00e7\u00e3o de uma j\u00e1 existente) deixa escolher
+    // v\u00e1rias fotos de uma vez na galeria \u2014 cada uma vira uma caixa.
+    fileInput.multiple = !!(item.multiple && activeMultiIdx === null);
+    // a observa\u00e7\u00e3o some antes de anexar, n\u00e3o depois: assim o t\u00e9cnico j\u00e1
+    // sabe pra qual se\u00e7\u00e3o (aberta/fechada/etc.) a foto vai antes de tirar.
+    captureObsField.style.display = item.multiple ? 'block' : 'none';
+    captureObsInput.value = (item.multiple && existing) ? (existing.legend || '') : '';
     meterField.classList.toggle('show', !!item.needsMeter);
     meterInput.value = existing ? existing.meter || '' : '';
     if(existing && existing.imgSrc){
@@ -2767,7 +2813,56 @@
     };
     reader.readAsDataURL(file);
   }
-  fileInput.addEventListener('change', (e)=> handleFile(e.target.files[0]));
+  function lerComoDataURL(file){
+    return new Promise((res)=>{
+      const reader = new FileReader();
+      reader.onload = e => res(e.target.result);
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // Várias fotos escolhidas de uma vez pra um item de caixa (multiple):
+  // cada arquivo vira sua própria caixa direto, sem passar uma por uma
+  // pela tela de conferência — a legenda digitada antes vale pra todas,
+  // e dá pra ajustar cada uma individualmente depois na lista.
+  async function handleFilesBulk(files){
+    const item = activeItem;
+    const legendaCompartilhada = captureObsInput.value || '';
+    const now = new Date();
+    const novos = [];
+    for(const file of files){
+      const dataUrl = await lerComoDataURL(file);
+      const ehPdfArquivo = (file.type === 'application/pdf') || /\.pdf$/i.test(file.name);
+      const imgSrc = ehPdfArquivo ? dataUrl : await reduzirImagem(dataUrl);
+      novos.push({
+        time: now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}),
+        meter: null,
+        imgSrc,
+        fileMeta: file.name,
+        mime: ehPdfArquivo ? 'application/pdf' : 'image/jpeg',
+        coords: null,
+        legend: legendaCompartilhada,
+        obs: ''
+      });
+    }
+    if(!novos.length) return;
+    if(!dataState[item.storeKey][item.id]) dataState[item.storeKey][item.id] = [];
+    dataState[item.storeKey][item.id].push(...novos);
+    overlay.classList.remove('show');
+    renderCurrentStepItems();
+    salvarRascunho();
+    showToast(novos.length + (novos.length === 1 ? ' foto anexada' : ' fotos anexadas'));
+  }
+
+  fileInput.addEventListener('change', (e)=>{
+    const files = Array.from(e.target.files || []);
+    if(!files.length) return;
+    if(activeItem && activeItem.multiple && activeMultiIdx === null && files.length > 1){
+      handleFilesBulk(files);
+    } else {
+      handleFile(files[0]);
+    }
+  });
   startCameraBtn.addEventListener('click', startCamera);
   shutterBtn.addEventListener('click', captureFromCamera);
 
@@ -2802,8 +2897,9 @@
     const now = new Date();
     let existingLegend = '', existingObs = '';
     if(activeItem.multiple){
-      const arr = dataState[activeItem.storeKey][activeItem.id] || [];
-      if(activeMultiIdx !== null && arr[activeMultiIdx]) existingLegend = arr[activeMultiIdx].legend || '';
+      // pra caixa a legenda vem do campo de observação preenchido antes
+      // de anexar, não de um valor salvo antes — é o próprio dado novo.
+      existingLegend = captureObsInput.value || '';
     } else if(dataState[activeItem.storeKey][activeItem.id]){
       existingLegend = dataState[activeItem.storeKey][activeItem.id].legend || '';
       existingObs = dataState[activeItem.storeKey][activeItem.id].obs || '';
@@ -4585,7 +4681,7 @@
     document.getElementById('phTitle').textContent = 'Despacho';
 
     try{
-      let qTecsQuadro = supabaseClient.from('perfis').select('id,nome,email,equipe_id,ultimo_acesso')
+      let qTecsQuadro = supabaseClient.from('perfis').select('id,nome,email,equipe_id,ultimo_acesso,status_manual')
         .eq('papel','tecnico').eq('aprovado', true);
       let qObrasQuadro = supabaseClient.from(SUPABASE_TABLE).select('*')
         .in('status', ['pendente','rascunho','despachada','em_execucao','enviado','reprovado','aprovado']);
@@ -4614,8 +4710,10 @@
       const aguardandoDespacho = conta('pendente');
       const aRevisar   = conta('enviado');
       const devolvidas = conta('reprovado');
+      // quem está de falta/folga/ausência programada não conta como livre,
+      // mesmo sem obra em aberto — não dá pra despachar pra ele hoje.
       const livres = (tecs||[]).filter(t =>
-        !(porTec[t.id]||[]).some(o => abertas.includes(o.status))).length;
+        !t.status_manual && !(porTec[t.id]||[]).some(o => abertas.includes(o.status))).length;
       const mes = new Date(); mes.setDate(1); mes.setHours(0,0,0,0);
 
       // valor do que já tem técnico e está em andamento (pendente fica de
@@ -4664,6 +4762,7 @@
           equipe: nomeEq[t.equipe_id] || 'sem equipe',
           n: abertos.length,
           est: abertos.length === 0 ? 'free' : (abertos.length >= 3 ? 'over' : 'busy'),
+          statusManual: t.status_manual || '',
           devolvida: abertos.some(o => o.status === 'reprovado'),
           ultimo: t.ultimo_acesso,
           mes: noMes,
@@ -4701,7 +4800,7 @@
     const termo = (document.getElementById('tecBusca').value || '').trim().toLowerCase();
     const lista = tecCache.filter(t =>
       (!termo || t.nome.toLowerCase().includes(termo) || t.equipe.toLowerCase().includes(termo))
-      && (filtroTecStatus === 'todos' || t.est === filtroTecStatus)
+      && (filtroTecStatus === 'todos' || (t.statusManual ? 'ausente' : t.est) === filtroTecStatus)
       && (filtroTecEquipe === 'todas' || t.equipe === filtroTecEquipe));
 
     if(!lista.length){
@@ -4713,9 +4812,14 @@
     }
 
     cx.innerHTML = '';
+    const ROTULO_MANUAL = {falta:'Faltou hoje', folga:'De folga', ausencia:'Ausência programada'};
     lista.forEach(t=>{
-      const est = t.est;
-      const rot = est === 'free' ? 'Disponível' : (est === 'over' ? 'Sobrecarregado' : 'Em atividade');
+      // status manual (falta/folga/ausência) manda mais que o cálculo
+      // automático por carga de obra — não dá pra despachar pra quem
+      // o admin já marcou como fora hoje.
+      const est = t.statusManual || t.est;
+      const rot = t.statusManual ? ROTULO_MANUAL[t.statusManual]
+        : (est === 'free' ? 'Disponível' : (est === 'over' ? 'Sobrecarregado' : 'Em atividade'));
       const ini = String(t.nome).split(/\s+/).slice(0,2).map(x=>x[0]||'').join('').toUpperCase();
       const c = t.atual && t.atual.dados ? (t.atual.dados.contract || {}) : {};
 
@@ -4728,6 +4832,12 @@
             <div class="tec-n">${esc(t.nome)}</div>
             <div class="tec-st ${est}">${rot}</div>
             <div class="tec-sub">${t.n ? esc('Contrato ' + t.atual.contrato) : 'Sem obra atribuída'}${t.devolvida ? ' · retrabalho' : ''}</div>
+            <select class="tec-status-sel" data-tec-id="${esc(t.id)}">
+              <option value=""${!t.statusManual ? ' selected' : ''}>Disponibilidade normal</option>
+              <option value="falta"${t.statusManual === 'falta' ? ' selected' : ''}>Faltou hoje</option>
+              <option value="folga"${t.statusManual === 'folga' ? ' selected' : ''}>De folga</option>
+              <option value="ausencia"${t.statusManual === 'ausencia' ? ' selected' : ''}>Ausência programada</option>
+            </select>
           </div>
         </div>
         <div class="tec-cols">
@@ -4754,6 +4864,23 @@
           const s = document.getElementById('dTecnico');
           if(s){ s.value = t.id; s.dispatchEvent(new Event('change')); }
         }, 650);
+      });
+      const selStatus = el.querySelector('.tec-status-sel');
+      selStatus.addEventListener('click', (e)=> e.stopPropagation());
+      selStatus.addEventListener('change', async (e)=>{
+        e.stopPropagation();
+        const novo = selStatus.value || null;
+        selStatus.disabled = true;
+        try{
+          const {error} = await supabaseClient.from('perfis')
+            .update({status_manual: novo}).eq('id', t.id);
+          if(error) throw error;
+          showToast(novo ? 'Status de ' + t.nome + ' atualizado' : 'Disponibilidade normal restaurada');
+          renderQuadro();   // recarrega tudo — o KPI "Técnicos livres" também depende disso
+        } catch(err){
+          showToast('Não deu pra salvar: ' + (err.message || err));
+          selStatus.disabled = false;
+        }
       });
       cx.appendChild(el);
     });
@@ -4797,6 +4924,7 @@
       {id:'free',  rotulo:'Disponível'},
       {id:'busy',  rotulo:'Em atividade'},
       {id:'over',  rotulo:'Sobrecarregado'},
+      {id:'ausente', rotulo:'Ausente'},
     ];
     cont.innerHTML = '';
     defs.forEach(f=>{
@@ -5024,7 +5152,7 @@
       // dono do produto dentro da instância de uma empresa só pode despachar
       // pros técnicos DELA — sem esse filtro o RLS do superadmin enxerga
       // técnicos de todas as empresas misturados no mesmo seletor.
-      let qTecnicos = supabaseClient.from('perfis').select('id,nome,email,equipe_id').eq('papel','tecnico').eq('aprovado', true);
+      let qTecnicos = supabaseClient.from('perfis').select('id,nome,email,equipe_id,status_manual').eq('papel','tecnico').eq('aprovado', true);
       if(empAlvo) qTecnicos = qTecnicos.eq('empresa_id', empAlvo);
       const [{data:perfis}, {data:obras}] = await Promise.all([
         qTecnicos,
@@ -5044,8 +5172,9 @@
         sel.innerHTML = '<option value="">Nenhum técnico liberado ainda</option>';
         return;
       }
+      const AVISO_MANUAL = {falta:' · faltou hoje', folga:' · de folga', ausencia:' · ausência programada'};
       sel.innerHTML = '<option value="">Sem técnico por enquanto</option>' + tecnicosCache.map(t=>
-        `<option value="${esc(t.id)}">${esc(t.nome || t.email)} — ${t.carga} em aberto (${esc(t.equipe)})</option>`
+        `<option value="${esc(t.id)}">${esc(t.nome || t.email)} — ${t.carga} em aberto (${esc(t.equipe)})${AVISO_MANUAL[t.status_manual] || ''}</option>`
       ).join('');
     } catch(e){
       sel.innerHTML = '<option value="">Não deu pra carregar</option>';
@@ -5211,6 +5340,7 @@
   const PAPEIS = ['tecnico', 'monitor', 'analista', 'admin', 'superadmin'];
   let usuariosCache = [];
   let obrasPorUsuario = {};
+  let obrasPorTecnico = {};
   let empresasNomeMap = {};        // {empresa_id: nome} — só o dono do produto lê a tabela toda
   let filtroUsuarios = 'todos';
   // true quando se entra pelo atalho "Técnicos" do menu — a tela vira só
@@ -5254,7 +5384,7 @@
   async function carregarUsuarios(){
     const [perfis, obras, convites, emps] = await Promise.all([
       supabaseClient.from('perfis').select('*').order('criado_em', {ascending:false}),
-      supabaseClient.from(SUPABASE_TABLE).select('tecnico_id'),
+      supabaseClient.from(SUPABASE_TABLE).select('tecnico_id, status, contrato'),
       supabaseClient.from('convites').select('*').eq('usado', false).order('criado_em', {ascending:false}),
       // só o dono do produto enxerga mais de uma empresa por vez — pra ele,
       // deixa claro em cada linha a qual empresa a pessoa pertence.
@@ -5271,8 +5401,17 @@
       convitesCache = convitesCache.filter(c => c.empresa_id === empresaContexto.id);
     }
     obrasPorUsuario = {};
+    // atalho "Ver obras" na aba Técnicos: agrupa por status sem precisar
+    // de uma segunda consulta quando o admin abre o painel de alguém.
+    obrasPorTecnico = {};
     (obras.data || []).forEach(r=>{
-      if(r.tecnico_id) obrasPorUsuario[r.tecnico_id] = (obrasPorUsuario[r.tecnico_id] || 0) + 1;
+      if(!r.tecnico_id) return;
+      obrasPorUsuario[r.tecnico_id] = (obrasPorUsuario[r.tecnico_id] || 0) + 1;
+      const grupo = obrasPorTecnico[r.tecnico_id] || (obrasPorTecnico[r.tecnico_id] = {pendentes:[], rejeitadas:[], aprovadas:[]});
+      const item = {contrato: r.contrato, status: r.status};
+      if(r.status === 'aprovado') grupo.aprovadas.push(item);
+      else if(r.status === 'reprovado') grupo.rejeitadas.push(item);
+      else grupo.pendentes.push(item);
     });
   }
 
@@ -5423,6 +5562,9 @@
             : (nomeEmpresa ? `<div class="user-row-meta" style="color:var(--accent);">${esc(nomeEmpresa)}</div>` : '')}
         </div>
         <div class="user-acoes">
+          ${u.papel === 'tecnico' ? `<button class="user-ver-obras" type="button" data-acao="ver-obras">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
+            Ver obras</button>` : ''}
           <select class="user-papel">${
             PAPEIS.map(p => `<option value="${p}"${p === u.papel ? ' selected' : ''}>${p}</option>`).join('')
           }</select>
@@ -5437,6 +5579,10 @@
       const empLabel = row.querySelector('.user-empresa-label');
       const btn = row.querySelector('[data-acao="liberar"]');
       const btnDel = row.querySelector('[data-acao="excluir"]');
+      const btnVerObras = row.querySelector('[data-acao="ver-obras"]');
+      if(btnVerObras){
+        btnVerObras.addEventListener('click', (e)=>{ e.stopPropagation(); abrirObrasTecnico(u); });
+      }
 
       // troca o rótulo pelo select só quando clica no lápis — volta a
       // esconder ao perder o foco sem escolher nada (não fica um combobox
@@ -5508,6 +5654,33 @@
       usersList.appendChild(row);
     });
   }
+
+  // Atalho "Ver obras": mostra o que está com o técnico agrupado por
+  // status, sem precisar ir até "Obras" e caçar pelo nome dele.
+  const tecObrasOverlay = document.getElementById('tecObrasOverlay');
+  const STATUS_LABEL_TEC = {pendente:'Pendente', despachada:'Despachada', em_execucao:'Em execução',
+    enviado:'Enviado', rascunho:'Rascunho', aprovado:'Aprovado', reprovado:'Reprovado'};
+  function abrirObrasTecnico(u){
+    document.getElementById('tecObrasTitle').textContent = 'Obras de ' + (u.nome || u.email || '—');
+    const grupos = obrasPorTecnico[u.id] || {pendentes:[], rejeitadas:[], aprovadas:[]};
+    const secao = (titulo, cls, arr) => `
+      <div class="tec-obras-secao">
+        <div class="tec-obras-secao-t ${cls}">${titulo}<span>${arr.length}</span></div>
+        ${arr.length ? arr.map(o => `
+          <div class="tec-obras-item">
+            <span class="tec-obras-contrato">Contrato ${esc(o.contrato)}</span>
+            <span class="tec-obras-status">${esc(STATUS_LABEL_TEC[o.status] || o.status)}</span>
+          </div>`).join('')
+          : '<div class="tec-obras-vazio">Nenhuma obra nesse status.</div>'}
+      </div>`;
+    document.getElementById('tecObrasBody').innerHTML =
+      secao('Pendentes', 'pend', grupos.pendentes) +
+      secao('Rejeitadas', 'rej', grupos.rejeitadas) +
+      secao('Aprovadas', 'apr', grupos.aprovadas);
+    tecObrasOverlay.classList.add('show');
+    if(typeof empilhar === 'function') empilhar({overlay:'tecObras'});
+  }
+  document.getElementById('closeTecObras').addEventListener('click', ()=> tecObrasOverlay.classList.remove('show'));
 
   async function renderUsuarios(){
     if(!ehAdmin()){ irParaInicio(); return; }
@@ -6794,6 +6967,10 @@
       docViewerOverlay.classList.remove('show');
       return;
     }
+    if(tecObrasOverlay.classList.contains('show')){
+      tecObrasOverlay.classList.remove('show');
+      return;
+    }
 
     const st = ev.state;
 
@@ -7256,6 +7433,12 @@
       if(empresaContexto){
         qTecJobs = qTecJobs.eq('empresa_id', empresaContexto.id);
         qObrasJobs = qObrasJobs.eq('empresa_id', empresaContexto.id);
+      }
+      // técnico só pode ver as próprias obras, em qualquer status — sem
+      // esse filtro a query pedia tudo e dependia 100% do RLS pra podar,
+      // e um RLS restrito a "status = aprovado" deixava só essas passarem.
+      if(ehTecnico() && perfilAtual){
+        qObrasJobs = qObrasJobs.eq('tecnico_id', perfilAtual.id);
       }
       const [{data, error}, {data: tecsJobs}] = await Promise.all([qObrasJobs, qTecJobs]);
       tecnicosJobsCache = tecsJobs || [];
