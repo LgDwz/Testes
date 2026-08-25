@@ -212,6 +212,11 @@
   .user-ver-obras{background:none;border:1px solid var(--border);color:var(--text-dim);cursor:pointer;
     font-size:11.5px;padding:5px 10px;border-radius:6px;display:flex;align-items:center;gap:5px;}
   .user-ver-obras:hover{color:var(--accent);border-color:var(--accent);}
+  /* a .hd principal do app é sticky com z-index:50 — sem isto essa janela
+     abria por baixo do cabeçalho, escondendo o próprio X de fechar. */
+  #tecObrasOverlay{z-index:90;}
+  .tec-obras-item{cursor:pointer;}
+  .tec-obras-item:hover .tec-obras-contrato{color:var(--accent);}
   .multi-add-btn{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;margin-top:10px;
     padding:10px;border-radius:6px;border:1px dashed var(--border);background:transparent;color:var(--text-dim);
     font-family:'IBM Plex Mono',monospace;font-size:12px;cursor:pointer;text-transform:uppercase;letter-spacing:0.03em;}
@@ -247,6 +252,26 @@
     background:var(--accent-dim);border:1px solid var(--accent);border-radius:7px;
     padding:14px 16px;margin-top:14px;font-family:'Barlow Condensed',sans-serif;font-weight:700;
     font-size:18px;text-transform:uppercase;letter-spacing:0.02em;color:var(--accent);}
+
+  /* catálogo editável: excluir item + form de adicionar (materiais/valores) */
+  .cat-del-btn{background:none;border:none;color:var(--text-faint);cursor:pointer;
+    font-size:15px;padding:4px 6px;border-radius:5px;flex-shrink:0;line-height:1;}
+  .cat-del-btn:hover{color:var(--warning);background:var(--warning-dim);}
+  .cat-add-btn{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;margin-top:4px;
+    background:none;border:1.5px dashed var(--border);color:var(--text-dim);border-radius:7px;
+    padding:12px;font-size:12.5px;cursor:pointer;font-family:'Inter',sans-serif;}
+  .cat-add-btn:hover{border-color:var(--accent);color:var(--accent);}
+  .cat-add-form{background:var(--bg-elev);border:1px solid var(--accent);border-radius:7px;
+    padding:12px 14px;margin-top:8px;display:flex;flex-direction:column;gap:8px;}
+  .cat-add-form input{width:100%;background:var(--bg-elev-2);border:1px solid var(--border);color:var(--text);
+    font-size:12.5px;padding:8px 10px;border-radius:6px;font-family:'Inter',sans-serif;}
+  .cat-add-form .cat-add-row{display:flex;gap:8px;}
+  .cat-add-form .cat-add-row input{flex:1;}
+  .cat-add-form-btns{display:flex;gap:8px;margin-top:2px;}
+  .cat-add-form-btns button{flex:1;padding:8px;border-radius:6px;font-size:12px;cursor:pointer;
+    font-family:'Inter',sans-serif;font-weight:600;}
+  .cat-add-salvar{background:var(--accent);border:none;color:var(--accent-ink);}
+  .cat-add-cancelar{background:none;border:1px solid var(--border);color:var(--text-dim);}
 
   /* RESPONSAVEIS */
   .resp-card{background:var(--bg-elev);border:1px solid var(--border);border-radius:7px;padding:14px;margin-bottom:12px;}
@@ -1629,10 +1654,25 @@
             </div>
           </div>
         </div>
+        <div class="valdrop" id="mesDrop">
         <div class="datebox" id="dateBox">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4.5" width="18" height="17" rx="2"/><path d="M3 9.5h18"/><path d="M8 2.5v4M16 2.5v4"/></svg>
           <span id="dateTxt">&mdash;</span>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity:.6"><path d="M6 9l6 6 6-6"/></svg>
+        </div>
+          <div class="valdrop-panel" id="mesDropPanel">
+            <div style="display:flex;flex-direction:column;gap:8px;padding:4px 0;">
+              <input type="month" id="mesDropInput" style="width:100%;background:var(--bg-elev);border:1px solid var(--border);
+                color:var(--text);border-radius:6px;padding:8px 10px;font-size:13px;font-family:'Inter',sans-serif;">
+              <div style="font-size:11px;color:var(--text-faint);">Filtra os valores "no mês" pelo mês escolhido.</div>
+              <div style="display:flex;gap:8px;">
+                <button type="button" id="mesDropAplicar" style="flex:1;background:var(--accent);border:none;color:var(--accent-ink);
+                  border-radius:6px;padding:8px;font-size:12px;font-weight:600;cursor:pointer;">Aplicar</button>
+                <button type="button" id="mesDropHoje" style="flex:1;background:none;border:1px solid var(--border);color:var(--text-dim);
+                  border-radius:6px;padding:8px;font-size:12px;cursor:pointer;">Mês atual</button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -2092,7 +2132,7 @@
 (function(){
   // Marque aqui a cada build enviado ao campo. O testador informa esta
   // string ao relatar um problema, senao nao da pra saber o que ele rodou.
-  const APP_VERSION = 'Enlace Ops · alpha-10.33 · 25/08/2026';
+  const APP_VERSION = 'Enlace Ops · alpha-10.35 · 25/08/2026';
 
   // ---------- Supabase config ----------
   // Troque pelos valores reais do seu projeto (Project Settings -> API no Supabase).
@@ -2463,7 +2503,9 @@
     valuesTotalEl.textContent = formatBRL(total);
   }
   function renderValores(){
+    garantirCatalogo();
     valuesList.innerHTML = '';
+    const podeEditarCatalogo = !ehTecnico();
     valuesItems.forEach(v=>{
       const qty = Number(dataState.valuesQty[v.code]) || 0;
       const subtotal = qty * v.price;
@@ -2471,8 +2513,9 @@
       row.className = 'value-row';
       row.innerHTML = `
         <div class="value-top">
-          <span class="value-code">${v.code}</span>
-          <span class="value-desc">${v.desc}</span>
+          <span class="value-code">${esc(v.code)}</span>
+          <span class="value-desc">${esc(v.desc)}</span>
+          ${podeEditarCatalogo ? `<button class="cat-del-btn" type="button" data-code="${esc(v.code)}" title="Excluir do catálogo" aria-label="Excluir">&#10005;</button>` : ''}
         </div>
         <div class="value-bottom">
           <span class="value-price">${formatBRL(v.price)} / un</span>
@@ -2490,29 +2533,186 @@
         subtotalEl.textContent = formatBRL((Number(e.target.value)||0) * v.price);
         recomputeValuesTotal();
       });
+      const delBtn = row.querySelector('.cat-del-btn');
+      if(delBtn) delBtn.addEventListener('click', ()=> excluirServico(v.code));
       valuesList.appendChild(row);
     });
     recomputeValuesTotal();
+    if(podeEditarCatalogo) valuesList.appendChild(montarFormAddServico());
+  }
+
+  function montarFormAddServico(){
+    const wrap = document.createElement('div');
+    const btn = document.createElement('button');
+    btn.type = 'button'; btn.className = 'cat-add-btn';
+    btn.textContent = '+ Adicionar serviço ao catálogo';
+    const form = document.createElement('div');
+    form.className = 'cat-add-form'; form.style.display = 'none';
+    form.innerHTML = `
+      <div class="cat-add-row">
+        <input type="text" placeholder="Código (ex: 05.01)" class="cat-add-code">
+        <input type="number" step="0.01" placeholder="Preço (R$)" class="cat-add-price">
+      </div>
+      <input type="text" placeholder="Descrição do serviço" class="cat-add-desc">
+      <div class="cat-add-form-btns">
+        <button type="button" class="cat-add-salvar">Adicionar</button>
+        <button type="button" class="cat-add-cancelar">Cancelar</button>
+      </div>
+    `;
+    btn.addEventListener('click', ()=>{ btn.style.display = 'none'; form.style.display = 'flex'; form.querySelector('.cat-add-code').focus(); });
+    form.querySelector('.cat-add-cancelar').addEventListener('click', ()=>{ form.style.display = 'none'; btn.style.display = 'flex'; });
+    form.querySelector('.cat-add-salvar').addEventListener('click', async ()=>{
+      const code = form.querySelector('.cat-add-code').value.trim();
+      const desc = form.querySelector('.cat-add-desc').value.trim();
+      const price = Number(form.querySelector('.cat-add-price').value);
+      if(!code || !desc || !price){ showToast('Preencha código, descrição e preço'); return; }
+      if(valuesItems.some(v => v.code === code)){ showToast('Já existe um serviço com esse código'); return; }
+      await adicionarServico(code, desc, price);
+    });
+    wrap.appendChild(btn); wrap.appendChild(form);
+    return wrap;
+  }
+
+  async function adicionarServico(code, desc, price){
+    const empId = obraEmpresaId || (perfilAtual && perfilAtual.empresa_id) || null;
+    valuesItems.push({code, desc, price});
+    if(supabaseConfigured && online && empId){
+      try{
+        const {error} = await supabaseClient.from('servicos_catalogo')
+          .insert({empresa_id: empId, code, descricao: desc, preco: price, ordem: valuesItems.length});
+        if(error) throw error;
+      } catch(e){ showToast('Adicionado aqui, mas não salvou no servidor: ' + (e.message || e)); }
+    }
+    showToast('Serviço adicionado ao catálogo');
+    renderValores();
+  }
+
+  async function excluirServico(code){
+    if(!confirm('Remover esse serviço do catálogo? Ele deixa de aparecer nas próximas obras.')) return;
+    const empId = obraEmpresaId || (perfilAtual && perfilAtual.empresa_id) || null;
+    const idx = valuesItems.findIndex(v => v.code === code);
+    if(idx > -1) valuesItems.splice(idx, 1);
+    if(supabaseConfigured && online && empId){
+      try{
+        const {error} = await supabaseClient.from('servicos_catalogo').delete()
+          .eq('empresa_id', empId).eq('code', code);
+        if(error) throw error;
+      } catch(e){ showToast('Removido aqui, mas não removeu no servidor: ' + (e.message || e)); }
+    }
+    showToast('Serviço removido do catálogo');
+    renderValores();
   }
 
   // ---------- Step: Materiais ----------
   const materialsList = document.getElementById('materialsList');
   function renderMateriais(){
+    garantirCatalogo();
     materialsList.innerHTML = '';
+    const podeEditarCatalogo = !ehTecnico();
     materials.forEach(m=>{
       const row = document.createElement('div');
       row.className = 'material-row';
       row.innerHTML = `
         <div class="material-num">${m.id}</div>
-        <div class="material-name">${m.name}</div>
+        <div class="material-name">${esc(m.name)}</div>
         <input class="material-qty" type="number" inputmode="numeric" min="0" value="${dataState.materialsQty[m.id]||0}" data-mat-id="${m.id}">
+        ${podeEditarCatalogo ? `<button class="cat-del-btn" type="button" data-mat-id="${m.id}" title="Excluir do catálogo" aria-label="Excluir">&#10005;</button>` : ''}
       `;
       row.querySelector('.material-qty').addEventListener('input', (e)=>{
         dataState.materialsQty[m.id] = e.target.value;
         salvarRascunho();
       });
+      const delBtn = row.querySelector('.cat-del-btn');
+      if(delBtn) delBtn.addEventListener('click', ()=> excluirMaterial(m.id));
       materialsList.appendChild(row);
     });
+    if(podeEditarCatalogo) materialsList.appendChild(montarFormAddMaterial());
+  }
+
+  function montarFormAddMaterial(){
+    const wrap = document.createElement('div');
+    const btn = document.createElement('button');
+    btn.type = 'button'; btn.className = 'cat-add-btn';
+    btn.textContent = '+ Adicionar material ao catálogo';
+    const form = document.createElement('div');
+    form.className = 'cat-add-form'; form.style.display = 'none';
+    form.innerHTML = `
+      <input type="text" placeholder="Nome do material" class="cat-add-nome">
+      <div class="cat-add-form-btns">
+        <button type="button" class="cat-add-salvar">Adicionar</button>
+        <button type="button" class="cat-add-cancelar">Cancelar</button>
+      </div>
+    `;
+    btn.addEventListener('click', ()=>{ btn.style.display = 'none'; form.style.display = 'flex'; form.querySelector('.cat-add-nome').focus(); });
+    form.querySelector('.cat-add-cancelar').addEventListener('click', ()=>{ form.style.display = 'none'; btn.style.display = 'flex'; });
+    form.querySelector('.cat-add-salvar').addEventListener('click', async ()=>{
+      const nome = form.querySelector('.cat-add-nome').value.trim();
+      if(!nome){ showToast('Digite o nome do material'); return; }
+      await adicionarMaterial(nome);
+    });
+    wrap.appendChild(btn); wrap.appendChild(form);
+    return wrap;
+  }
+
+  async function adicionarMaterial(nome){
+    const empId = obraEmpresaId || (perfilAtual && perfilAtual.empresa_id) || null;
+    const novoId = (materials.reduce((max,m)=> Math.max(max, Number(m.id)||0), 0)) + 1;
+    materials.push({id: novoId, name: nome});
+    if(supabaseConfigured && online && empId){
+      try{
+        const {error} = await supabaseClient.from('materiais_catalogo')
+          .insert({empresa_id: empId, item_id: novoId, nome, ordem: novoId});
+        if(error) throw error;
+      } catch(e){ showToast('Adicionado aqui, mas não salvou no servidor: ' + (e.message || e)); }
+    }
+    showToast('Material adicionado ao catálogo');
+    renderMateriais();
+  }
+
+  async function excluirMaterial(id){
+    if(!confirm('Remover esse material do catálogo? Ele deixa de aparecer nas próximas obras.')) return;
+    const empId = obraEmpresaId || (perfilAtual && perfilAtual.empresa_id) || null;
+    const idx = materials.findIndex(m => m.id === id);
+    if(idx > -1) materials.splice(idx, 1);
+    if(supabaseConfigured && online && empId){
+      try{
+        const {error} = await supabaseClient.from('materiais_catalogo').delete()
+          .eq('empresa_id', empId).eq('item_id', id);
+        if(error) throw error;
+      } catch(e){ showToast('Removido aqui, mas não removeu no servidor: ' + (e.message || e)); }
+    }
+    showToast('Material removido do catálogo');
+    renderMateriais();
+  }
+
+  // catálogo de materiais/serviços é por empresa — carrega uma vez por
+  // empresa e reaproveita; se ainda não rodou o SQL de instalação das
+  // tabelas (ou offline), fica nos itens padrão embutidos no app.
+  let catalogoEmpresaCarregada = null;
+  let catalogoCarregando = null;
+  async function garantirCatalogo(){
+    const empId = obraEmpresaId || (perfilAtual && perfilAtual.empresa_id) || null;
+    if(!supabaseConfigured || !online || !empId) return;
+    if(catalogoEmpresaCarregada === empId || catalogoCarregando === empId) return;
+    catalogoCarregando = empId;
+    try{
+      const [{data:mats}, {data:servs}] = await Promise.all([
+        supabaseClient.from('materiais_catalogo').select('*').eq('empresa_id', empId).order('ordem'),
+        supabaseClient.from('servicos_catalogo').select('*').eq('empresa_id', empId).order('ordem'),
+      ]);
+      if(mats && mats.length){
+        materials.length = 0;
+        mats.forEach(m => materials.push({id: m.item_id, name: m.nome}));
+      }
+      if(servs && servs.length){
+        valuesItems.length = 0;
+        servs.forEach(s => valuesItems.push({code: s.code, desc: s.descricao, price: Number(s.preco)}));
+      }
+      catalogoEmpresaCarregada = empId;
+      if(steps[currentStep] === 'materiais') renderMateriais();
+      if(steps[currentStep] === 'valores') renderValores();
+    } catch(e){ /* mantém os itens padrão embutidos no app */ }
+    finally { catalogoCarregando = null; }
   }
 
   // ---------- Capture overlay (generic, driven by item.storeKey) ----------
@@ -4562,6 +4762,12 @@
     rotaAtual = rota;
     hdTitle.textContent = TITULOS[rota] || '';
     shell.classList.remove('open');   // menu suspenso: fecha sozinho ao escolher uma opção
+    // qualquer navegação pelo menu fecha janelas por cima — sem isto dava
+    // pra ficar "preso" numa janela flutuante trocando de aba por baixo dela.
+    const tecObrasOv = document.getElementById('tecObrasOverlay');
+    if(tecObrasOv) tecObrasOv.classList.remove('show');
+    const docViewerOv = document.getElementById('docViewerOverlay');
+    if(docViewerOv) docViewerOv.classList.remove('show');
 
     switch(rota){
       case 'dashboard': showAppView('quadro'); renderQuadro(); break;
@@ -4634,6 +4840,9 @@
   let tecCache = [];
   let filtroTecStatus = 'todos';   // 'todos' | 'free' | 'busy' | 'over'
   let filtroTecEquipe = 'todas';
+  // mês usado pelos números "no mês" do quadro — o seletor de calendário
+  // no cabeçalho troca isso pra ver meses passados; sempre dia 1, 00:00.
+  let mesReferencia = (()=>{ const d = new Date(); d.setDate(1); d.setHours(0,0,0,0); return d; })();
 
   // valor total já lançado numa obra (mesmo cálculo usado nos cards de Obras)
   function valorObraRow(o){
@@ -4657,6 +4866,8 @@
       if(btnTrocarQuadro) btnTrocarQuadro.style.display = 'none';
       document.getElementById('valDrop').style.display = 'none';
       document.getElementById('valDropPanel').classList.remove('aberto');
+      document.getElementById('mesDrop').style.display = 'none';
+      document.getElementById('mesDropPanel').classList.remove('aberto');
       gate.style.display = '';
       const sel = document.getElementById('quadroEmpresaAlvo');
       sel.innerHTML = '<option value="">Carregando...</option>';
@@ -4668,13 +4879,14 @@
     gate.style.display = 'none';
     if(btnTrocarQuadro) btnTrocarQuadro.style.display = (ehSuper() && empresaContexto) ? '' : 'none';
     document.getElementById('valDrop').style.display = '';
+    document.getElementById('mesDrop').style.display = '';
 
     const cx = document.getElementById('quadroLista');
     cx.innerHTML = '<div class="empty">Carregando...</div>';
     pintarCabecalho();
 
     const hoje = new Date();
-    document.getElementById('dateTxt').textContent = hoje.toLocaleDateString('pt-BR');
+    atualizarDateTxt();
     document.getElementById('phHello').textContent =
       (hoje.getHours() < 12 ? 'Bom dia, ' : hoje.getHours() < 18 ? 'Boa tarde, ' : 'Boa noite, ')
       + (techNameDisplay.textContent || '').trim().split(/\s+/)[0];
@@ -4714,7 +4926,11 @@
       // mesmo sem obra em aberto — não dá pra despachar pra ele hoje.
       const livres = (tecs||[]).filter(t =>
         !t.status_manual && !(porTec[t.id]||[]).some(o => abertas.includes(o.status))).length;
-      const mes = new Date(); mes.setDate(1); mes.setHours(0,0,0,0);
+      // "mês" agora é o mês escolhido no seletor do cabeçalho, não sempre
+      // o mês corrente — mesReferencia já vem no dia 1, 00:00.
+      const mes = mesReferencia;
+      const proximoMes = new Date(mes.getFullYear(), mes.getMonth()+1, 1);
+      const noPeriodo = dt => dt && new Date(dt) >= mes && new Date(dt) < proximoMes;
 
       // valor do que já tem técnico e está em andamento (pendente fica de
       // fora — sem técnico despachado ainda não tem valor real nenhum).
@@ -4722,9 +4938,9 @@
       const valorEmAndamento = (obras||[])
         .filter(o => emAndamento.includes(o.status))
         .reduce((sum, o) => sum + valorObraRow(o), 0);
-      // valor já aprovado neste mês.
+      // valor já aprovado no mês escolhido.
       const valorAprovadoMes = (obras||[])
-        .filter(o => o.status === 'aprovado' && o.criado_em && new Date(o.criado_em) >= mes)
+        .filter(o => o.status === 'aprovado' && noPeriodo(o.criado_em))
         .reduce((sum, o) => sum + valorObraRow(o), 0);
 
       // ---- indicadores ----
@@ -4756,7 +4972,7 @@
         const minhas = porTec[t.id] || [];
         const abertos = minhas.filter(o => abertas.includes(o.status));
         const noMes = minhas.filter(o =>
-          o.status === 'aprovado' && o.criado_em && new Date(o.criado_em) >= mes).length;
+          o.status === 'aprovado' && noPeriodo(o.criado_em)).length;
         return {
           id:t.id, nome:t.nome || t.email,
           equipe: nomeEq[t.equipe_id] || 'sem equipe',
@@ -4982,6 +5198,40 @@
   document.addEventListener('click', (e)=>{
     const drop = document.getElementById('valDrop');
     if(drop && !drop.contains(e.target)) document.getElementById('valDropPanel').classList.remove('aberto');
+    const mesDrop = document.getElementById('mesDrop');
+    if(mesDrop && !mesDrop.contains(e.target)) document.getElementById('mesDropPanel').classList.remove('aberto');
+  });
+
+  // seletor de mês do cabeçalho do Dashboard: troca o mês de referência
+  // usado pelos números "no mês" (Aprovado/Aprovadas), sem mexer nos KPIs
+  // de estado atual (esses são sempre "agora", não fazem sentido no passado).
+  const MESES_CURTOS = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+  function atualizarDateTxt(){
+    const ehMesAtual = (()=>{ const h = new Date(); return h.getFullYear() === mesReferencia.getFullYear() && h.getMonth() === mesReferencia.getMonth(); })();
+    document.getElementById('dateTxt').textContent =
+      (ehMesAtual ? 'Este mês · ' : '') + MESES_CURTOS[mesReferencia.getMonth()] + '/' + mesReferencia.getFullYear();
+  }
+  document.getElementById('dateBox').addEventListener('click', (e)=>{
+    e.stopPropagation();
+    const input = document.getElementById('mesDropInput');
+    input.value = mesReferencia.getFullYear() + '-' + String(mesReferencia.getMonth()+1).padStart(2,'0');
+    document.getElementById('mesDropPanel').classList.toggle('aberto');
+  });
+  document.getElementById('mesDropAplicar').addEventListener('click', ()=>{
+    const v = document.getElementById('mesDropInput').value;   // "YYYY-MM"
+    if(!v) return;
+    const [ano, mesNum] = v.split('-').map(Number);
+    mesReferencia = new Date(ano, mesNum-1, 1);
+    document.getElementById('mesDropPanel').classList.remove('aberto');
+    atualizarDateTxt();
+    renderQuadro();
+  });
+  document.getElementById('mesDropHoje').addEventListener('click', ()=>{
+    const d = new Date(); d.setDate(1); d.setHours(0,0,0,0);
+    mesReferencia = d;
+    document.getElementById('mesDropPanel').classList.remove('aberto');
+    atualizarDateTxt();
+    renderQuadro();
   });
 
   // ---------- Despacho de obra (analista e admin) ----------
@@ -5667,16 +5917,31 @@
       <div class="tec-obras-secao">
         <div class="tec-obras-secao-t ${cls}">${titulo}<span>${arr.length}</span></div>
         ${arr.length ? arr.map(o => `
-          <div class="tec-obras-item">
+          <div class="tec-obras-item" data-contrato="${esc(o.contrato)}" data-status="${esc(o.status)}">
             <span class="tec-obras-contrato">Contrato ${esc(o.contrato)}</span>
             <span class="tec-obras-status">${esc(STATUS_LABEL_TEC[o.status] || o.status)}</span>
           </div>`).join('')
           : '<div class="tec-obras-vazio">Nenhuma obra nesse status.</div>'}
       </div>`;
-    document.getElementById('tecObrasBody').innerHTML =
+    const body = document.getElementById('tecObrasBody');
+    body.innerHTML =
       secao('Pendentes', 'pend', grupos.pendentes) +
       secao('Rejeitadas', 'rej', grupos.rejeitadas) +
       secao('Aprovadas', 'apr', grupos.aprovadas);
+    // clicar na obra não é só ver — leva direto pra ela em Obras/Histórico,
+    // já filtrada pelo contrato, de onde dá pra abrir/editar de verdade.
+    body.querySelectorAll('.tec-obras-item[data-contrato]').forEach(row=>{
+      row.addEventListener('click', ()=>{
+        const contrato = row.dataset.contrato;
+        const status = row.dataset.status;
+        tecObrasOverlay.classList.remove('show');
+        navegarMenu(status === 'aprovado' ? 'historico' : 'obras');
+        setTimeout(()=>{
+          const busca = document.getElementById('jobsBusca');
+          if(busca){ busca.value = contrato; busca.dispatchEvent(new Event('input')); }
+        }, 600);
+      });
+    });
     tecObrasOverlay.classList.add('show');
     if(typeof empilhar === 'function') empilhar({overlay:'tecObras'});
   }
@@ -6404,6 +6669,7 @@
 
     const db = {
       empresas: [{id:1, nome:'Enlace Demo Telecom', ativa:true}],
+      materiais_catalogo: [], servicos_catalogo: [],
       equipes:  [{id:1, nome:'Equipe Norte', empresa_id:1}, {id:2, nome:'Equipe Sul', empresa_id:1}],
       perfis: [
         {id:'d-adm', nome:'Você (demonstração)', email:'demo@enlace.app', papel:'admin',    aprovado:true, empresa_id:1},
