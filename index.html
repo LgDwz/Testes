@@ -288,6 +288,8 @@
     font-weight:700;font-size:16px;letter-spacing:0.03em;text-transform:uppercase;cursor:pointer;}
   .nav-btn.primary{background:var(--accent);color:var(--accent-ink);}
   .nav-btn.secondary{background:var(--bg-elev-2);color:var(--text-dim);border:1px solid var(--border);flex:0 0 110px;}
+  .nav-btn.tertiary{background:transparent;color:var(--accent);border:1px solid var(--accent);flex:0 0 90px;}
+  .nav-btn.tertiary:disabled{color:var(--text-faint);border-color:var(--border);cursor:not-allowed;}
   .nav-btn.primary:disabled{background:var(--bg-elev-2);color:var(--text-faint);cursor:not-allowed;}
 
   /* REVIEW / RELATORIO SCREEN */
@@ -1268,6 +1270,7 @@
     .nav-btn{ padding:13px; font-size:15px; }
     .nav-btn.primary{ flex:0 0 220px; margin-left:auto; }
     .nav-btn.secondary{ flex:0 0 110px; }
+    .nav-btn.tertiary{ flex:0 0 130px; }
 
     .review-actions{ max-width:340px; margin-left:auto; }
   }
@@ -2049,6 +2052,7 @@
 
   <div class="bottom-bar" id="bottomBar">
     <button class="nav-btn secondary" id="backBtn">Voltar</button>
+    <button class="nav-btn tertiary" id="saveJobBtn" style="display:none;">Salvar</button>
     <button class="nav-btn primary" id="nextBtn">Próximo</button>
   </div>
   </div>
@@ -2136,7 +2140,7 @@
 (function(){
   // Marque aqui a cada build enviado ao campo. O testador informa esta
   // string ao relatar um problema, senao nao da pra saber o que ele rodou.
-  const APP_VERSION = 'Enlace Ops · alpha-10.36 · 25/08/2026';
+  const APP_VERSION = 'Enlace Ops · alpha-10.37 · 25/08/2026';
 
   // ---------- Supabase config ----------
   // Troque pelos valores reais do seu projeto (Project Settings -> API no Supabase).
@@ -2250,6 +2254,7 @@
   // ---------- Navigation ----------
   const backBtn = document.getElementById('backBtn');
   const nextBtn = document.getElementById('nextBtn');
+  const saveJobBtn = document.getElementById('saveJobBtn');
   const bottomBar = document.getElementById('bottomBar');
   const sections = {
     contrato: document.getElementById('stepContrato'),
@@ -2274,6 +2279,10 @@
     } else {
       bottomBar.style.display = 'flex';
       nextBtn.textContent = i === 5 ? 'Gerar relatório' : 'Próximo';
+      // "Salvar" só faz sentido numa obra que já existe no servidor — pra
+      // quem está corrigindo materiais/valores de várias obras seguidas,
+      // sem precisar passar pela revisão/PDF de cada uma pra voltar à lista.
+      saveJobBtn.style.display = obraEditandoId ? '' : 'none';
     }
     if(i < 6) renderStepper();
     window.scrollTo(0,0);
@@ -4176,6 +4185,44 @@
 
   reviewSendBtn.addEventListener('click', enviarObra);
 
+  // ---------- Salvar e voltar (correção rápida de várias obras seguidas) ----------
+  // Diferente de "Enviar"/"Gerar relatório": não mexe no status da obra (não
+  // reabre uma obra aprovada nem reenvia pra fila de revisão) — só grava o
+  // que foi alterado (ex.: materiais/valores) e volta pra lista de obras,
+  // pra quem está lançando/corrigindo várias obras em sequência.
+  async function salvarEVoltar(){
+    if(!obraEditandoId){ showToast('Abra uma obra existente para usar "Salvar"'); return; }
+    if(!supabaseConfigured){ showToast('Chaves do Supabase ainda não configuradas'); return; }
+    if(!online){ showToast('Sem conexão — tente de novo quando reconectar'); return; }
+    const rotulo = saveJobBtn.textContent;
+    saveJobBtn.disabled = true; saveJobBtn.textContent = 'Salvando...';
+    try{
+      const contractNumero = dataState.contract.numero || ('sem-numero-' + Date.now());
+      const uploaded = await uploadAllFiles(contractNumero);
+      const campos = {
+        dados: {
+          contract: dataState.contract,
+          materialsQty: dataState.materialsQty,
+          valuesQty: dataState.valuesQty,
+          arquivos: uploaded,
+          meta: buildMetaSnapshot(),
+          tecnico: (techNameDisplay.textContent || '').trim(),
+        },
+        atualizado_em: new Date().toISOString(),
+      };
+      const {error} = await supabaseClient.from(SUPABASE_TABLE).update(campos).eq('id', obraEditandoId);
+      if(error) throw error;
+      showToast('Salvo — voltando pra lista de obras');
+      idbApagar('atual');
+      navegarMenu('obras');
+    } catch(err){
+      showToast('Não deu pra salvar: ' + (err.message || err));
+    } finally {
+      saveJobBtn.disabled = false; saveJobBtn.textContent = rotulo;
+    }
+  }
+  saveJobBtn.addEventListener('click', salvarEVoltar);
+
   // ---------- Rascunho salvo no aparelho (IndexedDB) ----------
   // Antes o dataState so existia em memoria: se o Android matasse a aba
   // em segundo plano (comum ao abrir a camera), a obra inteira sumia.
@@ -4428,7 +4475,10 @@
     // A navegação agora é a sidebar, mas estes cartões continuam sendo os
     // pontos de entrada usados internamente (ex.: navegarMenu('despacho')).
     const mostrar = (el, v) => { if(el) el.style.display = v ? 'block' : 'none'; };
-    mostrar(document.getElementById('newJobCard'), false);   // obra nasce no escritório
+    // o técnico agora pode criar a própria obra do zero (pedido do Gustavo:
+    // sem depender do escritório despachar toda vez). Analista/admin
+    // continuam usando "Despachar obra", que já anexa OS/projeto e atribui.
+    mostrar(document.getElementById('newJobCard'), ehTecnico());
     mostrar(despacharCard, ehOperador());
     mostrar(equipeCard,    ehOperador() && !ehAdmin());
     mostrar(usersCard,     ehAdmin());
@@ -4639,10 +4689,12 @@
   });
 
   // ---------- Abrir uma obra despachada ----------
-  // Passos 1 e 2 viram leitura pro técnico: os dados vieram do escritório
-  // e são justamente os que ele errava digitando no poste.
+  // Passos 1 e 2 viram leitura pro técnico só quando a obra já veio pronta
+  // do escritório (obraEditandoId setado) — são os dados que ele errava
+  // digitando no poste. Numa obra que o próprio técnico está criando do
+  // zero (sem obraEditandoId), ele preenche esses campos normalmente.
   function aplicarModoLeitura(){
-    const soLeitura = ehTecnico();
+    const soLeitura = ehTecnico() && !!obraEditandoId;
     ['fNumero','fData','fEndereco','fCodtcomp','fCidade','fCep','fCoord','fEmpresa'].forEach(id=>{
       const el = document.getElementById(id);
       if(!el) return;
@@ -7637,7 +7689,9 @@
     resetDataState();
     obraEditandoId = null;
     obraDonoId = null;
+    obraEmpresaId = null;
     idbApagar('atual');
+    aplicarModoLeitura();   // limpa o modo-leitura/aviso de uma obra aberta antes
     showAppView('wizard');
     showStep(0);
   });
