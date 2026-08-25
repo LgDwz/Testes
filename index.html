@@ -177,6 +177,9 @@
   /* MULTI-PHOTO GROUP (box-type items) */
   .multi-group{background:var(--bg-elev);border:1px solid var(--border);border-radius:7px;padding:14px;}
   .multi-group.has-entries{border-color:rgba(53,208,127,0.35);}
+  /* caixa aberta + caixa fechada lado a lado; encolhe pra empilhar em telas bem estreitas */
+  .multi-group-pair{display:flex;flex-wrap:wrap;gap:10px;}
+  .multi-group-pair > .multi-group{flex:1 1 220px;min-width:0;}
   .multi-header{display:flex;align-items:center;gap:10px;margin-bottom:2px;}
   .multi-header .item-num{width:26px;flex-shrink:0;}
   .multi-header-body{flex:1;min-width:0;}
@@ -1249,6 +1252,7 @@
     /* checklist-style lists become 2-column grids, box-groups stay full width */
     .checklist{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
     .checklist > .multi-group{ grid-column:1 / -1; }
+    .checklist > .multi-group-pair{ grid-column:1 / -1; }
     #materialsList, #valuesList{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
     .material-row, .value-row{ margin-bottom:0; }
 
@@ -2132,7 +2136,7 @@
 (function(){
   // Marque aqui a cada build enviado ao campo. O testador informa esta
   // string ao relatar um problema, senao nao da pra saber o que ele rodou.
-  const APP_VERSION = 'Enlace Ops · alpha-10.35 · 25/08/2026';
+  const APP_VERSION = 'Enlace Ops · alpha-10.36 · 25/08/2026';
 
   // ---------- Supabase config ----------
   // Troque pelos valores reais do seu projeto (Project Settings -> API no Supabase).
@@ -2384,7 +2388,21 @@
   const fotosChecklist = document.getElementById('fotosChecklist');
   function renderFotos(){
     fotosChecklist.innerHTML = '';
+    // caixa aberta (id 3) e caixa fechada (id 5) ficam lado a lado, pra dar
+    // pra comparar/anexar as duas juntas; identificação (id 4) some daqui
+    // e é renderizada logo depois, como item cheio abaixo do par.
+    const idPar1 = 3, idPar2 = 5;
     photoItems.forEach(item=>{
+      if(item.id === idPar2) return; // já foi colocado dentro do par abaixo
+      if(item.id === idPar1){
+        const itemPar2 = photoItems.find(i => i.id === idPar2);
+        const row = document.createElement('div');
+        row.className = 'multi-group-pair';
+        row.appendChild(buildMultiPhotoGroup(item));
+        if(itemPar2) row.appendChild(buildMultiPhotoGroup(itemPar2));
+        fotosChecklist.appendChild(row);
+        return;
+      }
       if(item.multiple){
         fotosChecklist.appendChild(buildMultiPhotoGroup(item));
       } else {
@@ -2945,6 +2963,12 @@
     // pra caixa nova (n\u00e3o edi\u00e7\u00e3o de uma j\u00e1 existente) deixa escolher
     // v\u00e1rias fotos de uma vez na galeria \u2014 cada uma vira uma caixa.
     fileInput.multiple = !!(item.multiple && activeMultiIdx === null);
+    // itens de caixa s\u00e3o sempre foto, nunca PDF \u2014 e em alguns celulares
+    // (principalmente iPhone) aceitar imagem+PDF junto faz o sistema abrir um
+    // seletor de arquivo \u00fanico em vez do seletor de fotos com sele\u00e7\u00e3o
+    // m\u00faltipla. Restringindo pra "image/*" nesses itens, o seletor de fotos
+    // nativo aparece e a sele\u00e7\u00e3o de v\u00e1rias de uma vez funciona.
+    fileInput.accept = item.multiple ? 'image/*' : 'image/*,application/pdf';
     // a observa\u00e7\u00e3o some antes de anexar, n\u00e3o depois: assim o t\u00e9cnico j\u00e1
     // sabe pra qual se\u00e7\u00e3o (aberta/fechada/etc.) a foto vai antes de tirar.
     captureObsField.style.display = item.multiple ? 'block' : 'none';
