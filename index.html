@@ -1030,6 +1030,9 @@
   .job-service-row .k{color:var(--text-dim);flex:1;}
   .job-service-row .v{font-family:'IBM Plex Mono',monospace;color:var(--text);flex-shrink:0;}
   .job-service-empty{padding:10px 0;font-size:12px;color:var(--text-faint);}
+  .job-service-section-t{font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:0.06em;
+    text-transform:uppercase;color:var(--text-faint);margin:10px 0 2px;}
+  .job-service-section-t:first-child{margin-top:0;}
   .job-edit-btn{
     display:flex;align-items:center;gap:6px;width:100%;justify-content:center;
     margin-top:8px;padding:9px;border-radius:6px;border:1px solid var(--border);
@@ -2140,7 +2143,7 @@
 (function(){
   // Marque aqui a cada build enviado ao campo. O testador informa esta
   // string ao relatar um problema, senao nao da pra saber o que ele rodou.
-  const APP_VERSION = 'Enlace Ops · alpha-10.37 · 25/08/2026';
+  const APP_VERSION = 'Enlace Ops · alpha-10.38 · 25/08/2026';
 
   // ---------- Supabase config ----------
   // Troque pelos valores reais do seu projeto (Project Settings -> API no Supabase).
@@ -4158,12 +4161,16 @@
       const servicosFinal = valuesItems
         .filter(v => Number(dataState.valuesQty[v.code]) > 0)
         .map(v => ({desc: v.desc, qtd: Number(dataState.valuesQty[v.code]), preco: v.price}));
+      const materiaisFinal = materials
+        .filter(m => Number(dataState.materialsQty[m.id]) > 0)
+        .map(m => ({nome: m.name, qtd: Number(dataState.materialsQty[m.id])}));
       reportsList.unshift({
         contrato: contractNumero,
         cliente: dataState.contract.empresa || 'Empresa não informada',
         status: 'enviado',
         data: new Date().toLocaleDateString('pt-BR'),
         servicos: servicosFinal,
+        materiais: materiaisFinal,
         snapshot: JSON.parse(JSON.stringify(dataState)),
       });
     } catch(err){
@@ -7498,9 +7505,22 @@
 
       const details = document.createElement('div');
       details.className = 'job-details';
+      // materiais some do card há tempos: a obra guarda materialsQty desde
+      // sempre, mas só a Revisão do próprio assistente lia isso — aqui na
+      // lista de Obras só o valor (serviços) era montado.
+      let materiaisHtml = '';
+      if(job.materiais && job.materiais.length){
+        materiaisHtml = '<div class="job-service-section-t">Materiais</div>' + job.materiais.map(m => `
+          <div class="job-service-row">
+            <span class="k">${esc(m.nome)}</span>
+            <span class="v">${esc(m.qtd)}</span>
+          </div>
+        `).join('');
+      }
       let servicosHtml = '';
       if(job.servicos && job.servicos.length){
-        servicosHtml = job.servicos.map(s => `
+        servicosHtml = (job.materiais && job.materiais.length ? '<div class="job-service-section-t">Serviços</div>' : '')
+          + job.servicos.map(s => `
           <div class="job-service-row">
             <span class="k">${esc(s.desc)} (x${esc(s.qtd)})</span>
             <span class="v">${formatBRL(s.qtd * s.preco)}</span>
@@ -7534,7 +7554,7 @@
           </button>` : ''}
         </div>` : '';
 
-      details.innerHTML = servicosHtml + (podeRemanejar ? `
+      details.innerHTML = materiaisHtml + servicosHtml + (podeRemanejar ? `
         <div class="user-empresa-wrap" style="margin-bottom:10px;">
           <span class="user-empresa-label">${esc(job.tecnico || 'sem técnico')}</span>
           <button type="button" class="user-empresa-edit" data-acao="remanejar-job" title="Atribuir/remanejar técnico" aria-label="Atribuir/remanejar técnico">
@@ -7793,10 +7813,14 @@
         const servicos = valuesItems
           .filter(v => Number((d.valuesQty || {})[v.code]) > 0)
           .map(v => ({desc:v.desc, qtd:Number(d.valuesQty[v.code]), preco:v.price}));
+        const materiais = materials
+          .filter(m => Number((d.materialsQty || {})[m.id]) > 0)
+          .map(m => ({nome:m.name, qtd:Number(d.materialsQty[m.id])}));
         return {
           contrato: row.contrato,
           cliente: (d.contract || {}).empresa || 'Empresa não informada',
           status: row.status || 'enviado',
+          materiais: materiais,
           data: (d.contract || {}).data ? toDateBR(d.contract.data) : '',
           tecnico: d.tecnico || '',
           servicos: servicos,
