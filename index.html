@@ -225,6 +225,23 @@
   .med-obra-lin:last-child{border-bottom:none;}
   .med-obra-lin .k{color:var(--text-dim);}
   .med-obra-lin .v{font-family:'IBM Plex Mono',monospace;color:var(--success);white-space:nowrap;}
+  /* Alterar status na mão — recolhido de propósito: é exceção, não rotina */
+  .status-box{margin-top:8px;}
+  .status-abrir{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;
+    min-height:44px;cursor:pointer;background:none;border:1px solid var(--border);
+    border-radius:7px;color:var(--text-dim);font-family:'Inter',sans-serif;font-size:12.5px;}
+  .status-abrir:hover,.status-abrir.on{border-color:var(--accent);color:var(--accent);}
+  .status-painel{margin-top:8px;padding:12px;background:var(--bg-elev-2);
+    border:1px solid var(--border);border-radius:8px;}
+  .status-atual{font-size:11.5px;color:var(--text-dim);margin-bottom:9px;}
+  .status-atual strong{color:var(--text);}
+  .status-opcoes{display:flex;flex-wrap:wrap;gap:6px;}
+  .status-op{min-height:40px;cursor:pointer;background:var(--bg-elev);border:1px solid var(--border);
+    color:var(--text);border-radius:7px;padding:9px 12px;font-family:'Inter',sans-serif;font-size:12px;}
+  .status-op:hover{border-color:var(--accent);color:var(--accent);}
+  .status-op[data-status="aprovado"]:hover{border-color:var(--success);color:var(--success);}
+  .status-op[data-status="reprovado"]:hover{border-color:var(--danger);color:var(--danger);}
+  .status-nota{margin-top:9px;font-size:10.5px;color:var(--text-faint);}
   /* Obra que ja tinha sido aprovada e o tecnico mexeu. Sem isso o analista
      reaprova no automatico sem perceber que o numero mudou depois do "de acordo". */
   .selo-reaberta{margin-top:4px;font-family:'IBM Plex Mono',monospace;font-size:10px;
@@ -2466,7 +2483,7 @@
 (function(){
   // Marque aqui a cada build enviado ao campo. O testador informa esta
   // string ao relatar um problema, senao nao da pra saber o que ele rodou.
-  const APP_VERSION = 'Enlace Ops · alpha-10.47 · 26/08/2026';
+  const APP_VERSION = 'Enlace Ops · alpha-10.48 · 26/08/2026';
 
   // ---------- Supabase config ----------
   // Troque pelos valores reais do seu projeto (Project Settings -> API no Supabase).
@@ -6478,6 +6495,17 @@
     aprovado:'aprovada', reprovado:'devolvida',
   };
 
+  // Status que o escritório pode aplicar na mão. Antes, obra aprovada era beco
+  // sem saída: Aprovar/Reprovar só aparecem quando o status é 'enviado', então
+  // uma aprovação por engano só se desfazia excluindo a obra inteira.
+  const STATUS_MANUAIS = [
+    {id:'despachada',  rot:'Despachada'},
+    {id:'em_execucao', rot:'Em execução'},
+    {id:'enviado',     rot:'Enviada (voltar pra revisão)'},
+    {id:'aprovado',    rot:'Aprovada'},
+    {id:'reprovado',   rot:'Devolvida ao técnico'},
+  ];
+
   async function obrasComContrato(numero, empId, ignorarId){
     if(!numero || !supabaseConfigured || !online) return [];
     try{
@@ -8683,7 +8711,41 @@
             <button class="job-edit-btn" type="button" data-acao="reprovar" style="flex:1;border-color:var(--accent);color:var(--accent);">Reprovar</button>
           </div>
         </div>` : ''}
+        ${ehRevisor() && job.row ? `
+        <div class="status-box">
+          <button type="button" class="status-abrir" data-acao="abrir-status">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+              stroke-linecap="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>
+            Alterar status
+          </button>
+          <div class="status-painel" style="display:none;">
+            <div class="status-atual">Agora: <strong>${esc(ROTULO_STATUS_OBRA[job.status] || job.status)}</strong></div>
+            <div class="status-opcoes">${STATUS_MANUAIS
+              .filter(st => st.id !== job.status)
+              .map(st => `<button type="button" class="status-op" data-status="${st.id}">${esc(st.rot)}</button>`)
+              .join('')}</div>
+            <div class="status-nota">Fica registrado quem mudou e quando.</div>
+          </div>
+        </div>` : ''}
       `;
+
+      // ---- alterar status na mão (só escritório) ----
+      const btnAbrirStatus = details.querySelector('[data-acao="abrir-status"]');
+      if(btnAbrirStatus){
+        const painel = details.querySelector('.status-painel');
+        btnAbrirStatus.addEventListener('click', (e)=>{
+          e.stopPropagation();
+          const aberto = painel.style.display !== 'none';
+          painel.style.display = aberto ? 'none' : 'block';
+          btnAbrirStatus.classList.toggle('on', !aberto);
+        });
+        details.querySelectorAll('.status-op').forEach(op=>{
+          op.addEventListener('click', (e)=>{
+            e.stopPropagation();
+            trocarStatusObra(job, op.dataset.status, op);
+          });
+        });
+      }
 
       const tecEditarJob = details.querySelector('[data-acao="remanejar-job"]');
       if(tecEditarJob){
@@ -9029,6 +9091,54 @@
   }
 
   document.getElementById('medGerar').addEventListener('click', gerarMedicao);
+
+  // Muda o status de uma obra na mão, do lado do escritório. Guarda um
+  // histórico dentro de `dados` — num documento que vira faturamento, saber
+  // quem tirou uma aprovação e quando importa mais do que o status em si.
+  async function trocarStatusObra(job, novoStatus, btn){
+    if(!job.row || !supabaseConfigured || !online){
+      showToast('Sem conexão — tente de novo depois'); return;
+    }
+    const de = ROTULO_STATUS_OBRA[job.status] || job.status;
+    const para = ROTULO_STATUS_OBRA[novoStatus] || novoStatus;
+
+    let aviso = 'Mudar a obra ' + job.contrato + ' de "' + de + '" para "' + para + '"?';
+    if(job.status === 'aprovado'){
+      aviso += '\n\nEla vai sair da medição enquanto não estiver aprovada de novo.';
+    }
+    if(novoStatus === 'aprovado'){
+      aviso += '\n\nAprovada, ela entra na medição do período com o valor atual.';
+    }
+    if(!confirm(aviso)) return;
+
+    const rotulo = btn.textContent;
+    btn.disabled = true; btn.textContent = 'Mudando...';
+    try{
+      const d = Object.assign({}, job.row.dados || {});
+      const hist = Array.isArray(d.historicoStatus) ? d.historicoStatus.slice() : [];
+      hist.push({
+        de: job.status, para: novoStatus,
+        em: new Date().toISOString(),
+        por: (techNameDisplay.textContent || '').trim(),
+      });
+      d.historicoStatus = hist;
+      // sai da aprovação: o selo de "reaberta pelo técnico" perde o sentido
+      if(novoStatus !== 'enviado') delete d.reaberta;
+
+      const campos = {status: novoStatus, dados: d, atualizado_em: new Date().toISOString()};
+      const {error} = await supabaseClient.from(SUPABASE_TABLE).update(campos).eq('id', job.row.id);
+      if(error) throw error;
+      job.status = novoStatus;
+      job.row.status = novoStatus;
+      job.row.dados = d;
+      showToast('Status alterado para "' + para + '"');
+      await refreshJobsList();
+    } catch(err){
+      showToast('Não deu pra mudar: ' + (err.message || err));
+    } finally {
+      btn.disabled = false; btn.textContent = rotulo;
+    }
+  }
 
   // ---------- Fila de revisão ----------
   // Motivos que se repetem toda semana. Ficam no código de propósito: uma
