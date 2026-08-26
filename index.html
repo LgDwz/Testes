@@ -849,6 +849,24 @@
   .kpi.devolv::before{background:var(--accent);} .kpi.devolv .kpi-n{color:var(--accent);}
   .kpi.livre::before{background:#4A9BE0;}   .kpi.livre .kpi-n{color:#8CC3EE;}
   .kpi.zero .kpi-n{color:var(--text-faint);}
+  /* Cartão do painel que leva a algum lugar */
+  .kpi.clicavel{cursor:pointer;font-family:inherit;text-align:left;width:100%;
+    transition:border-color .15s ease, transform .1s ease;}
+  .kpi.clicavel:hover{border-color:var(--accent);}
+  .kpi.clicavel:active{transform:translateY(1px);}
+  .kpi.clicavel:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+  .kpi-seta{margin-left:auto;align-self:center;font-size:17px;color:var(--text-faint);flex-shrink:0;}
+  .kpi.clicavel:hover .kpi-seta{color:var(--accent);}
+  @media (prefers-reduced-motion:reduce){ .kpi.clicavel{transition:none;} .kpi.clicavel:active{transform:none;} }
+  /* Faixa dizendo que a lista está recortada */
+  .faixa-painel{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px;
+    padding:10px 13px;border-radius:8px;background:var(--accent-dim);
+    border:1px solid var(--accent);font-size:12.5px;color:var(--text);}
+  .faixa-painel strong{color:var(--accent);}
+  .faixa-limpar{margin-left:auto;min-height:34px;cursor:pointer;background:none;
+    border:1px solid var(--accent);color:var(--accent);border-radius:7px;padding:7px 13px;
+    font-family:'Inter',sans-serif;font-size:12px;font-weight:600;}
+  .faixa-limpar:hover{background:var(--accent);color:var(--accent-ink);}
   /* ---- linhas de técnico ---- */
   .quadro-eq{
     font-size:10.5px;color:var(--text-faint);font-family:'IBM Plex Mono',monospace;
@@ -2253,6 +2271,7 @@
         <span>Adicionar obra</span>
       </button>
       <input class="adm-busca" id="jobsBusca" placeholder="Buscar por contrato, cliente, técnico ou status" autocomplete="off" style="margin-top:12px;margin-bottom:0;">
+      <div class="faixa-painel" id="faixaFiltroPainel" style="display:none;"></div>
       <div class="adm-filtros" id="jobsStatusFiltro" style="margin-top:10px;margin-bottom:0;padding-bottom:0;">
         <div class="adm-chip ativo" data-filtro="abertas">Pendentes/Rejeitadas</div>
         <div class="adm-chip" data-filtro="historico">Aprovadas</div>
@@ -2552,7 +2571,7 @@
 (function(){
   // Marque aqui a cada build enviado ao campo. O testador informa esta
   // string ao relatar um problema, senao nao da pra saber o que ele rodou.
-  const APP_VERSION = 'Enlace Ops · alpha-10.57 · 26/08/2026';
+  const APP_VERSION = 'Enlace Ops · alpha-10.59 · 26/08/2026';
 
   // ---------- Supabase config ----------
   // Troque pelos valores reais do seu projeto (Project Settings -> API no Supabase).
@@ -4931,7 +4950,11 @@
     }
 
     const sufixo = anexoInterno ? '-com-anexo' : '';
-    doc.save('Relatorio-Ativacao-Convencional-' + contrato + sufixo + '.pdf');
+    const nomePdf = 'Relatorio-Ativacao-Convencional-' + contrato + sufixo + '.pdf';
+    // opts.comoBlob: em vez de baixar, devolve o arquivo pra quem chamou —
+    // é assim que o pacote .zip consegue incluir o relatório junto dos anexos
+    if(opts.comoBlob) return {nome: nomePdf, blob: doc.output('blob')};
+    doc.save(nomePdf);
   }
 
   document.getElementById('reviewEditBtn').addEventListener('click', ()=> showStep(0));
@@ -5264,6 +5287,157 @@
   // Baixa direto do Storage um dos documentos executados (asbuilt ou
   // diagrama unifilar atualizados) que o técnico anexou no passo 4. Não
   // passa pelo jsPDF — é o arquivo original (PDF/imagem) como foi enviado.
+  // ---------- Pacote .zip da obra ----------
+  // ZIP escrito à mão, método "store" (sem compressão). Poderia ser JSZip, mas
+  // seria mais um arquivo pra subir e pra manter offline — e o conteúdo aqui
+  // é PDF e imagem, que já vêm comprimidos: zipar de novo não ganharia nada.
+  const TABELA_CRC = (()=>{
+    const t = new Uint32Array(256);
+    for(let n=0;n<256;n++){
+      let c = n;
+      for(let k=0;k<8;k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+      t[n] = c >>> 0;
+    }
+    return t;
+  })();
+
+  function crc32(u8){
+    let c = 0xFFFFFFFF;
+    for(let i=0;i<u8.length;i++) c = TABELA_CRC[(c ^ u8[i]) & 0xFF] ^ (c >>> 8);
+    return (c ^ 0xFFFFFFFF) >>> 0;
+  }
+
+  function montarZip(arquivos){
+    const enc = new TextEncoder();
+    const partes = [], central = [];
+    let deslocamento = 0;
+
+    arquivos.forEach(f=>{
+      const nome = enc.encode(f.nome);
+      const dados = f.dados;
+      const crc = crc32(dados);
+      const cab = new DataView(new ArrayBuffer(30));
+      cab.setUint32(0, 0x04034b50, true);   // assinatura do cabeçalho local
+      cab.setUint16(4, 20, true);           // versão necessária
+      cab.setUint16(6, 0x0800, true);       // nome do arquivo em UTF-8
+      cab.setUint16(8, 0, true);            // método 0 = store
+      cab.setUint16(10, 0, true); cab.setUint16(12, 0, true);   // hora/data
+      cab.setUint32(14, crc, true);
+      cab.setUint32(18, dados.length, true);
+      cab.setUint32(22, dados.length, true);
+      cab.setUint16(26, nome.length, true);
+      cab.setUint16(28, 0, true);
+      partes.push(new Uint8Array(cab.buffer), nome, dados);
+
+      const cd = new DataView(new ArrayBuffer(46));
+      cd.setUint32(0, 0x02014b50, true);
+      cd.setUint16(4, 20, true); cd.setUint16(6, 20, true);
+      cd.setUint16(8, 0x0800, true); cd.setUint16(10, 0, true);
+      cd.setUint16(12, 0, true); cd.setUint16(14, 0, true);
+      cd.setUint32(16, crc, true);
+      cd.setUint32(20, dados.length, true);
+      cd.setUint32(24, dados.length, true);
+      cd.setUint16(28, nome.length, true);
+      cd.setUint16(30, 0, true); cd.setUint16(32, 0, true);
+      cd.setUint16(34, 0, true); cd.setUint16(36, 0, true);
+      cd.setUint32(38, 0, true);
+      cd.setUint32(42, deslocamento, true);
+      central.push(new Uint8Array(cd.buffer), nome);
+
+      deslocamento += 30 + nome.length + dados.length;
+    });
+
+    const tamCentral = central.reduce((a, x) => a + x.length, 0);
+    const fim = new DataView(new ArrayBuffer(22));
+    fim.setUint32(0, 0x06054b50, true);
+    fim.setUint16(8, arquivos.length, true);
+    fim.setUint16(10, arquivos.length, true);
+    fim.setUint32(12, tamCentral, true);
+    fim.setUint32(16, deslocamento, true);
+    return new Blob([...partes, ...central, new Uint8Array(fim.buffer)],
+                    {type:'application/zip'});
+  }
+
+  // Um clique = relatório fotográfico + asbuilt + diagrama unifilar, num zip só.
+  // Antes esse botão baixava só o relatório e os anexos ficavam em dois outros
+  // botões, dentro do cartão aberto — três cliques em três lugares por obra.
+  async function baixarPacoteObra(job, iconBtn){
+    if(iconBtn){ iconBtn.disabled = true; iconBtn.classList.add('loading'); }
+    try{
+      const arquivos = [];
+      const faltando = [];
+
+      // 1) o relatório em PDF
+      if(!job.state && job.snapshot) job.state = job.snapshot;
+      if(!job.state && job.row){
+        if(!online){ showToast('Sem conexão — os arquivos precisam vir do servidor'); return; }
+        showToast('Baixando arquivos da obra...');
+        job.state = await buildStateFromRow(job.row);
+      }
+      if(job.state){
+        const r = generatePDF({state: job.state, tecnico: job.tecnico, comoBlob: true});
+        if(r) arquivos.push({nome: r.nome, dados: new Uint8Array(await r.blob.arrayBuffer()), rot:'relatório'});
+        else faltando.push('relatório fotográfico');   // sem isto o aviso prometia o que não entregou
+      } else if(!job.row){
+        showToast('Exemplo de demonstração — sem dados no servidor pra reimprimir');
+        return;
+      } else {
+        faltando.push('relatório fotográfico (sem fotos no servidor)');
+      }
+
+      // 2) e 3) os documentos executados do passo 4
+      const caminhos = (job.row && job.row.dados && job.row.dados.arquivos
+                        && job.row.dados.arquivos.docsAtt) || {};
+      const anexos = [
+        {id:'asbuilt',      rot:'Asbuilt-atualizado'},
+        {id:'diagrama_att', rot:'Diagrama-unifilar-atualizado'},
+      ];
+      for(const a of anexos){
+        const caminho = caminhos[a.id];
+        if(!caminho){ faltando.push(a.rot.replace(/-/g,' ').toLowerCase()); continue; }
+        try{
+          const {data, error} = await supabaseClient.storage.from(SUPABASE_BUCKET).download(caminho);
+          if(error) throw error;
+          const ext = (caminho.split('.').pop() || 'pdf').toLowerCase();
+          arquivos.push({nome: a.rot + '-' + job.contrato + '.' + ext,
+                         dados: new Uint8Array(await data.arrayBuffer()),
+                         rot: a.rot.replace(/-/g,' ').toLowerCase()});
+        } catch(e){ faltando.push(a.rot.replace(/-/g,' ').toLowerCase() + ' (falhou o download)'); }
+      }
+
+      if(!arquivos.length){
+        // dizer POR QUE não veio nada vale mais que um "nada pra baixar"
+        showToast('Nada pra baixar ainda — falta: ' + faltando.join(', '));
+        return;
+      }
+
+      // um arquivo só não precisa de zip
+      if(arquivos.length === 1){
+        const url = URL.createObjectURL(new Blob([arquivos[0].dados]));
+        const a = document.createElement('a');
+        a.href = url; a.download = arquivos[0].nome;
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(()=> URL.revokeObjectURL(url), 4000);
+      } else {
+        const url = URL.createObjectURL(montarZip(arquivos));
+        const a = document.createElement('a');
+        a.href = url; a.download = 'Obra-' + job.contrato + '.zip';
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(()=> URL.revokeObjectURL(url), 4000);
+      }
+
+      // a mensagem descreve o que entrou no arquivo, não o que se tentou pegar
+      const veio = arquivos.map(a => a.rot).filter(Boolean).join(', ');
+      showToast(faltando.length
+        ? 'Baixado: ' + veio + ' — faltou: ' + faltando.join(', ')
+        : 'Baixado: ' + veio);
+    } catch(err){
+      showToast('Não deu pra montar o pacote: ' + (err.message || err));
+    } finally {
+      if(iconBtn){ iconBtn.disabled = false; iconBtn.classList.remove('loading'); }
+    }
+  }
+
   async function baixarDocExecutado(job, itemId, nomeBase, btn){
     const path = job.row && job.row.dados && job.row.dados.arquivos
       && job.row.dados.arquivos.docsAtt && job.row.dados.arquivos.docsAtt[itemId];
@@ -6164,7 +6338,12 @@
       case 'nova':      abrirObraNova(); break;
       case 'medicao':   showAppView('medicao'); prepararMedicao(); break;
       case 'tecnicos':  showAppView('usuarios'); escopoTecnicos = true; escopoEmpresas = false; filtroUsuarios = 'tecnico'; renderUsuarios(); break;
-      case 'obras':     filtroObras = 'abertas';   refreshJobsList(); break;
+      case 'obras':
+        // entrar em Obras pelo menu mostra tudo; vindo de um cartão do painel,
+        // o recorte daquele cartão é justamente o que a pessoa quer ver
+        if(!vemDoPainel) filtroPainel = null;
+        vemDoPainel = false;
+        filtroObras = 'abertas';   refreshJobsList(); break;
       case 'historico': filtroObras = 'historico'; refreshJobsList(); break;
       case 'relatorios':
         showToast('Relatórios ainda não têm tela própria — por ora, use o Histórico');
@@ -6336,21 +6515,36 @@
         .reduce((sum, o) => sum + valorObraRow(o), 0);
 
       // ---- indicadores ----
+      // Cada cartão leva pra sua própria lista. Cartão zerado não é clicável:
+      // não há pra onde ir, e um clique que não faz nada corrói a confiança.
       document.getElementById('quadroKpis').innerHTML = [
-        ['', 'tecnicos', emCampo, emCampo, 'Em campo', 'Equipes trabalhando'],
-        ['amber','fila', aguardandoDespacho, aguardandoDespacho, 'Aguardando despacho', 'Obras sem técnico ainda'],
-        ['amber','revisar', aRevisar, aRevisar, 'Aguardando revisão', 'Aguardando análise'],
-        ['red',  'alerta',  devolvidas, devolvidas, 'Devolvidas', 'Precisam de atenção'],
-        ['green','livre',   livres, livres, 'Técnicos livres', 'Disponíveis para despacho'],
-      ].map(([cls, ic, n, disp, rot, ajuda]) => `
-        <div class="kpi ${cls}${n ? '' : ' zero'}${(ic==='alerta'&&n)?' hot':''}">
+        ['', 'tecnicos', emCampo, emCampo, 'Em campo', 'Equipes trabalhando', 'campo'],
+        ['amber','fila', aguardandoDespacho, aguardandoDespacho, 'Aguardando despacho', 'Obras sem técnico ainda', 'despacho'],
+        ['amber','revisar', aRevisar, aRevisar, 'Aguardando revisão', 'Aguardando análise', 'revisar'],
+        ['red',  'alerta',  devolvidas, devolvidas, 'Devolvidas', 'Precisam de atenção', 'devolv'],
+        ['green','livre',   livres, livres, 'Técnicos livres', 'Disponíveis para despacho', 'tecnicos'],
+      ].map(([cls, ic, n, disp, rot, ajuda, destino]) => {
+        const clicavel = n > 0;
+        return `
+        <${clicavel ? 'button type="button"' : 'div'} class="kpi ${cls}${n ? '' : ' zero'}${(ic==='alerta'&&n)?' hot':''}${clicavel ? ' clicavel' : ''}"
+          ${clicavel ? 'data-destino="' + destino + '" aria-label="' + esc(rot) + ': ' + n + '. Toque para ver."' : ''}>
           <div class="kpi-ic">${ICO_KPI[ic]}</div>
           <div style="min-width:0;">
             <div class="kpi-n">${disp}</div>
             <div class="kpi-l">${rot}</div>
             <div class="kpi-h">${ajuda}</div>
           </div>
-        </div>`).join('');
+          ${clicavel ? '<span class="kpi-seta">&#8250;</span>' : ''}
+        </${clicavel ? 'button' : 'div'}>`;
+      }).join('');
+
+      document.querySelectorAll('#quadroKpis .kpi.clicavel').forEach(el=>{
+        el.addEventListener('click', ()=>{
+          const d = el.dataset.destino;
+          if(d === 'tecnicos') navegarMenu('tecnicos');
+          else abrirObrasDoPainel(d);
+        });
+      });
 
       document.getElementById('phSub').textContent =
         (tecs||[]).length + ' técnico(s) · ' + (emCampo + aRevisar + devolvidas) + ' obra(s) em aberto'
@@ -7280,11 +7474,11 @@
           ${u.papel === 'tecnico' ? `<button class="user-ver-obras" type="button" data-acao="ver-obras">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
             Ver obras</button>` : ''}
-          <select class="user-papel">${
+          ${ehAdmin() ? `<select class="user-papel">${
             PAPEIS.map(p => `<option value="${p}"${p === u.papel ? ' selected' : ''}>${p}</option>`).join('')
           }</select>
           <button class="${u.aprovado ? 'user-bloquear' : 'user-aprovar'}" type="button" data-acao="liberar">${u.aprovado ? 'Bloquear' : 'Liberar'}</button>
-          ${souEu ? '' : '<button class="user-excluir" type="button" data-acao="excluir">Excluir</button>'}
+          ${souEu ? '' : '<button class="user-excluir" type="button" data-acao="excluir">Excluir</button>'}` : ''}
         </div>
       `;
 
@@ -7337,6 +7531,9 @@
       }
 
       async function salvar(campos){
+        // só existe caminho pra cá com os controles de admin na tela; sem eles
+        // (analista vendo a lista de técnicos) não há o que salvar
+        if(!btn || !sel) return;
         // trava contra o admin se trancar pra fora do proprio painel
         if(souEu && (campos.aprovado === false || (campos.papel && campos.papel !== 'admin'))){
           showToast('Você não pode remover o próprio acesso de admin');
@@ -7362,8 +7559,10 @@
         renderFiltros(); renderListaUsuarios();
       }
 
-      sel.addEventListener('change', ()=> salvar({papel: sel.value}));
-      btn.addEventListener('click', ()=> salvar({aprovado: !u.aprovado}));
+      // sem os controles de admin na tela (analista vendo só a lista), não há
+      // o que escutar — e chamar addEventListener em null derruba o render
+      if(sel) sel.addEventListener('change', ()=> salvar({papel: sel.value}));
+      if(btn) btn.addEventListener('click', ()=> salvar({aprovado: !u.aprovado}));
       if(selEmp) selEmp.addEventListener('change', ()=>
         salvar({empresa_id: selEmp.value ? Number(selEmp.value) : null}));
       usersList.appendChild(row);
@@ -7413,7 +7612,12 @@
   document.getElementById('closeTecObras').addEventListener('click', ()=> tecObrasOverlay.classList.remove('show'));
 
   async function renderUsuarios(){
-    if(!ehAdmin()){ irParaInicio(); return; }
+    // O menu oferece "Técnicos" pra analista (ehOperador), mas esta tela exigia
+    // admin e mandava de volta pra home em silêncio — o analista clicava e
+    // simplesmente não acontecia nada. Agora a lista de técnicos é liberada pro
+    // escritório; o painel de acessos (liberar, bloquear, excluir, convidar)
+    // continua sendo só de admin, escondido logo abaixo.
+    if(escopoTecnicos ? !ehOperador() : !ehAdmin()){ irParaInicio(); return; }
     if(escopoEmpresas && !ehSuper()){ irParaInicio(); return; }
 
     const tituloAdm = document.querySelector('#usersScreen .step-title');
@@ -7463,7 +7667,8 @@
     }
     // superadmin sem escolher uma empresa não tem onde encaixar quem for convidado
     const btnConv = document.getElementById('btnNovoConvite');
-    if(btnConv) btnConv.style.display = (ehSuper() && !empresaContexto) ? 'none' : '';
+    if(btnConv) btnConv.style.display =
+      (!ehAdmin() || (ehSuper() && !empresaContexto)) ? 'none' : '';
 
     usersList.innerHTML = '<div class="job-service-empty" style="padding:20px 4px;">Carregando...</div>';
     try{
@@ -8836,10 +9041,56 @@
   // dele (uma obra pendente não tem tecnico_id nenhum ainda).
   const ABERTAS = ['pendente','despachada','em_execucao','enviado','reprovado','rascunho'];
 
+  // Recorte vindo de um cartão do painel de Despacho. Um número que diz
+  // "1 obra precisa de atenção" e não leva até ela resolve metade do problema.
+  let filtroPainel = null;   // {status:[...], rot:'...'} ou null
+
+  const RECORTES_PAINEL = {
+    campo:    {status:['despachada','em_execucao'], rot:'Em campo'},
+    despacho: {status:['pendente'],                 rot:'Aguardando despacho'},
+    revisar:  {status:['enviado'],                  rot:'Aguardando revisão'},
+    devolv:   {status:['reprovado'],                rot:'Devolvidas'},
+  };
+
   function obrasDoFiltro(){
-    return reportsList.filter(j => filtroObras === 'historico'
+    let lista = reportsList.filter(j => filtroObras === 'historico'
       ? j.status === 'aprovado'
       : ABERTAS.includes(j.status));
+    if(filtroPainel) lista = lista.filter(j => filtroPainel.status.includes(j.status));
+    return lista;
+  }
+
+  // Entra na lista de obras já recortada pelo cartão que foi tocado.
+  let vemDoPainel = false;   // ver navegarMenu, case 'obras'
+
+  function abrirObrasDoPainel(chave){
+    const r = RECORTES_PAINEL[chave];
+    if(!r) return;
+    filtroPainel = r;
+    vemDoPainel = true;
+    filtroObras = 'abertas';
+    document.querySelectorAll('#jobsStatusFiltro .adm-chip')
+      .forEach(c => c.classList.toggle('ativo', c.dataset.filtro === 'abertas'));
+    const busca = document.getElementById('jobsBusca');
+    if(busca) busca.value = '';
+    navegarMenu('obras');
+  }
+
+  function limparFiltroPainel(){
+    filtroPainel = null;
+    refreshJobsList();
+  }
+
+  // Faixa dizendo qual recorte está ativo — sem isso o analista abre a lista,
+  // vê 1 obra e acha que só existe 1 obra em aberto.
+  function pintarFaixaPainel(){
+    const faixa = document.getElementById('faixaFiltroPainel');
+    if(!faixa) return;
+    if(!filtroPainel){ faixa.style.display = 'none'; faixa.innerHTML = ''; return; }
+    faixa.style.display = '';
+    faixa.innerHTML = '<span>Mostrando só: <strong>' + esc(filtroPainel.rot) + '</strong></span>'
+      + '<button type="button" class="faixa-limpar">Ver todas</button>';
+    faixa.querySelector('.faixa-limpar').addEventListener('click', limparFiltroPainel);
   }
 
   // Se a seção fica aberta ou fechada é escolha de quem usa, e o app lembra.
@@ -8871,6 +9122,7 @@
         .some(v => String(v || '').toLowerCase().includes(termoJobs));
     });
 
+    pintarFaixaPainel();
     if(!lista.length){
       jobsList.innerHTML = '<div class="job-service-empty" style="padding:24px 4px;">'
         + (termoJobs
@@ -8915,9 +9167,12 @@
         </button>
         <div class="job-chevron">&#8250;</div>
       `;
-      header.querySelector('.job-pdf-quick').addEventListener('click', (e)=>{
+      const btnPacote = header.querySelector('.job-pdf-quick');
+      btnPacote.title = 'Baixar tudo: relatório, asbuilt e diagrama';
+      btnPacote.setAttribute('aria-label', 'Baixar todos os documentos do contrato ' + job.contrato);
+      btnPacote.addEventListener('click', (e)=>{
         e.stopPropagation();
-        gerarPdfDaObra(job, null, e.currentTarget);
+        baixarPacoteObra(job, e.currentTarget);
       });
 
       const details = document.createElement('div');
@@ -9556,6 +9811,7 @@
   document.querySelectorAll('#jobsStatusFiltro .adm-chip').forEach(chip=>{
     chip.addEventListener('click', ()=>{
       filtroObras = chip.dataset.filtro;
+      filtroPainel = null;   // trocar de aba na mão desfaz o recorte do painel
       atualizarTituloJobs();
       renderJobsList();
     });
