@@ -311,8 +311,12 @@
   .multi-entry-legend{width:100%;background:var(--bg-elev);border:1px solid var(--border);color:var(--text);
     font-size:12px;padding:6px 8px;border-radius:5px;font-family:'Inter',sans-serif;}
   .multi-entry-legend::placeholder{color:var(--text-faint);}
+  .item-remove{background:none;border:none;color:var(--text-faint);cursor:pointer;font-size:16px;
+    min-width:44px;min-height:44px;flex-shrink:0;border-radius:7px;align-self:center;}
+  .item-remove:hover{color:var(--warning);background:var(--warning-dim);}
+  .item-remove:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
   .multi-entry-remove{background:none;border:none;color:var(--text-faint);cursor:pointer;font-size:16px;
-    width:26px;height:26px;flex-shrink:0;border-radius:5px;}
+    min-width:44px;min-height:44px;flex-shrink:0;border-radius:7px;}
   .multi-entry-remove:hover{color:var(--warning);background:var(--warning-dim);}
   .tec-obras-secao{margin-bottom:18px;}
   .tec-obras-secao-t{display:flex;align-items:center;gap:8px;font-family:'IBM Plex Mono',monospace;font-size:11.5px;
@@ -528,7 +532,8 @@
     font-weight:700;font-size:16px;letter-spacing:0.03em;text-transform:uppercase;cursor:pointer;}
   .nav-btn.primary{background:var(--accent);color:var(--accent-ink);}
   .nav-btn.secondary{background:var(--bg-elev-2);color:var(--text-dim);border:1px solid var(--border);flex:0 0 110px;}
-  .nav-btn.tertiary{background:transparent;color:var(--accent);border:1px solid var(--accent);flex:0 0 90px;}
+  .nav-btn.tertiary{background:transparent;color:var(--accent);border:1px solid var(--accent);
+    flex:0 0 auto;padding-left:14px;padding-right:14px;white-space:nowrap;}
   .nav-btn.tertiary:disabled{color:var(--text-faint);border-color:var(--border);cursor:not-allowed;}
   .nav-btn.primary:disabled{background:var(--bg-elev-2);color:var(--text-faint);cursor:not-allowed;}
 
@@ -570,6 +575,14 @@
   .close-btn:hover{border-color:var(--danger);color:var(--danger);}
   /* Sair da captura sem precisar caçar o X do canto: o técnico toca no item
      errado o tempo todo e ficava preso escolhendo câmera ou galeria. */
+  /* Escolher arquivo: era um link sublinhado discreto. Vira botão de verdade,
+     porque em documento (projeto, diagrama) ele é a ÚNICA opção — pedir foto de
+     um asbuilt não faz sentido nenhum. */
+  .attach-arquivo{display:flex;align-items:center;justify-content:center;gap:9px;width:100%;
+    min-height:52px;cursor:pointer;background:none;border:1.5px dashed var(--border-strong);
+    border-radius:9px;color:var(--text-dim);font-family:'Inter',sans-serif;font-size:13.5px;padding:14px;}
+  .attach-arquivo:hover{border-color:var(--accent);color:var(--accent);}
+  .attach-arquivo.principal{border-style:solid;border-color:var(--accent);color:var(--accent);font-weight:600;}
   .capture-cancelar{width:100%;min-height:48px;margin-top:4px;cursor:pointer;background:none;
     border:1px solid var(--border);border-radius:9px;color:var(--text-dim);
     font-family:'Inter',sans-serif;font-size:13px;}
@@ -1524,7 +1537,7 @@
     .nav-btn{ padding:13px; font-size:15px; }
     .nav-btn.primary{ flex:0 0 220px; margin-left:auto; }
     .nav-btn.secondary{ flex:0 0 110px; }
-    .nav-btn.tertiary{ flex:0 0 130px; }
+    .nav-btn.tertiary{ flex:0 0 auto; padding-left:18px; padding-right:18px; }
 
     .review-actions{ max-width:340px; margin-left:auto; }
   }
@@ -2407,11 +2420,13 @@
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h3l1.5-2h7L17 7h3a1 1 0 011 1v10a1 1 0 01-1 1H4a1 1 0 01-1-1V8a1 1 0 011-1z"/><circle cx="12" cy="13" r="3.5"/></svg>
           Tirar foto agora
         </button>
-        <label for="fileInput" id="attachLabel" style="display:flex;align-items:center;gap:8px;color:var(--text-dim);font-size:12.5px;cursor:pointer;text-decoration:underline;">
-          Escolher da galeria
+        <label for="fileInput" id="attachLabel" class="attach-arquivo">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round"><path d="M6 2h9l5 5v13a2 2 0 01-2 2H6a2 2 0 01-2-2V4a2 2 0 012-2z"/><path d="M14 2v6h6"/></svg>
+          <span id="attachLabelTxt">Escolher da galeria</span>
         </label>
         <input type="file" id="fileInput" accept="image/*,application/pdf" style="display:none;">
-        <button type="button" class="capture-cancelar" id="cancelarCaptura">Cancelar &mdash; voltar pra lista de fotos</button>
+        <button type="button" class="capture-cancelar" id="cancelarCaptura">Cancelar</button>
       </div>
       <video id="cameraVideo" autoplay playsinline muted style="display:none;position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></video>
       <canvas id="captureCanvas" style="display:none;"></canvas>
@@ -2483,7 +2498,7 @@
 (function(){
   // Marque aqui a cada build enviado ao campo. O testador informa esta
   // string ao relatar um problema, senao nao da pra saber o que ele rodou.
-  const APP_VERSION = 'Enlace Ops · alpha-10.48 · 26/08/2026';
+  const APP_VERSION = 'Enlace Ops · alpha-10.52 · 26/08/2026';
 
   // ---------- Supabase config ----------
   // Troque pelos valores reais do seu projeto (Project Settings -> API no Supabase).
@@ -2531,7 +2546,7 @@
     {id:3, title:"Caixa aberta", needsMeter:false, multiple:true, storeKey:'photos'},
     {id:4, title:"Identificação do cliente dentro da caixa", needsMeter:false, multiple:true, storeKey:'photos'},
     {id:5, title:"Caixa fechada e acomodada no local", needsMeter:false, multiple:true, storeKey:'photos'},
-    {id:6, title:"Cliente no local da instalação (PTO)", needsMeter:false, multiple:false, storeKey:'photos'},
+    {id:6, title:"Interna do cliente", needsMeter:false, multiple:false, storeKey:'photos'},
     // O sinal era só uma foto: ninguém conseguia filtrar, somar ou barrar nada
     // a partir dela, e leitura tremida virava obra devolvida. Agora vai também
     // como número, com faixa de aceite — é assim que a VIAVI monta relatório de
@@ -2677,7 +2692,11 @@
       // "Salvar" só faz sentido numa obra que já existe no servidor — pra
       // quem está corrigindo materiais/valores de várias obras seguidas,
       // sem precisar passar pela revisão/PDF de cada uma pra voltar à lista.
-      saveJobBtn.style.display = obraEditandoId ? '' : 'none';
+      // Antes só aparecia em obra que já existia no servidor. Numa obra nova o
+      // único jeito de gravar era "Gerar relatório", que monta o PDF e envia —
+      // quem está lançando uma leva inteira precisa só guardar e ir pra próxima.
+      saveJobBtn.style.display = '';
+      saveJobBtn.textContent = obraEditandoId ? 'Salvar' : 'Salvar e sair';
     }
     if(i < 6) renderStepper();
     window.scrollTo(0,0);
@@ -2799,9 +2818,25 @@
         ${refHtml}
         ${obsHtml}
       </div>
+      ${s ? `<button class="item-remove" type="button" title="Remover anexo" aria-label="Remover ${esc(item.title)}">&#10005;</button>` : ''}
       <div class="item-chevron">&#8250;</div>
     `;
+    // mesma lógica das fotos: anexou o arquivo errado, tem que dar pra tirar
+    const btnRemoverDoc = card.querySelector('.item-remove');
+    if(btnRemoverDoc){
+      btnRemoverDoc.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        if(!confirm('Remover o anexo "' + item.title + '"?')) return;
+        delete dataState[item.storeKey][item.id];
+        salvarRascunho();
+        renderDocsProjeto();
+        renderDocsExecutados();
+        renderStepper();
+        showToast('Anexo removido');
+      });
+    }
     card.addEventListener('click', (e)=>{
+      if(e.target.closest('.item-remove')) return;   // o X tem tratamento próprio
       if(e.target.classList.contains('ref-link') && e.target.dataset.ref){
         e.stopPropagation();
         const refDoc = dataState.projectDocs[e.target.dataset.ref];
@@ -3128,12 +3163,29 @@
         }</div>
         ${s ? `<input class="legend-input" placeholder="Observação/legenda..." value="${esc(s.legend||'')}" data-photo-id="${item.id}">` : ''}
       </div>
+      ${s ? `<button class="item-remove" type="button" data-remove-foto="${item.id}" title="Remover foto" aria-label="Remover foto de ${esc(item.title)}">&#10005;</button>` : ''}
       <div class="item-chevron">&#8250;</div>
     `;
     card.addEventListener('click', (e)=>{
       if(e.target.classList.contains('legend-input')){ e.stopPropagation(); return; }
+      if(e.target.closest('.item-remove')) return;   // o X tem tratamento próprio
       openCapture(item, null);
     });
+    // Antes só as caixas tinham como remover: pra trocar uma foto de cabo o
+    // técnico tinha que anexar outra por cima, e sem jeito nenhum de simplesmente
+    // apagar uma que entrou errada.
+    const btnRemover = card.querySelector('.item-remove');
+    if(btnRemover){
+      btnRemover.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        if(!confirm('Remover a foto "' + item.title + '"?')) return;
+        delete dataState.photos[item.id];
+        salvarRascunho();
+        renderFotos();
+        renderStepper();
+        showToast('Foto removida');
+      });
+    }
     const legendInput = card.querySelector('.legend-input');
     if(legendInput){
       legendInput.addEventListener('input', (e)=>{
@@ -3676,6 +3728,8 @@
   const attachedImg = document.getElementById('attachedImg');
   const fileName = document.getElementById('fileName');
   const attachLabel = document.getElementById('attachLabel');
+  const attachLabelTxt = document.getElementById('attachLabelTxt');
+  const cancelarCaptura = document.getElementById('cancelarCaptura');
   const captureChoice = document.getElementById('captureChoice');
   const startCameraBtn = document.getElementById('startCameraBtn');
   const cameraVideo = document.getElementById('cameraVideo');
@@ -3904,7 +3958,18 @@
     // seletor de arquivo \u00fanico em vez do seletor de fotos com sele\u00e7\u00e3o
     // m\u00faltipla. Restringindo pra "image/*" nesses itens, o seletor de fotos
     // nativo aparece e a sele\u00e7\u00e3o de v\u00e1rias de uma vez funciona.
-    fileInput.accept = item.multiple ? 'image/*' : 'image/*,application/pdf';
+    // Documento (projeto, diagrama, asbuilt) não se fotografa: se anexa o
+    // arquivo. Oferecer "tirar foto agora" num asbuilt só atrapalha, e um
+    // asbuilt fotografado da tela do computador é ilegível no relatório.
+    const ehDocumento = item.storeKey !== 'photos';
+    startCameraBtn.style.display = ehDocumento ? 'none' : '';
+    attachLabel.classList.toggle('principal', ehDocumento);
+    attachLabelTxt.textContent = ehDocumento ? 'Escolher arquivo' : 'Escolher da galeria';
+    cancelarCaptura.textContent = ehDocumento
+      ? 'Cancelar' : 'Cancelar \u2014 voltar pra lista de fotos';
+    fileInput.accept = ehDocumento
+      ? 'application/pdf,image/*'
+      : (item.multiple ? 'image/*' : 'image/*,application/pdf');
     // a observa\u00e7\u00e3o some antes de anexar, n\u00e3o depois: assim o t\u00e9cnico j\u00e1
     // sabe pra qual se\u00e7\u00e3o (aberta/fechada/etc.) a foto vai antes de tirar.
     captureObsField.style.display = item.multiple ? 'block' : 'none';
@@ -4325,7 +4390,9 @@
     const c = st.contract || {};
     const contrato = c.numero || 'sem-numero';
     const dataRel = toDateBR(c.data) || new Date().toLocaleDateString('pt-BR');
-    const tecnico = (opts.tecnico || techNameDisplay.textContent || '').trim();
+    // fallback era techNameDisplay = quem está logado. Num PDF que vai pra
+    // operadora, isso nomeia o analista como executor do serviço.
+    const tecnico = (opts.tecnico || nomeTecnicoObra() || '').trim();
     const CONTENT_TOP = 40;
 
     // ---- Cabecalho repetido em todas as paginas ----
@@ -5131,7 +5198,7 @@
           valuesQty: dataState.valuesQty,
           arquivos: uploaded,
           meta: buildMetaSnapshot(),
-          tecnico: (techNameDisplay.textContent || '').trim(),
+          tecnico: nomeTecnicoObra(),
           reaberta: dataState.reabertaMarca || undefined,
         }
       };
@@ -5190,6 +5257,30 @@
   // reabre uma obra aprovada nem reenvia pra fila de revisão) — só grava o
   // que foi alterado (ex.: materiais/valores) e volta pra lista de obras,
   // pra quem está lançando/corrigindo várias obras em sequência.
+  // Nome do técnico QUE EXECUTOU a obra — não de quem está com ela aberta.
+  // Era `techNameDisplay.textContent` em cinco lugares, ou seja: sempre o
+  // usuário logado. Bastava o escritório abrir e salvar uma obra pra o nome do
+  // técnico virar o do analista — no cartão, no PDF que vai pra operadora e na
+  // coluna "Técnico" da medição. O vínculo (tecnico_id) sempre esteve certo;
+  // o que estava errado era o nome gravado ao lado dele.
+  function nomeTecnicoObra(){
+    if(obraDonoId){
+      // try/catch e não `typeof`: com `let`, `typeof` numa variável ainda não
+      // inicializada LANÇA erro em vez de devolver "undefined" — e essa classe
+      // de bug já derrubou o script inteiro duas vezes neste projeto.
+      let achado = null;
+      try{
+        achado = tecnicosJobsCache.concat(tecnicosCache)
+          .find(t => String(t.id) === String(obraDonoId));
+      } catch(e){ achado = null; }
+      if(achado) return (achado.nome || achado.email || '').trim();
+      if(obraTecnicoNome) return obraTecnicoNome;     // sem a lista à mão, mantém o que já estava
+      return '';
+    }
+    // obra nova: quem está criando é quem vai executar
+    return (techNameDisplay.textContent || '').trim();
+  }
+
   // Obra aprovada que o TÉCNICO mexe perde a aprovação e volta pra fila do
   // escritório. Antes o "Salvar" gravava por cima sem tocar no status — a obra
   // seguia aprovada com número diferente do que foi validado, e ia pra medição
@@ -5199,9 +5290,12 @@
   }
 
   async function salvarEVoltar(){
-    if(!obraEditandoId){ showToast('Abra uma obra existente para usar "Salvar"'); return; }
     if(!supabaseConfigured){ showToast('Chaves do Supabase ainda não configuradas'); return; }
     if(!online){ showToast('Sem conexão — tente de novo quando reconectar'); return; }
+
+    // Obra nova: guarda como rascunho, sem gerar PDF nem mandar pra revisão.
+    // Ela aparece na lista de Obras e é retomada depois pelo botão "Abrir".
+    if(!obraEditandoId) return salvarObraNova();
 
     const reabrir = vaiReabrirAprovacao();
     if(reabrir && !confirm(
@@ -5222,7 +5316,7 @@
           valuesQty: dataState.valuesQty,
           arquivos: uploaded,
           meta: buildMetaSnapshot(),
-          tecnico: (techNameDisplay.textContent || '').trim(),
+          tecnico: nomeTecnicoObra(),
         },
         atualizado_em: new Date().toISOString(),
       };
@@ -5252,6 +5346,62 @@
       saveJobBtn.disabled = false; saveJobBtn.textContent = rotulo;
     }
   }
+  // Grava uma obra que ainda não existe no servidor, como RASCUNHO: nada de
+  // PDF, nada de fila de revisão. É o "anotei, volto nela depois".
+  async function salvarObraNova(){
+    const numero = (dataState.contract.numero || '').trim();
+    if(!numero){
+      showToast('Preencha o número do contrato antes de salvar');
+      showStep(0);
+      const el = document.getElementById('fNumero');
+      if(el){ el.focus(); el.style.borderColor = 'var(--warning)';
+              setTimeout(()=>{ el.style.borderColor = ''; }, 2000); }
+      return;
+    }
+    const rotulo = saveJobBtn.textContent;
+    saveJobBtn.disabled = true; saveJobBtn.textContent = 'Salvando...';
+    try{
+      const uploaded = await uploadAllFiles(numero);
+      const payload = {
+        contrato: numero,
+        status: 'rascunho',
+        empresa_id: obraEmpresaId || minhaEmpresa(),
+        tecnico_id: obraDonoId || (perfilAtual && perfilAtual.id !== 'demo' ? perfilAtual.id : undefined),
+        dados: {
+          contract: dataState.contract,
+          materialsQty: dataState.materialsQty,
+          materialsExtra: dataState.materialsExtra,
+          valuesQty: dataState.valuesQty,
+          arquivos: uploaded,
+          meta: buildMetaSnapshot(),
+          tecnico: nomeTecnicoObra(),
+        },
+      };
+      // O Supabase de verdade devolve um construtor encadeável e o id só volta
+      // com .select(); o banco falso do modo demo devolve a promessa direto.
+      // Este teste faz o mesmo código servir nos dois.
+      const req = supabaseClient.from(SUPABASE_TABLE).insert(payload);
+      const {data, error} = (req && typeof req.select === 'function')
+        ? await req.select('id').maybeSingle()
+        : await req;
+      if(error) throw error;
+      // a partir daqui a obra existe: o próximo Salvar atualiza em vez de duplicar
+      const novoId = data && (Array.isArray(data) ? (data[0]||{}).id : data.id);
+      if(novoId){
+        obraEditandoId = novoId;
+        statusObraAtual = 'rascunho';
+      }
+      registrarUso();
+      idbApagar('atual');
+      showToast('Rascunho salvo — continue pela lista de obras quando quiser');
+      navegarMenu('obras');
+    } catch(err){
+      showToast('Não deu pra salvar: ' + (err.message || err));
+    } finally {
+      saveJobBtn.disabled = false; saveJobBtn.textContent = rotulo;
+    }
+  }
+
   saveJobBtn.addEventListener('click', salvarEVoltar);
 
   // ---------- Rascunho salvo no aparelho (IndexedDB) ----------
@@ -5321,7 +5471,7 @@
       try{
         await idbGravar('atual', {
           quando: Date.now(),
-          tecnico: (techNameDisplay.textContent || '').trim(),
+          tecnico: nomeTecnicoObra(),
           dados: dataState,
         });
       } catch(e){ /* cota cheia ou modo privado: segue sem travar o app */ }
@@ -5445,6 +5595,7 @@
   let perfilAtual = null;                 // {id, nome, papel, aprovado}
   let obraEditandoId = null;              // id da linha quando esta corrigindo obra existente
   let obraDonoId = null;                  // dono original: o revisor grava na pasta dele
+  let obraTecnicoNome = null;             // nome do técnico DA OBRA (não de quem está mexendo)
   let obraEmpresaId = null;               // empresa da obra aberta
   let statusObraAtual = null;             // evita reenviar obra já fechada
 
@@ -5767,6 +5918,7 @@
       });
       obraEditandoId = job.row ? job.row.id : null;
       obraDonoId     = job.row ? (job.row.tecnico_id || null) : null;
+      obraTecnicoNome = job.row ? (((job.row.dados || {}).tecnico) || null) : null;
       obraEmpresaId  = job.row ? (job.row.empresa_id || null) : null;
       statusObraAtual = job.row ? job.row.status : null;
 
@@ -8121,7 +8273,7 @@
       contrato: dataState.contract.numero || ('sem-numero-' + Date.now()),
       dados: JSON.parse(JSON.stringify(dataState)),
       meta: buildMetaSnapshot(),
-      tecnico: (techNameDisplay.textContent || '').trim(),
+      tecnico: nomeTecnicoObra(),
       donoId: obraDonoId,
       empresaId: obraEmpresaId || minhaEmpresa(),
       editandoId: obraEditandoId,
@@ -8396,6 +8548,12 @@
   // Sem dados de exemplo: a lista vem do Supabase, filtrada pelo RLS.
   let reportsList = [];
   let tecnicosJobsCache = [];   // {id,nome,email,empresa_id} — pra remanejar direto por aqui também
+
+  function nomeDoVinculo(tecnicoId){
+    if(!tecnicoId) return '';
+    const t = tecnicosJobsCache.find(x => String(x.id) === String(tecnicoId));
+    return t ? (t.nome || t.email || '').trim() : '';
+  }
 
   // ---------- Botao voltar do navegador / do Android ----------
   // Sem isto, "voltar" saía do app e o técnico perdia a tela em que
@@ -9308,7 +9466,10 @@
           status: row.status || 'enviado',
           materiais: materiais,
           data: (d.contract || {}).data ? toDateBR(d.contract.data) : '',
-          tecnico: d.tecnico || '',
+          // resolve pelo vínculo (tecnico_id), não pelo nome gravado — assim as
+          // obras que já foram salvas com o nome errado aparecem certas sem
+          // precisar mexer no banco
+          tecnico: nomeDoVinculo(row.tecnico_id) || d.tecnico || '',
           servicos: servicos,
           reaberta: d.reaberta || null,
           row: row,
