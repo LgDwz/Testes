@@ -2301,6 +2301,7 @@
         <input class="cat-busca" id="materiaisBusca" placeholder="Buscar material..." autocomplete="off" inputmode="search">
         <button class="cat-chip" id="materiaisSoPreench" type="button">Só preenchidos</button>
       </div>
+      <div class="dup-aviso" id="materiaisSemEmpresa" style="display:none;"></div>
       <div class="cat-atalhos" id="materiaisAtalhos" style="display:none;"></div>
       <div class="cat-vazio" id="materiaisVazio" style="display:none;"></div>
       <div id="materialsList"></div>
@@ -2314,6 +2315,7 @@
         <input class="cat-busca" id="valoresBusca" placeholder="Buscar por código ou descrição..." autocomplete="off" inputmode="search">
         <button class="cat-chip" id="valoresSoPreench" type="button">Só preenchidos</button>
       </div>
+      <div class="dup-aviso" id="valoresSemEmpresa" style="display:none;"></div>
       <div class="cat-atalhos" id="valoresAtalhos" style="display:none;"></div>
       <div class="cat-vazio" id="valoresVazio" style="display:none;"></div>
       <div id="valuesList"></div>
@@ -2498,7 +2500,7 @@
 (function(){
   // Marque aqui a cada build enviado ao campo. O testador informa esta
   // string ao relatar um problema, senao nao da pra saber o que ele rodou.
-  const APP_VERSION = 'Enlace Ops · alpha-10.52 · 26/08/2026';
+  const APP_VERSION = 'Enlace Ops · alpha-10.55 · 26/08/2026';
 
   // ---------- Supabase config ----------
   // Troque pelos valores reais do seu projeto (Project Settings -> API no Supabase).
@@ -2688,6 +2690,14 @@
       renderReview();
     } else {
       bottomBar.style.display = 'flex';
+      // Redesenha o passo ao ENTRAR nele. Sem isto, Materiais e Valores ficavam
+      // com o que foi pintado lá no resetDataState (a lista embutida de 8 itens):
+      // o catálogo da empresa chega do servidor enquanto o técnico ainda está no
+      // passo Contrato, e `garantirCatalogo()` só redesenhava se ele já estivesse
+      // parado na tela de materiais. Era uma corrida — e era a causa real do
+      // "os materiais do CRM não aparecem".
+      if(steps[i] === 'materiais') renderMateriais();
+      if(steps[i] === 'valores')   renderValores();
       nextBtn.textContent = i === 5 ? 'Gerar relatório' : 'Próximo';
       // "Salvar" só faz sentido numa obra que já existe no servidor — pra
       // quem está corrigindo materiais/valores de várias obras seguidas,
@@ -2810,7 +2820,7 @@
     card.innerHTML = `
       <div class="item-num">${numberLabel || ''}</div>
       <div class="item-thumb${s ? ' filled' : ''}" style="${s ? 'background:var(--success-dim)' : ''}">
-        ${s && !ehPdf(s) ? '<img src="'+s.imgSrc+'" style="width:100%;height:100%;object-fit:cover;">' : fileIcon()}
+        ${temMiniatura(s) ? '<img src="'+s.imgSrc+'" style="width:100%;height:100%;object-fit:cover;">' : fileIcon()}
       </div>
       <div class="item-body">
         <div class="item-title">${item.title}</div>
@@ -3148,7 +3158,7 @@
     card.innerHTML = `
       <div class="item-num">${String(item.id).padStart(2,'0')}</div>
       <div class="item-thumb${s ? ' filled' : ''}" style="${s ? 'background:var(--success-dim)' : ''}">
-        ${s && !ehPdf(s) ? '<img src="'+s.imgSrc+'" style="width:100%;height:100%;object-fit:cover;">' : cameraIcon()}
+        ${temMiniatura(s) ? '<img src="'+s.imgSrc+'" style="width:100%;height:100%;object-fit:cover;">' : cameraIcon()}
       </div>
       <div class="item-body">
         <div class="item-title">${item.title}</div>
@@ -3273,6 +3283,21 @@
     });
     valuesTotalEl.textContent = formatBRL(total);
   }
+  // Qual empresa manda no catálogo.
+  //
+  // Era `obraEmpresaId || perfilAtual.empresa_id` nos cinco pontos do catálogo.
+  // Funciona pro técnico e pro analista, mas o SUPERADMIN não tem empresa
+  // própria (o resto do app já sabe disso e usa `empresaContexto`). Com
+  // empresa_id nulo, `garantirCatalogo()` saía na primeira linha e a tela
+  // caía nos 8 materiais embutidos no código; pior, "Adicionar material"
+  // nem tentava gravar no servidor — o item aparecia na tela e sumia no
+  // próximo carregamento. Parecia que subir o index apagava o catálogo.
+  function empresaDoCatalogo(){
+    if(obraEmpresaId) return obraEmpresaId;
+    try{ if(empresaContexto && empresaContexto.id) return empresaContexto.id; } catch(e){}
+    return (perfilAtual && perfilAtual.empresa_id) || null;
+  }
+
   // Filtro do catálogo — ver comentário em .cat-tools no CSS.
   const filtroCat = {materiais:{texto:'', so:false}, valores:{texto:'', so:false}};
 
@@ -3291,6 +3316,18 @@
 
   function atualizarFerramentasCat(qual, total, visiveis, cheios){
     const ui = CAT_UI[qual];
+    // superadmin sem empresa escolhida vê a lista embutida, não a da empresa —
+    // dizer isso na cara evita que ele ache que o catálogo foi apagado
+    const semEmpresa = supabaseConfigured && !empresaDoCatalogo();
+    const av = document.getElementById(qual === 'materiais' ? 'materiaisSemEmpresa' : 'valoresSemEmpresa');
+    if(av){
+      av.style.display = semEmpresa ? '' : 'none';
+      if(semEmpresa){
+        av.textContent = ehSuper()
+          ? 'Mostrando a lista padrão do app. Entre por uma empresa (menu Empresas) para ver e editar o catálogo dela.'
+          : 'Sua conta não está vinculada a uma empresa, então o catálogo da empresa não carrega. Avise o administrador.';
+      }
+    }
     const f = filtroCat[qual];
     const chip = document.getElementById(ui.chip);
     if(chip){
@@ -3497,7 +3534,13 @@
   }
 
   async function adicionarServico(code, desc, price){
-    const empId = obraEmpresaId || (perfilAtual && perfilAtual.empresa_id) || null;
+    const empId = empresaDoCatalogo();
+    if(supabaseConfigured && !empId){
+      showToast(ehSuper()
+        ? 'Escolha a empresa antes de mexer no catálogo dela'
+        : 'Sua conta não está vinculada a uma empresa — avise o administrador');
+      return;
+    }
     valuesItems.push({code, desc, price});
     if(supabaseConfigured && online && empId){
       try{
@@ -3512,7 +3555,7 @@
 
   async function excluirServico(code){
     if(!confirm('Remover esse serviço do catálogo? Ele deixa de aparecer nas próximas obras.')) return;
-    const empId = obraEmpresaId || (perfilAtual && perfilAtual.empresa_id) || null;
+    const empId = empresaDoCatalogo();
     const idx = valuesItems.findIndex(v => v.code === code);
     if(idx > -1) valuesItems.splice(idx, 1);
     if(supabaseConfigured && online && empId){
@@ -3634,7 +3677,15 @@
   }
 
   async function adicionarMaterial(nome){
-    const empId = obraEmpresaId || (perfilAtual && perfilAtual.empresa_id) || null;
+    const empId = empresaDoCatalogo();
+    // Sem empresa não há onde gravar. Antes o item entrava só na tela e sumia
+    // no próximo carregamento, sem ninguém avisar.
+    if(supabaseConfigured && !empId){
+      showToast(ehSuper()
+        ? 'Escolha a empresa antes de mexer no catálogo dela'
+        : 'Sua conta não está vinculada a uma empresa — avise o administrador');
+      return;
+    }
     const novoId = (materials.reduce((max,m)=> Math.max(max, Number(m.id)||0), 0)) + 1;
     materials.push({id: novoId, name: nome});
     if(supabaseConfigured && online && empId){
@@ -3650,7 +3701,7 @@
 
   async function excluirMaterial(id){
     if(!confirm('Remover esse material do catálogo? Ele deixa de aparecer nas próximas obras.')) return;
-    const empId = obraEmpresaId || (perfilAtual && perfilAtual.empresa_id) || null;
+    const empId = empresaDoCatalogo();
     const idx = materials.findIndex(m => m.id === id);
     if(idx > -1) materials.splice(idx, 1);
     if(supabaseConfigured && online && empId){
@@ -3679,10 +3730,10 @@
   // catálogo de materiais/serviços é por empresa — carrega uma vez por
   // empresa e reaproveita; se ainda não rodou o SQL de instalação das
   // tabelas (ou offline), fica nos itens padrão embutidos no app.
-  let catalogoEmpresaCarregada = null;
+  let catalogoEmpresaCarregada = null;   // comparada com empresaDoCatalogo() a cada render
   let catalogoCarregando = null;
   async function garantirCatalogo(){
-    const empId = obraEmpresaId || (perfilAtual && perfilAtual.empresa_id) || null;
+    const empId = empresaDoCatalogo();
     if(!supabaseConfigured || !online || !empId) return;
     if(catalogoEmpresaCarregada === empId || catalogoCarregando === empId) return;
     catalogoCarregando = empId;
@@ -3967,8 +4018,10 @@
     attachLabelTxt.textContent = ehDocumento ? 'Escolher arquivo' : 'Escolher da galeria';
     cancelarCaptura.textContent = ehDocumento
       ? 'Cancelar' : 'Cancelar \u2014 voltar pra lista de fotos';
+    // .vsdx é o formato do desenho de rota/GEO que a Ligga envia. Sem ele na
+    // lista, o técnico simplesmente não conseguia selecionar o arquivo.
     fileInput.accept = ehDocumento
-      ? 'application/pdf,image/*'
+      ? '.pdf,.vsdx,.vsd,.dwg,.dxf,.kmz,.kml,.xlsx,.xls,.docx,application/pdf,image/*'
       : (item.multiple ? 'image/*' : 'image/*,application/pdf');
     // a observa\u00e7\u00e3o some antes de anexar, n\u00e3o depois: assim o t\u00e9cnico j\u00e1
     // sabe pra qual se\u00e7\u00e3o (aberta/fechada/etc.) a foto vai antes de tirar.
@@ -3981,7 +4034,7 @@
     avaliarDbm();
     if(existing && existing.imgSrc){
       attachedImg.src = existing.imgSrc;
-      attachedImg.style.display = ehPdf(existing) ? 'none' : '';
+      attachedImg.style.display = temMiniatura(existing) ? '' : 'none';
       stagedMime = existing.mime || 'image/jpeg';
       fileName.textContent = existing.fileMeta;
       photoStaged = true;
@@ -3991,6 +4044,16 @@
     }
     overlay.classList.add('show');
     if(typeof empilhar === 'function') empilhar({overlay:'captura'});
+  }
+
+  // Só imagem rende miniatura. PDF já era tratado; agora Visio (.vsdx, que é o
+  // que a Ligga manda como projeto/GEO), DWG, KMZ e afins entram na mesma
+  // regra — antes iam pro <img> e apareciam como imagem quebrada.
+  function temMiniatura(rec){
+    if(!rec) return false;
+    const m = String(rec.mime || '');
+    if(m) return m.indexOf('image/') === 0;
+    return typeof rec.imgSrc === 'string' && rec.imgSrc.indexOf('data:image/') === 0;
   }
 
   function ehPdf(rec){
@@ -4027,14 +4090,23 @@
     reader.onload = async (e)=>{
       const ehPdfArquivo = (file.type === 'application/pdf')
         || /\.pdf$/i.test(file.name);
+      const ehImagem = /^image\//.test(file.type || '')
+        || /\.(jpe?g|png|gif|webp|bmp|heic|heif)$/i.test(file.name);
       if(ehPdfArquivo){
         stagedMime = 'application/pdf';
         attachedImg.src = e.target.result;
         attachedImg.style.display = 'none';
-      } else {
+      } else if(ehImagem){
         attachedImg.src = await reduzirImagem(e.target.result);
         attachedImg.style.display = '';
         stagedMime = 'image/jpeg';
+      } else {
+        // Visio, DWG, KMZ, planilha... guarda como veio. Antes caía no ramo de
+        // imagem, era marcado como image/jpeg e virava miniatura quebrada — e o
+        // arquivo subia pro servidor com o tipo errado.
+        stagedMime = file.type || 'application/octet-stream';
+        attachedImg.src = e.target.result;
+        attachedImg.style.display = 'none';
       }
       fileName.textContent = file.name;
       photoStaged = true;
