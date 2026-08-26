@@ -37,6 +37,17 @@
     /* Para o que o tecnico PRECISA ler no sol: metragem, estado do passo, erro.
        O WCAG modela luz de escritorio, nao reflexo de sol, entao aqui a meta e
        AAA (>=7:1) em qualquer um dos tres fundos, nao o minimo de 4,5:1. */
+    /* Materiais e serviços viviam com a mesma cara no cartão da obra.
+       Dois tons da mesma família azul: aço pro que é coisa contada em
+       unidade, o azul da marca pro que é serviço faturado. */
+    /* Materiais x Serviços. A 1ª tentativa usou só matiz e os dois fundos
+       ficaram com contraste 1.00 entre si — ou seja, idênticos em claridade,
+       imperceptíveis. Agora um bloco é recuado (escuro) e o outro elevado
+       (claro), que é o que o olho pega de longe. */
+    --secao-mat:#8E9BF5;        /* índigo — material é coisa contada */
+    --secao-mat-dim:#0B1024;    /* recuado, mais escuro que o cartão */
+    --secao-serv:#2FE3F5;       /* ciano — serviço é dinheiro */
+    --secao-serv-dim:#1E3A5C;   /* elevado, bem mais claro */
     --critico:#5CC6FF;
     --text:#EAF1F8;
     --text-dim:#8FA3BE;
@@ -1297,6 +1308,47 @@
   .job-service-section-t{font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:0.06em;
     text-transform:uppercase;color:var(--text-faint);margin:10px 0 2px;}
   .job-service-section-t:first-child{margin-top:0;}
+  /* mesma distinção da lista de obras, pra conferência não contradizer o cartão */
+  .review-section-title.secao-mat{color:var(--secao-mat);}
+  .review-section-title.secao-serv{color:var(--secao-serv);}
+  .review-card.secao-mat{border-left:3px solid var(--secao-mat);background:var(--secao-mat-dim);}
+  .review-card.secao-mat .review-row .v{color:var(--secao-mat);font-weight:600;}
+  .review-card.secao-serv{border-left:4px solid var(--secao-serv);background:var(--secao-serv-dim);}
+  .review-card.secao-serv .review-row .v{color:var(--success);font-weight:600;}
+  /* fundo claro: o rótulo precisa de mais peso, igual ao cartão da lista */
+  .review-card.secao-serv .review-row .k{color:var(--text);}
+  .review-card.secao-mat{border-left-width:4px;}
+  /* valor não quebra em duas linhas quando a descrição do serviço é longa */
+  .review-card.secao-mat .review-row .v,
+  .review-card.secao-serv .review-row .v{white-space:nowrap;padding-left:12px;}
+  /* ---- Materiais x Serviços: dois tons da mesma família ---- */
+  .job-secao{border-left:4px solid;border-radius:0 8px 8px 0;margin-bottom:9px;overflow:hidden;}
+  /* o título é o botão: toca pra abrir/fechar. O resumo (contagem, total) fica
+     sempre visível, então dá pra bater o valor sem abrir nada. */
+  .job-secao-t{display:flex;align-items:center;gap:9px;width:100%;cursor:pointer;
+    background:none;border:none;text-align:left;min-height:46px;padding:12px 13px;
+    font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.09em;
+    text-transform:uppercase;font-weight:600;}
+  .job-secao-t .conta{margin-left:auto;font-size:11px;letter-spacing:.03em;}
+  .job-secao-t .seta{flex-shrink:0;transition:transform .18s ease;opacity:.8;font-size:13px;}
+  .job-secao.aberta .job-secao-t .seta{transform:rotate(90deg);}
+  .job-secao-corpo{display:none;padding:0 13px 10px;}
+  .job-secao.aberta .job-secao-corpo{display:block;}
+  .job-secao .job-service-row{border-bottom-color:rgba(255,255,255,.08);}
+  .job-secao .job-service-row:last-child{border-bottom:none;}
+  @media (prefers-reduced-motion:reduce){ .job-secao-t .seta{transition:none;} }
+
+  .job-secao.mat{border-left-color:var(--secao-mat);background:var(--secao-mat-dim);}
+  .job-secao.mat .job-secao-t{color:var(--secao-mat);}
+  .job-secao.mat .job-secao-t:hover{background:rgba(142,155,245,.10);}
+  .job-secao.mat .job-service-row .v{color:var(--secao-mat);font-weight:600;}
+
+  .job-secao.serv{border-left-color:var(--secao-serv);background:var(--secao-serv-dim);}
+  .job-secao.serv .job-secao-t{color:var(--secao-serv);}
+  .job-secao.serv .job-secao-t:hover{background:rgba(47,227,245,.10);}
+  /* fundo mais claro: o rótulo precisa de mais peso pra não sumir */
+  .job-secao.serv .job-service-row .k{color:var(--text);}
+  .job-secao.serv .job-service-row .v{color:var(--success);font-weight:600;}
   .job-edit-btn{
     display:flex;align-items:center;gap:6px;width:100%;justify-content:center;
     margin-top:8px;padding:9px;border-radius:6px;border:1px solid var(--border);
@@ -2346,11 +2398,11 @@
       <div class="review-section-title">Documentos executados</div>
       <div class="review-card" id="reviewDocsExecutados"></div>
 
-      <div class="review-section-title">Materiais utilizados</div>
-      <div class="review-card" id="reviewMaterials"></div>
+      <div class="review-section-title secao-mat">Materiais utilizados</div>
+      <div class="review-card secao-mat" id="reviewMaterials"></div>
 
-      <div class="review-section-title">Valores</div>
-      <div class="review-card" id="reviewValores"></div>
+      <div class="review-section-title secao-serv">Valores</div>
+      <div class="review-card secao-serv" id="reviewValores"></div>
 
       <div class="review-actions" style="margin-top:18px;">
         <button class="review-btn edit" id="reviewEditBtn">Editar</button>
@@ -2500,7 +2552,7 @@
 (function(){
   // Marque aqui a cada build enviado ao campo. O testador informa esta
   // string ao relatar um problema, senao nao da pra saber o que ele rodou.
-  const APP_VERSION = 'Enlace Ops · alpha-10.55 · 26/08/2026';
+  const APP_VERSION = 'Enlace Ops · alpha-10.57 · 26/08/2026';
 
   // ---------- Supabase config ----------
   // Troque pelos valores reais do seu projeto (Project Settings -> API no Supabase).
@@ -8790,6 +8842,24 @@
       : ABERTAS.includes(j.status));
   }
 
+  // Se a seção fica aberta ou fechada é escolha de quem usa, e o app lembra.
+  // Começa fechada: o resumo no título já diz o essencial, e o cartão fica
+  // curto o bastante pra caber na tela.
+  const CHAVE_SECOES = 'enlace-secoes-obra';
+  function secoesEstado(){
+    try{ return JSON.parse(localStorage.getItem(CHAVE_SECOES)) || {}; }
+    catch(e){ return {}; }
+  }
+  function secaoAberta(qual){ return !!secoesEstado()[qual]; }
+  function alternarSecao(qual){
+    try{
+      const e = secoesEstado();
+      e[qual] = !e[qual];
+      localStorage.setItem(CHAVE_SECOES, JSON.stringify(e));
+      return e[qual];
+    } catch(err){ return false; }
+  }
+
   function renderJobsList(){
     jobsList.innerHTML = '';
     const termoJobs = (document.getElementById('jobsBusca').value || '').trim().toLowerCase();
@@ -8855,24 +8925,42 @@
       // materiais some do card há tempos: a obra guarda materialsQty desde
       // sempre, mas só a Revisão do próprio assistente lia isso — aqui na
       // lista de Obras só o valor (serviços) era montado.
+      // Cada bloco com sua faixa e seu tom: material é coisa contada em unidade,
+      // serviço é dinheiro faturado. Antes os dois saíam iguais e a leitura do
+      // cartão virava um bloco só.
+      // Cada bloco é uma sanfona com faixa e tom próprios. O resumo fica sempre
+      // à vista (quantos itens / quanto dá), então dá pra conferir o valor da
+      // obra sem abrir nada — e abrir só o que interessa naquele momento.
+      const seta = '<span class="seta">&#8250;</span>';
       let materiaisHtml = '';
       if(job.materiais && job.materiais.length){
-        materiaisHtml = '<div class="job-service-section-t">Materiais</div>' + job.materiais.map(m => `
+        const nMat = job.materiais.length;
+        materiaisHtml = '<div class="job-secao mat' + (secaoAberta('materiais') ? ' aberta' : '') + '" data-secao="materiais">'
+          + '<button type="button" class="job-secao-t">' + seta + 'Materiais'
+          + '<span class="conta">' + nMat + (nMat === 1 ? ' item' : ' itens') + '</span></button>'
+          + '<div class="job-secao-corpo">'
+          + job.materiais.map(m => `
           <div class="job-service-row">
             <span class="k">${esc(m.nome)}${m.serie ? `<br><span class="mat-serie-eco">${esc(m.serie)}</span>` : ''}${m.retirado ? ' <span class="mat-tag-retirado">retirado</span>' : ''}</span>
             <span class="v">${esc(m.qtd)}</span>
           </div>
-        `).join('');
+        `).join('') + '</div></div>';
       }
       let servicosHtml = '';
       if(job.servicos && job.servicos.length){
-        servicosHtml = (job.materiais && job.materiais.length ? '<div class="job-service-section-t">Serviços</div>' : '')
+        const totalServ = job.servicos.reduce((a, x) => a + (Number(x.qtd) * Number(x.preco)), 0);
+        const nServ = job.servicos.length;
+        servicosHtml = '<div class="job-secao serv' + (secaoAberta('servicos') ? ' aberta' : '') + '" data-secao="servicos">'
+          + '<button type="button" class="job-secao-t">' + seta + 'Serviços'
+          + '<span class="conta">' + nServ + (nServ === 1 ? ' serviço &middot; ' : ' serviços &middot; ')
+          + formatBRL(totalServ) + '</span></button>'
+          + '<div class="job-secao-corpo">'
           + job.servicos.map(s => `
           <div class="job-service-row">
             <span class="k">${esc(s.desc)} (x${esc(s.qtd)})</span>
             <span class="v">${formatBRL(s.qtd * s.preco)}</span>
           </div>
-        `).join('');
+        `).join('') + '</div></div>';
       } else {
         servicosHtml = '<div class="job-service-empty">Nenhum serviço lançado ainda neste rascunho.</div>';
       }
@@ -8958,6 +9046,19 @@
           </div>
         </div>` : ''}
       `;
+
+      // ---- sanfona de materiais/serviços ----
+      details.querySelectorAll('.job-secao-t').forEach(bt=>{
+        bt.addEventListener('click', (e)=>{
+          e.stopPropagation();
+          const bloco = bt.closest('.job-secao');
+          const abriu = alternarSecao(bloco.dataset.secao);
+          // aplica em TODOS os cartões: a escolha é do tipo de seção, não de
+          // uma obra específica — senão cada cartão abriria de um jeito
+          document.querySelectorAll('.job-secao[data-secao="' + bloco.dataset.secao + '"]')
+            .forEach(el => el.classList.toggle('aberta', abriu));
+        });
+      });
 
       // ---- alterar status na mão (só escritório) ----
       const btnAbrirStatus = details.querySelector('[data-acao="abrir-status"]');
