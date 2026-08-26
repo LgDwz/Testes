@@ -32,11 +32,16 @@
     --success-dim:#062418;
     --warning:#E0A03C;
     --warning-dim:#291D0C;
-    --danger:#E4585A;
+    --danger:#EE6E70;       /* era #E4585A: 4,47:1 sobre bg-elev-2, raspando o minimo AA */
     --danger-dim:#2A1116;
+    /* Para o que o tecnico PRECISA ler no sol: metragem, estado do passo, erro.
+       O WCAG modela luz de escritorio, nao reflexo de sol, entao aqui a meta e
+       AAA (>=7:1) em qualquer um dos tres fundos, nao o minimo de 4,5:1. */
+    --critico:#5CC6FF;
     --text:#EAF1F8;
     --text-dim:#8FA3BE;
-    --text-faint:#5A6E8C;
+    --text-faint:#7C90B0;   /* era #5A6E8C: 3,1:1 sobre bg-elev-2, abaixo do minimo AA.
+                               #7C90B0 da 4,96:1 no pior fundo, mantendo o mesmo matiz. */
   }
 
   *{box-sizing:border-box;}
@@ -110,6 +115,10 @@
   .step-label{font-size:9.5px;color:var(--text-faint);text-align:center;text-transform:uppercase;letter-spacing:0.03em;line-height:1.2;}
   .step-node.active .step-label{color:var(--text);}
   .step-node.done .step-label{color:var(--success);}
+  /* "parcial" = o técnico entrou no passo mas não terminou. Antes o ✓ verde
+     aparecia em qualquer passo que ficasse pra trás, mesmo vazio. */
+  .step-node.parcial .step-circle{border-color:var(--warning);background:var(--warning-dim);color:var(--warning);}
+  .step-node.parcial .step-label{color:var(--warning);}
   .step-line{position:absolute;top:13px;left:50%;width:100%;height:1.5px;background:var(--border);z-index:1;}
   .step-node.done .step-line{background:var(--success);}
   .step-node:last-child .step-line{display:none;}
@@ -164,6 +173,94 @@
   .item-body{flex:1;min-width:0;}
   .item-title{font-size:14px;font-weight:600;line-height:1.3;margin-bottom:3px;}
   .item-meta{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-dim);}
+  .item-meta .metragem{color:var(--critico);font-weight:600;font-size:12.5px;}
+  /* ---- Boletim de medição ---- */
+  .med-filtros{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;padding:0 16px 14px;}
+  .med-campo{display:flex;flex-direction:column;gap:5px;flex:1 1 130px;min-width:0;}
+  .med-campo-tec{flex:1 1 100%;}
+  .med-rot{font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--text-dim);}
+  .med-data{min-height:46px;background:var(--bg-elev-2);border:1px solid var(--border);color:var(--text);
+    border-radius:8px;padding:11px 12px;font-family:'Inter',sans-serif;font-size:13.5px;width:100%;}
+  .med-data:focus{outline:none;border-color:var(--accent);}
+  .med-btn{flex:0 0 auto;min-height:46px;padding:12px 22px;cursor:pointer;background:var(--accent);
+    border:none;color:var(--accent-ink);border-radius:8px;font-family:'Barlow Condensed',sans-serif;
+    font-weight:700;font-size:15px;text-transform:uppercase;letter-spacing:.04em;}
+  .med-btn:disabled{background:var(--bg-elev-2);color:var(--text-faint);cursor:not-allowed;}
+  .med-atalhos{display:flex;flex-wrap:wrap;gap:6px;padding:0 16px 14px;}
+  .med-atalho{min-height:34px;cursor:pointer;background:var(--bg-elev-2);border:1px solid var(--border);
+    color:var(--text-dim);border-radius:17px;padding:7px 13px;font-family:'Inter',sans-serif;font-size:11.5px;}
+  .med-atalho:hover{border-color:var(--accent);color:var(--accent);}
+  .med-resultado{padding:0 16px 40px;}
+  .med-vazio{padding:34px 16px;text-align:center;color:var(--text-dim);font-size:13.5px;line-height:1.6;
+    border:1px dashed var(--border);border-radius:10px;}
+  .med-cab{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:center;
+    margin-bottom:12px;}
+  .med-kpis{display:flex;flex-wrap:wrap;gap:8px;}
+  .med-kpi{background:var(--bg-elev);border:1px solid var(--border);border-radius:9px;padding:10px 14px;}
+  .med-kpi-n{font-family:'IBM Plex Mono',monospace;font-size:17px;font-weight:600;color:var(--text);
+    font-variant-numeric:tabular-nums;}
+  .med-kpi-n.destaque{color:var(--success);}
+  .med-kpi-r{font-size:10.5px;color:var(--text-dim);margin-top:2px;text-transform:uppercase;letter-spacing:.05em;}
+  .med-exportar{min-height:44px;cursor:pointer;background:transparent;border:1px solid var(--accent);
+    color:var(--accent);border-radius:8px;padding:11px 18px;font-family:'Inter',sans-serif;
+    font-size:12.5px;font-weight:600;display:flex;align-items:center;gap:7px;}
+  .med-exportar:hover{background:var(--accent);color:var(--accent-ink);}
+  .med-tabela-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:10px;background:var(--bg-elev);}
+  .med-tabela{width:100%;border-collapse:collapse;min-width:520px;font-size:12.5px;}
+  .med-tabela th{text-align:left;padding:11px 13px;background:var(--bg-elev-2);color:var(--text-dim);
+    font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;
+    font-weight:500;border-bottom:1px solid var(--border);white-space:nowrap;}
+  .med-tabela td{padding:11px 13px;border-bottom:1px solid var(--border);vertical-align:top;}
+  .med-tabela tr:last-child td{border-bottom:none;}
+  .med-tabela .num{font-family:'IBM Plex Mono',monospace;text-align:right;font-variant-numeric:tabular-nums;
+    white-space:nowrap;}
+  .med-tabela .cod{font-family:'IBM Plex Mono',monospace;color:var(--accent);white-space:nowrap;}
+  .med-tabela tfoot td{background:var(--bg-elev-2);font-weight:700;border-top:1px solid var(--border-strong);}
+  .med-tabela tfoot .num{color:var(--success);font-size:14px;}
+  .med-secao-t{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:17px;
+    text-transform:uppercase;letter-spacing:.03em;margin:22px 0 10px;color:var(--text);}
+  .med-obra-lin{display:flex;justify-content:space-between;gap:12px;padding:9px 13px;
+    border-bottom:1px solid var(--border);font-size:12.5px;}
+  .med-obra-lin:last-child{border-bottom:none;}
+  .med-obra-lin .k{color:var(--text-dim);}
+  .med-obra-lin .v{font-family:'IBM Plex Mono',monospace;color:var(--success);white-space:nowrap;}
+  /* Obra que ja tinha sido aprovada e o tecnico mexeu. Sem isso o analista
+     reaprova no automatico sem perceber que o numero mudou depois do "de acordo". */
+  .selo-reaberta{margin-top:4px;font-family:'IBM Plex Mono',monospace;font-size:10px;
+    letter-spacing:.03em;text-transform:uppercase;color:var(--warning);
+    background:var(--warning-dim);border:1px solid var(--warning);border-radius:4px;
+    padding:3px 7px;display:inline-block;line-height:1.35;}
+  .dup-aviso{background:var(--warning-dim);border:1px solid var(--warning);border-radius:8px;
+    padding:11px 13px;margin:8px 0 4px;font-size:12px;line-height:1.5;color:var(--text);}
+  .dup-aviso strong{color:var(--warning);display:block;margin-bottom:5px;font-size:12.5px;}
+  .dup-aviso ul{margin:0 0 6px;padding-left:17px;}
+  .dup-aviso li{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-dim);margin-bottom:2px;}
+  .dup-nota{display:block;color:var(--text-dim);font-size:11px;}
+  .med-obra-lin.zerada .v{color:var(--warning);}
+  .med-obra-lin.zerada .k{color:var(--warning);}
+  .med-alerta{background:var(--warning-dim);border:1px solid var(--warning);border-radius:9px;
+    padding:12px 14px;margin:20px 0 0;font-size:12.5px;line-height:1.55;color:var(--text);}
+  .med-alerta strong{color:var(--warning);}
+
+  .motivos-prontos{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:9px;}
+  .motivo-chip{min-height:34px;cursor:pointer;background:var(--bg-elev-2);border:1px solid var(--border);
+    color:var(--text-dim);border-radius:17px;padding:7px 12px;font-family:'Inter',sans-serif;font-size:11.5px;}
+  .motivo-chip:hover{border-color:var(--warning);color:var(--warning);}
+  .motivo-chip:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+  .mat-serie-eco{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--text-dim);}
+  .mat-tag-retirado{display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:8.5px;
+    letter-spacing:.05em;text-transform:uppercase;padding:1px 5px;border-radius:3px;
+    background:var(--warning-dim);color:var(--warning);vertical-align:middle;}
+  .dbm-veredito{margin-top:8px;font-family:'IBM Plex Mono',monospace;font-size:11px;
+    letter-spacing:.04em;min-height:15px;}
+  .dbm-veredito.bom{color:var(--success);}
+  .dbm-veredito.limite{color:var(--warning);}
+  .dbm-veredito.ruim{color:var(--danger);}
+  .item-meta .dbm{font-weight:600;font-size:12.5px;}
+  .item-meta .dbm.bom{color:var(--success);}
+  .item-meta .dbm.limite{color:var(--warning);}
+  .item-meta .dbm.ruim{color:var(--danger);}
   .item-meta.pending{color:var(--text-faint);}
   .item-meta.done{color:var(--success);}
   .ref-link{font-size:11px;color:var(--accent);margin-top:4px;text-decoration:underline;display:inline-block;}
@@ -230,7 +327,7 @@
     border:1px solid var(--border);border-radius:7px;padding:12px 14px;margin-bottom:8px;}
   .material-num{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--text-faint);width:18px;flex-shrink:0;}
   .material-name{flex:1;font-size:12.5px;line-height:1.35;}
-  .material-qty{width:60px;background:var(--bg-elev-2);border:1px solid var(--border);color:var(--text);
+  .material-qty{width:64px;min-height:44px;background:var(--bg-elev-2);border:1px solid var(--border);color:var(--text);
     font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:600;padding:8px;border-radius:6px;text-align:center;flex-shrink:0;}
   .material-qty:focus{outline:none;border-color:var(--accent);}
 
@@ -245,7 +342,7 @@
     padding-top:10px;border-top:1px solid var(--border);}
   .value-price{font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--text-dim);}
   .value-qty-wrap{display:flex;align-items:center;gap:8px;}
-  .value-qty{width:56px;background:var(--bg-elev-2);border:1px solid var(--border);color:var(--text);
+  .value-qty{width:64px;min-height:44px;background:var(--bg-elev-2);border:1px solid var(--border);color:var(--text);
     font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:600;padding:7px;border-radius:6px;
     text-align:center;flex-shrink:0;}
   .value-qty:focus{outline:none;border-color:var(--accent);}
@@ -257,8 +354,134 @@
     font-size:18px;text-transform:uppercase;letter-spacing:0.02em;color:var(--accent);}
 
   /* catálogo editável: excluir item + form de adicionar (materiais/valores) */
+  /* Busca e filtro do catálogo. O catálogo importado do CRM tem 27 materiais
+     e 19 serviços; sem isto o técnico rola dezenas de linhas em zero pra achar
+     as 3 ou 4 que usou de verdade. */
+
+  /* ---- Detalhe do material: destino e numero de serie ---- */
+  .material-row{flex-direction:column;align-items:stretch;gap:0;}
+  .material-topo{display:flex;align-items:center;gap:12px;}
+  .material-detalhe{display:flex;flex-wrap:wrap;gap:8px;margin-top:11px;
+    padding-top:11px;border-top:1px solid var(--border);}
+  .mat-fluxo{display:flex;border:1px solid var(--border);border-radius:7px;overflow:hidden;flex-shrink:0;}
+  .mat-fluxo-op{min-height:38px;padding:8px 13px;cursor:pointer;background:var(--bg-elev-2);
+    border:none;color:var(--text-faint);font-family:'Inter',sans-serif;font-size:11.5px;}
+  .mat-fluxo-op + .mat-fluxo-op{border-left:1px solid var(--border);}
+  .mat-fluxo-op.on{background:var(--accent-dim);color:var(--accent);font-weight:600;}
+  .mat-fluxo-op[data-fluxo="retirado"].on{background:var(--warning-dim);color:var(--warning);}
+  .mat-serie-linha{display:flex;gap:6px;flex:1 1 190px;min-width:0;}
+  .mat-serie{flex:1;min-width:0;min-height:38px;background:var(--bg-elev-2);border:1px solid var(--border);
+    color:var(--text);border-radius:7px;padding:8px 11px;font-family:'IBM Plex Mono',monospace;font-size:12px;}
+  .mat-serie:focus{outline:none;border-color:var(--accent);}
+  .mat-serie::placeholder{color:var(--text-faint);font-family:'Inter',sans-serif;}
+  .mat-scan{flex:0 0 44px;min-height:38px;cursor:pointer;background:var(--accent-dim);
+    border:1px solid var(--accent);color:var(--accent);border-radius:7px;
+    display:flex;align-items:center;justify-content:center;}
+  .mat-scan:hover{background:var(--accent);color:var(--accent-ink);}
+  /* ---- Leitor de codigo ---- */
+  .scan-overlay{position:fixed;inset:0;z-index:10000;background:#000;display:none;}
+  .scan-overlay.show{display:block;}
+  .scan-overlay video{width:100%;height:100%;object-fit:cover;}
+  .scan-mira{position:absolute;left:50%;top:44%;transform:translate(-50%,-50%);
+    width:min(74vw,300px);height:min(46vw,190px);border:2px solid var(--accent);border-radius:12px;
+    box-shadow:0 0 0 100vmax rgba(0,0,0,.55);}
+  .scan-dica{position:absolute;left:20px;right:20px;bottom:110px;text-align:center;color:#fff;
+    font-family:'Inter',sans-serif;font-size:13.5px;text-shadow:0 1px 4px rgba(0,0,0,.8);}
+  .scan-fechar{position:absolute;left:50%;transform:translateX(-50%);bottom:38px;min-height:48px;
+    padding:12px 30px;cursor:pointer;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.5);
+    color:#fff;border-radius:9px;font-family:'Barlow Condensed',sans-serif;font-weight:700;
+    font-size:15px;text-transform:uppercase;letter-spacing:.04em;}
+
+  /* ---- Assinatura do cliente ---- */
+  .assin-corpo{flex:1;display:flex;flex-direction:column;gap:14px;padding:16px 20px 22px;overflow-y:auto;}
+  .assin-campos{display:flex;flex-direction:column;gap:6px;}
+  .assin-rot{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--text-dim);}
+  .assin-rot-quadro{margin-top:2px;}
+  .assin-opc{color:var(--text-faint);letter-spacing:0;text-transform:none;}
+  .assin-input{min-height:48px;background:var(--bg-elev-2);border:1px solid var(--border);
+    color:var(--text);border-radius:8px;padding:12px 13px;font-family:'Inter',sans-serif;
+    font-size:14px;margin-bottom:6px;}
+  .assin-input:focus{outline:none;border-color:var(--accent);}
+  .assin-input::placeholder{color:var(--text-faint);}
+  /* fundo claro de propósito: assinatura tem que sair legível no PDF impresso */
+  .assin-quadro{position:relative;background:#FFFFFF;border:1px solid var(--border-strong);
+    border-radius:10px;height:230px;overflow:hidden;touch-action:none;}
+  .assin-quadro canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;}
+  .assin-linha{position:absolute;left:22px;right:22px;bottom:52px;height:1px;background:#C7CFD9;pointer-events:none;}
+  .assin-dica{position:absolute;left:0;right:0;bottom:28px;text-align:center;color:#96A2B2;
+    font-size:12px;pointer-events:none;font-family:'Inter',sans-serif;}
+  .assin-quadro.assinado .assin-dica{display:none;}
+  .assin-acoes{display:flex;gap:10px;}
+  .assin-btn-limpar{flex:0 0 108px;min-height:50px;cursor:pointer;background:var(--bg-elev-2);
+    border:1px solid var(--border);color:var(--text-dim);border-radius:8px;
+    font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:15px;
+    text-transform:uppercase;letter-spacing:.03em;}
+  .assin-btn-ok{flex:1;min-height:50px;cursor:pointer;background:var(--accent);border:none;
+    color:var(--accent-ink);border-radius:8px;font-family:'Barlow Condensed',sans-serif;
+    font-weight:700;font-size:16px;text-transform:uppercase;letter-spacing:.03em;}
+  .assin-btn-ok:disabled{background:var(--bg-elev-2);color:var(--text-faint);cursor:not-allowed;}
+  .assin-aviso{font-size:11.5px;color:var(--text-dim);line-height:1.5;}
+  /* cartao da assinatura no passo Fotos */
+  .assin-card{display:flex;align-items:center;gap:13px;cursor:pointer;
+    background:var(--bg-elev);border:1px dashed var(--border-strong);border-radius:9px;padding:14px;}
+  .assin-card.done{border-style:solid;border-color:var(--success);}
+  .assin-card-mini{width:64px;height:44px;flex-shrink:0;border-radius:6px;background:#FFFFFF;
+    display:flex;align-items:center;justify-content:center;overflow:hidden;}
+  .assin-card-mini img{width:100%;height:100%;object-fit:contain;}
+  .assin-card-corpo{flex:1;min-width:0;}
+  .assin-card-tit{font-size:13px;font-weight:600;}
+  .assin-card-sub{font-size:11.5px;color:var(--text-dim);margin-top:2px;}
+  .assin-card.done .assin-card-sub{color:var(--success);}
+
+  /* Aviso do que falta no passo Fotos — ver avisarFaltando() */
+  .aviso-faltando{position:fixed;left:12px;right:12px;bottom:12px;z-index:9998;max-width:480px;
+    margin:0 auto;background:var(--bg-elev-2);border:1px solid var(--warning);border-radius:10px;
+    padding:14px 15px;box-shadow:0 10px 40px rgba(0,0,0,.55);}
+  .aviso-faltando-topo{display:flex;justify-content:space-between;align-items:center;
+    font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:17px;
+    text-transform:uppercase;letter-spacing:.03em;color:var(--warning);}
+  .aviso-faltando-x{background:none;border:none;color:var(--text-dim);font-size:15px;cursor:pointer;
+    min-width:44px;min-height:44px;margin:-12px -12px -12px 0;}
+  .aviso-faltando-lista{display:flex;flex-direction:column;gap:6px;margin:10px 0 0;}
+  .aviso-faltando-item{display:block;width:100%;text-align:left;min-height:44px;cursor:pointer;
+    background:var(--bg-elev);border:1px solid var(--border);border-radius:7px;padding:11px 13px;
+    color:var(--text);font-family:'Inter',sans-serif;font-size:13px;}
+  .aviso-faltando-item:hover,.aviso-faltando-item:focus-visible{border-color:var(--warning);color:var(--warning);}
+  .aviso-faltando-rodape{font-size:11.5px;color:var(--text-dim);line-height:1.45;margin-top:10px;}
+  .aviso-faltando-seguir{width:100%;min-height:44px;margin-top:10px;cursor:pointer;
+    background:none;border:1px solid var(--border-strong);border-radius:7px;color:var(--text-dim);
+    font-family:'Inter',sans-serif;font-size:12.5px;}
+  .aviso-faltando-seguir:hover{border-color:var(--accent);color:var(--accent);}
+  @keyframes piscaItem{0%,100%{box-shadow:0 0 0 0 rgba(224,160,60,0);}
+                       50%{box-shadow:0 0 0 3px rgba(224,160,60,.55);}}
+  .piscando{animation:piscaItem .6s ease-in-out 3;border-radius:9px;}
+  @media (prefers-reduced-motion:reduce){.piscando{animation:none;outline:2px solid var(--warning);}}
+  .cat-tools{display:flex;gap:8px;align-items:stretch;margin:0 0 12px;}
+  .cat-busca{flex:1;min-width:0;min-height:44px;background:var(--bg-elev-2);
+    border:1px solid var(--border);color:var(--text);border-radius:7px;
+    padding:10px 13px;font-family:'Inter',sans-serif;font-size:13.5px;}
+  .cat-busca::placeholder{color:var(--text-faint);}
+  .cat-busca:focus{outline:none;border-color:var(--accent);}
+  .cat-chip{min-height:44px;flex-shrink:0;background:var(--bg-elev-2);border:1px solid var(--border);
+    color:var(--text-dim);border-radius:7px;padding:10px 13px;font-family:'Inter',sans-serif;
+    font-size:12.5px;cursor:pointer;white-space:nowrap;}
+  .cat-chip.on{background:var(--accent-dim);border-color:var(--accent);color:var(--accent);font-weight:600;}
+  .cat-chip:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+  .cat-atalhos{margin:0 0 12px;}
+  .cat-atalhos-tit{font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--text-dim);margin-bottom:7px;}
+  .cat-atalhos-linha{display:flex;flex-wrap:wrap;gap:6px;}
+  .cat-atalho{min-height:38px;cursor:pointer;background:var(--accent-dim);color:var(--accent);
+    border:1px solid var(--accent);border-radius:19px;padding:8px 13px;font-family:'Inter',sans-serif;
+    font-size:12px;font-weight:500;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .cat-atalho:hover{background:var(--accent);color:var(--accent-ink);}
+  .cat-atalho:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+  .cat-vazio{padding:22px 14px;text-align:center;font-size:13px;color:var(--text-faint);
+    border:1px dashed var(--border);border-radius:7px;margin-bottom:8px;line-height:1.5;}
   .cat-del-btn{background:none;border:none;color:var(--text-faint);cursor:pointer;
-    font-size:15px;padding:4px 6px;border-radius:5px;flex-shrink:0;line-height:1;}
+    font-size:15px;padding:4px 6px;border-radius:5px;flex-shrink:0;line-height:1;
+    min-width:40px;min-height:40px;}
   .cat-del-btn:hover{color:var(--warning);background:var(--warning-dim);}
   .cat-add-btn{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;margin-top:4px;
     background:none;border:1.5px dashed var(--border);color:var(--text-dim);border-radius:7px;
@@ -306,6 +529,9 @@
   .review-photo-empty{height:80px;display:flex;align-items:center;justify-content:center;
     color:var(--text-faint);font-family:'IBM Plex Mono',monospace;font-size:10.5px;}
   .review-photo-label{font-size:10.5px;padding:6px 8px;color:var(--text-dim);line-height:1.3;}
+  .selo-galeria{display:inline-block;margin-left:5px;font-family:'IBM Plex Mono',monospace;
+    font-size:8.5px;letter-spacing:.05em;text-transform:uppercase;padding:1px 5px;border-radius:3px;
+    background:var(--warning-dim);color:var(--warning);vertical-align:middle;}
   .review-row{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);font-size:12.5px;}
   .review-row:last-child{border-bottom:none;}
   .review-row .k{color:var(--text-dim);}
@@ -321,8 +547,16 @@
   .capture-overlay.show{display:flex;}
   .capture-head{display:flex;align-items:center;justify-content:space-between;padding:16px;border-bottom:1px solid var(--border);}
   .capture-head-title{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:18px;text-transform:uppercase;}
-  .close-btn{background:none;border:1px solid var(--border);color:var(--text-dim);width:30px;height:30px;
-    border-radius:6px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;}
+  .close-btn{background:none;border:1px solid var(--border);color:var(--text-dim);
+    min-width:44px;min-height:44px;
+    border-radius:8px;cursor:pointer;font-size:17px;display:flex;align-items:center;justify-content:center;}
+  .close-btn:hover{border-color:var(--danger);color:var(--danger);}
+  /* Sair da captura sem precisar caçar o X do canto: o técnico toca no item
+     errado o tempo todo e ficava preso escolhendo câmera ou galeria. */
+  .capture-cancelar{width:100%;min-height:48px;margin-top:4px;cursor:pointer;background:none;
+    border:1px solid var(--border);border-radius:9px;color:var(--text-dim);
+    font-family:'Inter',sans-serif;font-size:13px;}
+  .capture-cancelar:hover{border-color:var(--danger);color:var(--danger);}
   .viewfinder{flex:1;margin:16px;border-radius:8px;
     background:repeating-linear-gradient(45deg,var(--bg),var(--bg) 10px,var(--bg-elev) 10px,var(--bg-elev) 20px);
     border:1px solid var(--border);display:flex;align-items:center;justify-content:center;position:relative;
@@ -337,9 +571,9 @@
   .meter-field{margin:0 16px 16px;background:var(--bg-elev);border:1px solid var(--border);
     border-radius:7px;padding:14px;display:none;}
   .meter-field.show{display:block;}
-  .meter-label{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-dim);
+  .meter-label{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--critico);
     text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;}
-  .meter-input{width:100%;background:var(--bg-elev-2);border:1px solid var(--border);color:var(--text);
+  .meter-input{width:100%;min-height:52px;background:var(--bg-elev-2);border:1px solid var(--border-strong);color:var(--text);
     font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:600;padding:10px 12px;
     border-radius:6px;letter-spacing:0.03em;}
   .meter-input::placeholder{color:var(--text-faint);}
@@ -1638,6 +1872,36 @@
       <div class="page" id="pageWrap">
         <div class="page-in" id="pageIn">
 
+  <!-- Boletim de medição: junta as obras aprovadas do período e soma por código
+       de serviço, que é como a Ligga paga. Antes isso era planilha na mão. -->
+  <div class="users-screen" id="medicaoScreen">
+    <div class="ph">
+      <div>
+        <div class="ph-t">Medição</div>
+        <div class="ph-s" id="medSub">Obras aprovadas no período, somadas por código de serviço.</div>
+      </div>
+    </div>
+    <div class="med-filtros">
+      <div class="med-campo">
+        <label class="med-rot" for="medDe">De</label>
+        <input class="med-data" id="medDe" type="date">
+      </div>
+      <div class="med-campo">
+        <label class="med-rot" for="medAte">Até</label>
+        <input class="med-data" id="medAte" type="date">
+      </div>
+      <div class="med-campo med-campo-tec">
+        <label class="med-rot" for="medTecnico">Técnico</label>
+        <select class="med-data" id="medTecnico"><option value="">Todos</option></select>
+      </div>
+      <button class="med-btn" id="medGerar" type="button">Gerar</button>
+    </div>
+    <div class="med-atalhos" id="medAtalhos"></div>
+    <div class="med-resultado" id="medResultado">
+      <div class="med-vazio">Escolha o período e toque em <strong>Gerar</strong>.</div>
+    </div>
+  </div>
+
   <div class="users-screen" id="quadroScreen">
     <div class="ph">
       <div>
@@ -1749,6 +2013,7 @@
       <div class="field-label" style="margin-top:4px;">Obra *</div>
       <input class="field-input" id="dNumero" inputmode="numeric" placeholder="Ex: 2438766" autocomplete="off">
       <div id="dLookup" style="font-size:11.5px;color:var(--text-faint);margin:4px 0 12px;"></div>
+      <div id="dDuplicada" class="dup-aviso" style="display:none;"></div>
 
       <!-- Campos extras (data, cliente, endereço, etc.) ficam escondidos pra
            não poluir a tela de cadastro — o essencial aqui é só identificar
@@ -1936,6 +2201,7 @@
           <label class="field-label">Número do contrato <span class="req">*</span></label>
           <input class="field-input" id="fNumero" inputmode="numeric" placeholder="Ex: 2237754">
           <div id="contratoLookupStatus" style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;margin-top:5px;display:none;"></div>
+          <div id="fDuplicada" class="dup-aviso" style="display:none;"></div>
         </div>
         <div class="field-group">
           <label class="field-label">Data <span class="req">*</span></label>
@@ -2000,14 +2266,26 @@
     <section class="step-section" id="stepMateriais">
       <div class="step-eyebrow">Passo 5 de 6</div>
       <div class="step-title">Inventário de materiais</div>
-      <div class="step-sub">Informe a quantidade usada de cada material.</div>
+      <div class="step-sub">Busque o material e informe a quantidade. Só o que você usou precisa ser preenchido.</div>
+      <div class="cat-tools">
+        <input class="cat-busca" id="materiaisBusca" placeholder="Buscar material..." autocomplete="off" inputmode="search">
+        <button class="cat-chip" id="materiaisSoPreench" type="button">Só preenchidos</button>
+      </div>
+      <div class="cat-atalhos" id="materiaisAtalhos" style="display:none;"></div>
+      <div class="cat-vazio" id="materiaisVazio" style="display:none;"></div>
       <div id="materialsList"></div>
     </section>
 
     <section class="step-section" id="stepValores">
       <div class="step-eyebrow">Passo 6 de 6</div>
       <div class="step-title">Valores</div>
-      <div class="step-sub">Informe a quantidade de cada serviço executado.</div>
+      <div class="step-sub">Busque pelo código ou pela descrição. Só o que você executou precisa ser preenchido.</div>
+      <div class="cat-tools">
+        <input class="cat-busca" id="valoresBusca" placeholder="Buscar por código ou descrição..." autocomplete="off" inputmode="search">
+        <button class="cat-chip" id="valoresSoPreench" type="button">Só preenchidos</button>
+      </div>
+      <div class="cat-atalhos" id="valoresAtalhos" style="display:none;"></div>
+      <div class="cat-vazio" id="valoresVazio" style="display:none;"></div>
       <div id="valuesList"></div>
       <div class="values-total-row" id="valuesTotalRow">
         <span>Total</span>
@@ -2060,6 +2338,41 @@
   </div>
   </div>
 
+  <!-- Assinatura do cliente. Fica na mesma estrutura de "photos" pra herdar de
+       graça o upload, o rascunho offline e a entrada no PDF. -->
+  <div class="scan-overlay" id="scanOverlay">
+    <video id="scanVideo" autoplay playsinline muted></video>
+    <div class="scan-mira"></div>
+    <div class="scan-dica">Aponte para o código de barras ou QR da etiqueta</div>
+    <button type="button" class="scan-fechar" id="scanFechar">Cancelar</button>
+  </div>
+
+  <div class="capture-overlay" id="assinaturaOverlay">
+    <div class="capture-head">
+      <div class="capture-head-title">Assinatura do cliente</div>
+      <button class="close-btn" id="fecharAssinatura">&#10005;</button>
+    </div>
+    <div class="assin-corpo">
+      <div class="assin-campos">
+        <label class="assin-rot" for="assinNome">Nome de quem assina</label>
+        <input class="assin-input" id="assinNome" type="text" placeholder="Nome completo" autocomplete="off">
+        <label class="assin-rot" for="assinDoc">Documento <span class="assin-opc">(opcional)</span></label>
+        <input class="assin-input" id="assinDoc" type="text" placeholder="RG, CPF ou matrícula" autocomplete="off">
+      </div>
+      <div class="assin-rot assin-rot-quadro">Assine no quadro abaixo</div>
+      <div class="assin-quadro">
+        <canvas id="assinCanvas"></canvas>
+        <div class="assin-linha"></div>
+        <div class="assin-dica" id="assinDica">assine aqui com o dedo</div>
+      </div>
+      <div class="assin-acoes">
+        <button type="button" class="assin-btn-limpar" id="assinLimpar">Limpar</button>
+        <button type="button" class="assin-btn-ok" id="assinConfirmar">Confirmar assinatura</button>
+      </div>
+      <div class="assin-aviso">Ao assinar, o cliente confirma que o serviço descrito nesta obra foi executado no local.</div>
+    </div>
+  </div>
+
   <div class="capture-overlay" id="captureOverlay">
     <div class="capture-head">
       <div class="capture-head-title" id="captureTitle">Anexar</div>
@@ -2081,6 +2394,7 @@
           Escolher da galeria
         </label>
         <input type="file" id="fileInput" accept="image/*,application/pdf" style="display:none;">
+        <button type="button" class="capture-cancelar" id="cancelarCaptura">Cancelar &mdash; voltar pra lista de fotos</button>
       </div>
       <video id="cameraVideo" autoplay playsinline muted style="display:none;position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></video>
       <canvas id="captureCanvas" style="display:none;"></canvas>
@@ -2088,6 +2402,15 @@
         <img id="attachedImg" src="" alt="Anexo">
         <div class="file-badge" id="fileBadge"><i class="badge-dot"></i><span id="fileName">arquivo</span></div>
       </div>
+    </div>
+    <div class="meter-field" id="dbmField">
+      <div class="meter-label">Potência óptica recebida</div>
+      <div style="display:flex;align-items:center;">
+        <input class="meter-input" id="dbmInput" type="number" step="0.01"
+          placeholder="-21.50" inputmode="decimal">
+        <span class="meter-unit">dBm</span>
+      </div>
+      <div class="dbm-veredito" id="dbmVeredito"></div>
     </div>
     <div class="meter-field" id="meterField">
       <div class="meter-label">Metragem lida no cabo</div>
@@ -2143,7 +2466,7 @@
 (function(){
   // Marque aqui a cada build enviado ao campo. O testador informa esta
   // string ao relatar um problema, senao nao da pra saber o que ele rodou.
-  const APP_VERSION = 'Enlace Ops · alpha-10.41 · 25/08/2026';
+  const APP_VERSION = 'Enlace Ops · alpha-10.47 · 26/08/2026';
 
   // ---------- Supabase config ----------
   // Troque pelos valores reais do seu projeto (Project Settings -> API no Supabase).
@@ -2181,12 +2504,23 @@
   const photoItems = [
     {id:1, title:"Início do cabo com metragem", needsMeter:true, multiple:false, storeKey:'photos'},
     {id:8, title:"Chegada no poste do cliente", needsMeter:false, multiple:false, storeKey:'photos'},
+    // Assinatura entra em photoItems de propósito: herda upload, rascunho
+    // offline e página no PDF sem código novo. "opcional" porque em obra de
+    // rede (emenda em poste, sem cliente no local) não há quem assine — o
+    // aviso de pendências e o stepper ignoram itens opcionais.
+    {id:9, title:"Assinatura do cliente", needsMeter:false, multiple:false,
+     storeKey:'photos', assinatura:true, opcional:true},
     {id:2, title:"Final do cabo com metragem", needsMeter:true, multiple:false, storeKey:'photos'},
     {id:3, title:"Caixa aberta", needsMeter:false, multiple:true, storeKey:'photos'},
     {id:4, title:"Identificação do cliente dentro da caixa", needsMeter:false, multiple:true, storeKey:'photos'},
     {id:5, title:"Caixa fechada e acomodada no local", needsMeter:false, multiple:true, storeKey:'photos'},
     {id:6, title:"Cliente no local da instalação (PTO)", needsMeter:false, multiple:false, storeKey:'photos'},
-    {id:7, title:"Foto do sinal do cliente", needsMeter:false, multiple:false, storeKey:'photos'},
+    // O sinal era só uma foto: ninguém conseguia filtrar, somar ou barrar nada
+    // a partir dela, e leitura tremida virava obra devolvida. Agora vai também
+    // como número, com faixa de aceite — é assim que a VIAVI monta relatório de
+    // aceitação pra operadora.
+    {id:7, title:"Foto do sinal do cliente", needsMeter:false, multiple:false,
+     storeKey:'photos', pedeDbm:true},
   ];
 
   // Documentos executados (o técnico produz, depois do serviço)
@@ -2224,6 +2558,7 @@
     photos: {},
     docsAtt: {},
     materialsQty: {},
+    materialsExtra: {},   // por material: {serie, retirado} — ver ehEquipamento()
     valuesQty: {},
   };
 
@@ -2237,17 +2572,55 @@
 
   // ---------- Stepper header ----------
   const stepperBar = document.getElementById('stepperBar');
+  // Passos por onde o técnico já entrou nesta obra. Serve só pra separar
+  // "abri e deixei pela metade" (âmbar) de "nem cheguei lá" (cinza).
+  let passosVisitados = new Set();
+
+  // Um passo só ganha o ✓ verde quando está realmente pronto. Antes o critério
+  // era "ficou pra trás", então dava pra atravessar o passo Fotos sem anexar
+  // nada e ver seis vistos verdes numa obra pela metade.
+  function passoCompleto(s){
+    switch(s){
+      case 'contrato':
+        return !!(dataState.contract.numero && dataState.contract.data);
+      case 'docsProjeto':
+        return projectDocItems.every(it => !!dataState.projectDocs[it.id]);
+      case 'fotos':
+        return photoItems.filter(it => !it.opcional).every(it=>{
+          const v = dataState.photos[it.id];
+          return it.multiple ? (v && v.length > 0) : !!v;
+        });
+      case 'docsExecutados':
+        return docExecItems.every(it => !!dataState.docsAtt[it.id]);
+      case 'materiais':
+        return materials.some(m => Number(dataState.materialsQty[m.id]) > 0);
+      case 'valores':
+        return valuesItems.some(v => Number(dataState.valuesQty[v.code]) > 0);
+      default:
+        return false;
+    }
+  }
+
   function renderStepper(){
     stepperBar.innerHTML = '';
     steps.slice(0,6).forEach((s, i)=>{
+      const pronto  = passoCompleto(s);
+      const parcial = !pronto && (passosVisitados.has(i) || i < currentStep);
       const node = document.createElement('div');
-      node.className = 'step-node' + (i === currentStep ? ' active' : '') + (i < currentStep ? ' done' : '');
+      node.className = 'step-node'
+        + (i === currentStep ? ' active' : '')
+        + (pronto ? ' done' : (parcial ? ' parcial' : ''));
       node.style.cursor = 'pointer';
       node.setAttribute('role', 'button');
       node.setAttribute('tabindex', '0');
+      node.setAttribute('aria-label', stepLabels[s] + ' — '
+        + (pronto ? 'concluído' : (parcial ? 'incompleto' : 'não iniciado')));
       node.addEventListener('click', ()=> showStep(i));
+      node.addEventListener('keydown', (e)=>{
+        if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); showStep(i); }
+      });
       node.innerHTML = `
-        <div class="step-circle">${i < currentStep ? '&#10003;' : (i+1)}</div>
+        <div class="step-circle">${pronto ? '&#10003;' : (i+1)}</div>
         <div class="step-label">${stepLabels[s]}</div>
         <div class="step-line"></div>
       `;
@@ -2272,6 +2645,7 @@
 
   function showStep(i){
     currentStep = i;
+    if(i < 6) passosVisitados.add(i);
     if(typeof empilhar === 'function') empilhar({tela:'wizard', passo:i});
     Object.values(sections).forEach(s=>s.classList.remove('show'));
     sections[steps[i]].classList.add('show');
@@ -2320,8 +2694,59 @@
         empresa: document.getElementById('fEmpresa').value,
       };
     }
+    // Passo Fotos: em vez de descobrir lá na conferência que faltou foto, o
+    // técnico vê o que falta aqui, ainda em cima do poste, e toca pra ir direto
+    // no item. Não bloqueia — botão desabilitado não explica o motivo; o padrão
+    // recomendado é deixar tocar e então dizer o que falta.
+    if(steps[currentStep] === 'fotos'){
+      const faltamFotos = photoItems.filter(it=>{
+        if(it.opcional) return false;
+        const v = dataState.photos[it.id];
+        return it.multiple ? !(v && v.length) : !v;
+      });
+      if(faltamFotos.length) return avisarFaltando(faltamFotos);
+    }
     if(currentStep < 6) showStep(currentStep+1);
   });
+
+  // Aviso do que falta, com toque pra pular direto ao item. Fica na tela até o
+  // técnico fechar ou resolver — toast some rápido demais pra uma lista.
+  function avisarFaltando(itens){
+    document.getElementById('avisoFaltando')?.remove();
+    const box = document.createElement('div');
+    box.id = 'avisoFaltando';
+    box.className = 'aviso-faltando';
+    box.innerHTML = '<div class="aviso-faltando-topo">'
+      + '<span>' + (itens.length === 1 ? 'Falta 1 foto' : 'Faltam ' + itens.length + ' fotos')
+      + '</span><button type="button" class="aviso-faltando-x" aria-label="Fechar">&#10005;</button></div>'
+      + '<div class="aviso-faltando-lista"></div>'
+      + '<div class="aviso-faltando-rodape">Toque num item para ir até ele. Dá pra avançar assim mesmo '
+      + 'e voltar depois &mdash; a obra fica marcada como incompleta.</div>'
+      + '<button type="button" class="aviso-faltando-seguir">Avançar mesmo assim</button>';
+    const lista = box.querySelector('.aviso-faltando-lista');
+    itens.forEach(it=>{
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'aviso-faltando-item';
+      b.textContent = it.title;
+      b.addEventListener('click', ()=>{
+        box.remove();
+        const alvo = document.querySelector('[data-photo-anchor="' + it.id + '"]');
+        if(alvo){
+          alvo.scrollIntoView({behavior:'smooth', block:'center'});
+          alvo.classList.add('piscando');
+          setTimeout(()=> alvo.classList.remove('piscando'), 1800);
+        }
+      });
+      lista.appendChild(b);
+    });
+    box.querySelector('.aviso-faltando-x').addEventListener('click', ()=> box.remove());
+    box.querySelector('.aviso-faltando-seguir').addEventListener('click', ()=>{
+      box.remove();
+      if(currentStep < 6) showStep(currentStep+1);
+    });
+    document.body.appendChild(box);
+  }
 
   // ---------- Icons ----------
   function cameraIcon(){
@@ -2416,7 +2841,9 @@
         fotosChecklist.appendChild(row);
         return;
       }
-      if(item.multiple){
+      if(item.assinatura){
+        fotosChecklist.appendChild(buildAssinaturaCard(item));
+      } else if(item.multiple){
         fotosChecklist.appendChild(buildMultiPhotoGroup(item));
       } else {
         fotosChecklist.appendChild(buildSinglePhotoCard(item));
@@ -2424,10 +2851,248 @@
     });
   }
 
+  function buildAssinaturaCard(item){
+    const s = dataState.photos[item.id];
+    const card = document.createElement('div');
+    card.className = 'assin-card' + (s ? ' done' : '');
+    card.dataset.photoAnchor = item.id;
+    card.setAttribute('role', 'button');
+    card.setAttribute('tabindex', '0');
+    card.innerHTML = `
+      <div class="assin-card-mini">${s
+        ? `<img src="${s.imgSrc}" alt="Assinatura">`
+        : '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#96A2B2" stroke-width="1.6"'
+          + ' stroke-linecap="round"><path d="M3 17c3-6 5 4 8-2s4 3 7-2"/><path d="M3 21h18"/></svg>'}</div>
+      <div class="assin-card-corpo">
+        <div class="assin-card-tit">Assinatura do cliente</div>
+        <div class="assin-card-sub">${s
+          ? 'assinado por ' + esc(s.assinante || 'não identificado')
+          : 'opcional &middot; toque para coletar no local'}</div>
+      </div>
+    `;
+    const abrir = ()=> abrirAssinatura(item);
+    card.addEventListener('click', abrir);
+    card.addEventListener('keydown', (e)=>{
+      if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); abrir(); }
+    });
+    return card;
+  }
+
+  // ---------- Série e destino do material ----------
+  // Equipamento tem número de série; cabo e braçadeira não. Sem essa distinção
+  // o campo de série apareceria em 27 linhas e viraria ruído. Pelo nome mesmo:
+  // o catálogo não tem coluna de tipo, e criar uma exigiria mexer no banco.
+  const PADRAO_EQUIPAMENTO = /\b(ONU|ONT|CPE|ROTEADOR|MODULO SFP|SFP|OLT|RADIO|SWITCH)\b/i;
+  function ehEquipamento(m){ return PADRAO_EQUIPAMENTO.test(m.name || ''); }
+
+  // Leitura de código de barras/QR pela câmera. A API é nativa do Chrome
+  // Android — onde não existir, o técnico digita, que é o que já fazia.
+  async function lerCodigo(matId){
+    if(!('BarcodeDetector' in window)){
+      showToast('Este aparelho não lê código pela câmera — digite o número');
+      const campo = document.querySelector(`.mat-serie[data-serie-de="${matId}"]`);
+      if(campo) campo.focus();
+      return;
+    }
+    let stream = null;
+    try{
+      const det = new window.BarcodeDetector({
+        formats: ['qr_code','code_128','code_39','ean_13','data_matrix','itf']
+      });
+      stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
+      const v = document.getElementById('scanVideo');
+      const ov = document.getElementById('scanOverlay');
+      v.srcObject = stream;
+      ov.classList.add('show');
+      await v.play();
+      const parar = ()=>{
+        ov.classList.remove('show');
+        if(stream) stream.getTracks().forEach(t => t.stop());
+        stream = null;
+      };
+      document.getElementById('scanFechar').onclick = parar;
+      const prazo = Date.now() + 30000;   // 30s e desiste, pra não travar a tela
+      while(stream && Date.now() < prazo){
+        try{
+          const achou = await det.detect(v);
+          if(achou && achou.length){
+            const valor = String(achou[0].rawValue || '').trim().toUpperCase();
+            parar();
+            if(!dataState.materialsExtra[matId]) dataState.materialsExtra[matId] = {};
+            dataState.materialsExtra[matId].serie = valor;
+            salvarRascunho();
+            renderMateriais();
+            showToast('Lido: ' + valor);
+            return;
+          }
+        } catch(e){ /* quadro ruim, tenta o próximo */ }
+        await new Promise(r => setTimeout(r, 220));
+      }
+      if(stream){ parar(); showToast('Não consegui ler — digite o número'); }
+    } catch(e){
+      if(stream) stream.getTracks().forEach(t => t.stop());
+      document.getElementById('scanOverlay').classList.remove('show');
+      showToast('Câmera indisponível — digite o número');
+    }
+  }
+
+  // ---------- Potência óptica (dBm) ----------
+  // Faixa de aceite. Em GPON o receptor da ONU costuma trabalhar entre -8 e
+  // -27 dBm; abaixo de -25 já é zona de risco (funciona hoje, cai na chuva).
+  // Se a Ligga exigir outro limite em contrato, é só mudar aqui.
+  const DBM_BOM = {min:-25, max:-8};
+  const DBM_LIMITE = {min:-27, max:-3};
+  const dbmField    = document.getElementById('dbmField');
+  const dbmInput    = document.getElementById('dbmInput');
+  const dbmVeredito = document.getElementById('dbmVeredito');
+
+  function classificarDbm(v){
+    if(v == null || v === '' || isNaN(v)) return null;
+    const n = Number(v);
+    if(n >= DBM_BOM.min && n <= DBM_BOM.max) return {nivel:'bom',   txt:'Dentro da faixa aceitável'};
+    if(n >= DBM_LIMITE.min && n <= DBM_LIMITE.max) return {nivel:'limite', txt:'No limite — confira antes de fechar'};
+    return {nivel:'ruim', txt:'Fora da faixa aceitável'};
+  }
+
+  function avaliarDbm(){
+    const r = classificarDbm(dbmInput.value);
+    dbmVeredito.className = 'dbm-veredito' + (r ? ' ' + r.nivel : '');
+    dbmVeredito.textContent = r ? r.txt : '';
+    dbmInput.style.borderColor = r
+      ? (r.nivel === 'bom' ? 'var(--success)' : r.nivel === 'limite' ? 'var(--warning)' : 'var(--danger)')
+      : '';
+  }
+  dbmInput.addEventListener('input', avaliarDbm);
+
+  // ---------- Coleta de assinatura ----------
+  // Fundo branco de propósito: a assinatura precisa sair legível no PDF que a
+  // operadora imprime, e a paleta escura do app não serviria pra isso.
+  const assinOverlay  = document.getElementById('assinaturaOverlay');
+  const assinCanvas   = document.getElementById('assinCanvas');
+  const assinQuadro   = assinCanvas.parentElement;
+  const assinNome     = document.getElementById('assinNome');
+  const assinDoc      = document.getElementById('assinDoc');
+  const assinConfirmar= document.getElementById('assinConfirmar');
+  let assinItem = null, assinDesenhando = false, assinTemTraco = false, assinCtx = null;
+
+  function prepararCanvasAssinatura(){
+    const r = assinQuadro.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    assinCanvas.width  = Math.round(r.width  * dpr);
+    assinCanvas.height = Math.round(r.height * dpr);
+    assinCtx = assinCanvas.getContext('2d');
+    assinCtx.scale(dpr, dpr);
+    assinCtx.fillStyle = '#FFFFFF';
+    assinCtx.fillRect(0, 0, r.width, r.height);
+    assinCtx.strokeStyle = '#101820';
+    assinCtx.lineWidth = 2.4;
+    assinCtx.lineCap = 'round';
+    assinCtx.lineJoin = 'round';
+  }
+
+  function pontoAssin(e){
+    const r = assinCanvas.getBoundingClientRect();
+    return {x: e.clientX - r.left, y: e.clientY - r.top};
+  }
+
+  assinCanvas.addEventListener('pointerdown', (e)=>{
+    e.preventDefault();
+    assinCanvas.setPointerCapture(e.pointerId);
+    assinDesenhando = true;
+    const p = pontoAssin(e);
+    assinCtx.beginPath();
+    assinCtx.moveTo(p.x, p.y);
+  });
+  assinCanvas.addEventListener('pointermove', (e)=>{
+    if(!assinDesenhando) return;
+    e.preventDefault();
+    const p = pontoAssin(e);
+    assinCtx.lineTo(p.x, p.y);
+    assinCtx.stroke();
+    if(!assinTemTraco){
+      assinTemTraco = true;
+      assinQuadro.classList.add('assinado');
+      assinConfirmar.disabled = false;
+    }
+  });
+  ['pointerup','pointercancel','pointerleave'].forEach(ev=>
+    assinCanvas.addEventListener(ev, ()=>{ assinDesenhando = false; }));
+
+  function limparAssinatura(){
+    prepararCanvasAssinatura();
+    assinTemTraco = false;
+    assinQuadro.classList.remove('assinado');
+    assinConfirmar.disabled = true;
+  }
+
+  function abrirAssinatura(item){
+    assinItem = item;
+    const s = dataState.photos[item.id];
+    assinOverlay.classList.add('show');
+    assinNome.value = (s && s.assinante) || '';
+    assinDoc.value  = (s && s.docAssinante) || '';
+    // o canvas só mede certo depois que o overlay está visível
+    requestAnimationFrame(()=>{
+      limparAssinatura();
+      if(s && s.imgSrc){
+        const img = new Image();
+        img.onload = ()=>{
+          const r = assinQuadro.getBoundingClientRect();
+          assinCtx.drawImage(img, 0, 0, r.width, r.height);
+          assinTemTraco = true;
+          assinQuadro.classList.add('assinado');
+          assinConfirmar.disabled = false;
+        };
+        img.src = s.imgSrc;
+      }
+    });
+  }
+
+  function fecharAssinatura(){
+    assinOverlay.classList.remove('show');
+    assinItem = null;
+  }
+
+  document.getElementById('assinLimpar').addEventListener('click', limparAssinatura);
+  document.getElementById('fecharAssinatura').addEventListener('click', fecharAssinatura);
+
+  assinConfirmar.addEventListener('click', ()=>{
+    if(!assinTemTraco || !assinItem) return;
+    const nome = assinNome.value.trim();
+    if(!nome){
+      assinNome.focus();
+      assinNome.style.borderColor = 'var(--warning)';
+      setTimeout(()=>{ assinNome.style.borderColor = ''; }, 2000);
+      showToast('Escreva o nome de quem está assinando');
+      return;
+    }
+    const agora = new Date();
+    dataState.photos[assinItem.id] = {
+      time: agora.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'}),
+      meter: null,
+      imgSrc: assinCanvas.toDataURL('image/png'),
+      fileMeta: 'assinatura.png',
+      mime: 'image/png',
+      coords: null,
+      origem: 'assinatura',
+      assinante: nome,
+      docAssinante: assinDoc.value.trim() || null,
+      assinadoEm: agora.toISOString(),
+      legend: 'Assinado por ' + nome + (assinDoc.value.trim() ? ' — ' + assinDoc.value.trim() : ''),
+      obs: ''
+    };
+    salvarRascunho();
+    fecharAssinatura();
+    renderFotos();
+    renderStepper();
+    showToast('Assinatura registrada');
+  });
+
   function buildSinglePhotoCard(item){
     const s = dataState.photos[item.id];
     const card = document.createElement('div');
     card.className = 'item-card' + (s ? ' done' : '');
+    card.dataset.photoAnchor = item.id;   // alvo do aviso "faltam N fotos"
     card.innerHTML = `
       <div class="item-num">${String(item.id).padStart(2,'0')}</div>
       <div class="item-thumb${s ? ' filled' : ''}" style="${s ? 'background:var(--success-dim)' : ''}">
@@ -2436,7 +3101,12 @@
       <div class="item-body">
         <div class="item-title">${item.title}</div>
         <div class="item-meta ${s ? 'done' : 'pending'}">${
-          s ? (item.needsMeter ? s.meter + ' m &middot; anexada' : 'anexada')
+          s ? (item.needsMeter
+                ? '<span class="metragem">' + esc(s.meter) + ' m</span> &middot; anexada'
+                : (item.pedeDbm && s.dbm != null
+                    ? '<span class="dbm ' + (classificarDbm(s.dbm)||{nivel:''}).nivel + '">'
+                      + esc(s.dbm) + ' dBm</span> &middot; anexada'
+                    : 'anexada'))
             : 'toque para adicionar'
         }</div>
         ${s ? `<input class="legend-input" placeholder="Observação/legenda..." value="${esc(s.legend||'')}" data-photo-id="${item.id}">` : ''}
@@ -2460,6 +3130,7 @@
     const entries = dataState.photos[item.id] || [];
     const group = document.createElement('div');
     group.className = 'multi-group' + (entries.length ? ' has-entries' : '');
+    group.dataset.photoAnchor = item.id;   // alvo do aviso "faltam N fotos"
     const entriesHtml = entries.map((entry, idx)=>`
       <div class="multi-entry" data-idx="${idx}">
         <div class="multi-entry-thumb"><img src="${entry.imgSrc}"></div>
@@ -2533,11 +3204,162 @@
     });
     valuesTotalEl.textContent = formatBRL(total);
   }
+  // Filtro do catálogo — ver comentário em .cat-tools no CSS.
+  const filtroCat = {materiais:{texto:'', so:false}, valores:{texto:'', so:false}};
+
+  // acento não deve atrapalhar a busca: "braçadeira" acha com "bracadeira"
+  function chave(s){
+    return String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  }
+  function preenchido(v){ return Number(v) > 0; }
+
+  // Mantém o chip e o aviso de "nada encontrado" em dia. A barra de busca fica
+  // FORA da lista que é redesenhada, senão o campo perde o foco a cada tecla.
+  const CAT_UI = {
+    materiais: {busca:'materiaisBusca', chip:'materiaisSoPreench', vazio:'materiaisVazio', oq:'material'},
+    valores:   {busca:'valoresBusca',   chip:'valoresSoPreench',   vazio:'valoresVazio',   oq:'serviço'},
+  };
+
+  function atualizarFerramentasCat(qual, total, visiveis, cheios){
+    const ui = CAT_UI[qual];
+    const f = filtroCat[qual];
+    const chip = document.getElementById(ui.chip);
+    if(chip){
+      chip.classList.toggle('on', f.so);
+      chip.textContent = cheios ? 'Só preenchidos · ' + cheios : 'Só preenchidos';
+      chip.disabled = !cheios && !f.so;
+      chip.style.opacity = chip.disabled ? '.5' : '';
+    }
+    const vazio = document.getElementById(ui.vazio);
+    if(vazio){
+      if(visiveis === 0 && f.so){
+        vazio.textContent = 'Nenhum ' + ui.oq + ' preenchido ainda. Toque no filtro pra ver o catálogo inteiro (' + total + ').';
+        vazio.style.display = '';
+      } else if(visiveis === 0){
+        vazio.textContent = 'Nenhum ' + ui.oq + ' encontrado com "' + f.texto + '".';
+        vazio.style.display = '';
+      } else {
+        vazio.style.display = 'none';
+      }
+    }
+  }
+
+  // Só o rótulo do chip, sem redesenhar a lista: se redesenhasse a cada tecla,
+  // a linha sumiria debaixo do dedo do técnico enquanto ele digita a quantidade.
+  function refrescarChipCat(qual){
+    const cheios = qual === 'materiais'
+      ? materials.filter(m => preenchido(dataState.materialsQty[m.id])).length
+      : valuesItems.filter(v => preenchido(dataState.valuesQty[v.code])).length;
+    const chip = document.getElementById(CAT_UI[qual].chip);
+    if(!chip) return;
+    chip.textContent = cheios ? 'Só preenchidos · ' + cheios : 'Só preenchidos';
+    chip.disabled = !cheios && !filtroCat[qual].so;
+    chip.style.opacity = chip.disabled ? '.5' : '';
+  }
+
+  // ---------- Atalhos "mais usados" ----------
+  // Conta, no próprio aparelho, quantas obras cada item apareceu com quantidade
+  // > 0. O técnico repete quase sempre os mesmos 4 ou 5 — poder tocar uma vez
+  // em vez de procurar na lista é o que corta tempo de verdade.
+  const CHAVE_USO = 'enlace-uso-catalogo';
+
+  function lerUso(){
+    try{ return JSON.parse(localStorage.getItem(CHAVE_USO)) || {materiais:{}, valores:{}}; }
+    catch(e){ return {materiais:{}, valores:{}}; }
+  }
+
+  function registrarUso(){
+    try{
+      const u = lerUso();
+      materials.forEach(m=>{
+        if(Number(dataState.materialsQty[m.id]) > 0)
+          u.materiais[m.id] = (u.materiais[m.id] || 0) + 1;
+      });
+      valuesItems.forEach(v=>{
+        if(Number(dataState.valuesQty[v.code]) > 0)
+          u.valores[v.code] = (u.valores[v.code] || 0) + 1;
+      });
+      localStorage.setItem(CHAVE_USO, JSON.stringify(u));
+    } catch(e){ /* sem localStorage: só não há atalhos, nada quebra */ }
+  }
+
+  function renderAtalhosCat(qual){
+    const caixa = document.getElementById(qual === 'materiais' ? 'materiaisAtalhos' : 'valoresAtalhos');
+    if(!caixa) return;
+    caixa.innerHTML = '';
+    const uso = lerUso()[qual] || {};
+    const itens = qual === 'materiais'
+      ? materials.map(m => ({ch: String(m.id), rot: m.name, cheio: preenchido(dataState.materialsQty[m.id])}))
+      : valuesItems.map(v => ({ch: v.code, rot: v.code + ' · ' + v.desc, cheio: preenchido(dataState.valuesQty[v.code])}));
+    const top = itens
+      .filter(i => (uso[i.ch] || 0) > 0 && !i.cheio)
+      .sort((a,b) => (uso[b.ch]||0) - (uso[a.ch]||0))
+      .slice(0, 5);
+    if(!top.length){ caixa.style.display = 'none'; return; }
+    caixa.style.display = '';
+    const tit = document.createElement('div');
+    tit.className = 'cat-atalhos-tit';
+    tit.textContent = 'Você costuma usar';
+    caixa.appendChild(tit);
+    const linha = document.createElement('div');
+    linha.className = 'cat-atalhos-linha';
+    top.forEach(i=>{
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'cat-atalho';
+      // no serviço o código já identifica; no material corta o nome longo
+      b.textContent = '+ ' + (qual === 'valores' ? i.ch : i.rot.slice(0, 26) + (i.rot.length > 26 ? '…' : ''));
+      b.title = i.rot;
+      b.addEventListener('click', ()=>{
+        // não chuta quantidade: coloca 1 e já deixa o cursor pra corrigir
+        if(qual === 'materiais') dataState.materialsQty[i.ch] = '1';
+        else dataState.valuesQty[i.ch] = '1';
+        filtroCat[qual].texto = '';
+        const inp = document.getElementById(CAT_UI[qual].busca);
+        if(inp) inp.value = '';
+        salvarRascunho();
+        redesenharCat(qual);
+        const campo = document.querySelector(
+          qual === 'materiais' ? `.material-qty[data-mat-id="${i.ch}"]` : `.value-qty[data-code="${i.ch}"]`);
+        if(campo){ campo.focus(); campo.select(); campo.scrollIntoView({block:'center'}); }
+      });
+      linha.appendChild(b);
+    });
+    caixa.appendChild(linha);
+  }
+
+  function redesenharCat(qual){
+    if(qual === 'materiais') renderMateriais(); else renderValores();
+  }
+
+  function ligarFerramentasCat(qual, redesenhar){
+    const ui = CAT_UI[qual];
+    const inp = document.getElementById(ui.busca);
+    const chip = document.getElementById(ui.chip);
+    if(inp) inp.addEventListener('input', (e)=>{
+      filtroCat[qual].texto = e.target.value;
+      redesenhar();
+    });
+    if(chip) chip.addEventListener('click', ()=>{
+      filtroCat[qual].so = !filtroCat[qual].so;
+      redesenhar();
+    });
+  }
+
   function renderValores(){
     garantirCatalogo();
     valuesList.innerHTML = '';
     const podeEditarCatalogo = !ehTecnico();
-    valuesItems.forEach(v=>{
+    const f = filtroCat.valores;
+    const busca = chave(f.texto);
+    const visiveis = valuesItems.filter(v =>
+      (!f.so || preenchido(dataState.valuesQty[v.code])) &&
+      (!busca || chave(v.code).includes(busca) || chave(v.desc).includes(busca))
+    );
+    atualizarFerramentasCat('valores', valuesItems.length, visiveis.length,
+      valuesItems.filter(v => preenchido(dataState.valuesQty[v.code])).length);
+    renderAtalhosCat('valores');
+    visiveis.forEach(v=>{
       const qty = Number(dataState.valuesQty[v.code]) || 0;
       const subtotal = qty * v.price;
       const row = document.createElement('div');
@@ -2551,7 +3373,7 @@
         <div class="value-bottom">
           <span class="value-price">${formatBRL(v.price)} / un</span>
           <div class="value-qty-wrap">
-            <input class="value-qty" type="number" inputmode="numeric" min="0" value="${dataState.valuesQty[v.code]||0}" data-code="${v.code}">
+            <input class="value-qty" type="number" inputmode="numeric" min="0" value="${dataState.valuesQty[v.code] || ''}" data-code="${v.code}">
             <span class="value-subtotal" data-subtotal-for="${v.code}">${formatBRL(subtotal)}</span>
           </div>
         </div>
@@ -2563,6 +3385,7 @@
         salvarRascunho();
         subtotalEl.textContent = formatBRL((Number(e.target.value)||0) * v.price);
         recomputeValuesTotal();
+        refrescarChipCat('valores');
       });
       const delBtn = row.querySelector('.cat-del-btn');
       if(delBtn) delBtn.addEventListener('click', ()=> excluirServico(v.code));
@@ -2640,19 +3463,75 @@
     garantirCatalogo();
     materialsList.innerHTML = '';
     const podeEditarCatalogo = !ehTecnico();
-    materials.forEach(m=>{
+    const f = filtroCat.materiais;
+    const busca = chave(f.texto);
+    const visiveis = materials.filter(m =>
+      (!f.so || preenchido(dataState.materialsQty[m.id])) &&
+      (!busca || chave(m.name).includes(busca) || String(m.id) === busca)
+    );
+    atualizarFerramentasCat('materiais', materials.length, visiveis.length,
+      materials.filter(m => preenchido(dataState.materialsQty[m.id])).length);
+    renderAtalhosCat('materiais');
+    visiveis.forEach(m=>{
       const row = document.createElement('div');
-      row.className = 'material-row';
+      row.className = 'material-row' + (ehEquipamento(m) ? ' com-serie' : '');
+      const lancado = preenchido(dataState.materialsQty[m.id]);
+      const extra = dataState.materialsExtra[m.id] || {};
       row.innerHTML = `
-        <div class="material-num">${m.id}</div>
-        <div class="material-name">${esc(m.name)}</div>
-        <input class="material-qty" type="number" inputmode="numeric" min="0" value="${dataState.materialsQty[m.id]||0}" data-mat-id="${m.id}">
-        ${podeEditarCatalogo ? `<button class="cat-del-btn" type="button" data-mat-id="${m.id}" title="Excluir do catálogo" aria-label="Excluir">&#10005;</button>` : ''}
+        <div class="material-topo">
+          <div class="material-num">${m.id}</div>
+          <div class="material-name">${esc(m.name)}</div>
+          <input class="material-qty" type="number" inputmode="numeric" min="0" value="${dataState.materialsQty[m.id] || ''}" data-mat-id="${m.id}">
+          ${podeEditarCatalogo ? `<button class="cat-del-btn" type="button" data-mat-id="${m.id}" title="Excluir do catálogo" aria-label="Excluir">&#10005;</button>` : ''}
+        </div>
+        ${lancado ? `
+        <div class="material-detalhe">
+          <div class="mat-fluxo" role="group" aria-label="Destino do material">
+            <button type="button" class="mat-fluxo-op${extra.retirado ? '' : ' on'}" data-fluxo="instalado">Instalado</button>
+            <button type="button" class="mat-fluxo-op${extra.retirado ? ' on' : ''}" data-fluxo="retirado">Retirado</button>
+          </div>
+          ${ehEquipamento(m) ? `
+          <div class="mat-serie-linha">
+            <input class="mat-serie" type="text" inputmode="latin" autocomplete="off"
+              placeholder="Nº de série / MAC" value="${esc(extra.serie || '')}" data-serie-de="${m.id}">
+            <button type="button" class="mat-scan" data-scan-de="${m.id}" title="Ler código de barras / QR" aria-label="Ler código">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                stroke-linecap="round"><path d="M3 7V5a2 2 0 012-2h2"/><path d="M17 3h2a2 2 0 012 2v2"/>
+                <path d="M21 17v2a2 2 0 01-2 2h-2"/><path d="M7 21H5a2 2 0 01-2-2v-2"/><path d="M3 12h18"/></svg>
+            </button>
+          </div>` : ''}
+        </div>` : ''}
       `;
       row.querySelector('.material-qty').addEventListener('input', (e)=>{
+        const antes = preenchido(dataState.materialsQty[m.id]);
         dataState.materialsQty[m.id] = e.target.value;
         salvarRascunho();
+        refrescarChipCat('materiais');
+        // só redesenha quando cruza de "vazio" pra "lançado" (ou o contrário),
+        // pra abrir/fechar o detalhe sem tirar o campo debaixo do dedo
+        if(antes !== preenchido(e.target.value)){
+          const foco = e.target.selectionStart;
+          renderMateriais();
+          const novo = document.querySelector(`.material-qty[data-mat-id="${m.id}"]`);
+          if(novo){ novo.focus(); try{ novo.setSelectionRange(foco, foco); }catch(err){} }
+        }
       });
+      row.querySelectorAll('.mat-fluxo-op').forEach(b=>{
+        b.addEventListener('click', ()=>{
+          if(!dataState.materialsExtra[m.id]) dataState.materialsExtra[m.id] = {};
+          dataState.materialsExtra[m.id].retirado = (b.dataset.fluxo === 'retirado');
+          salvarRascunho();
+          row.querySelectorAll('.mat-fluxo-op').forEach(o => o.classList.toggle('on', o === b));
+        });
+      });
+      const campoSerie = row.querySelector('.mat-serie');
+      if(campoSerie) campoSerie.addEventListener('input', (e)=>{
+        if(!dataState.materialsExtra[m.id]) dataState.materialsExtra[m.id] = {};
+        dataState.materialsExtra[m.id].serie = e.target.value.trim().toUpperCase();
+        salvarRascunho();
+      });
+      const btnScan = row.querySelector('.mat-scan');
+      if(btnScan) btnScan.addEventListener('click', ()=> lerCodigo(m.id));
       const delBtn = row.querySelector('.cat-del-btn');
       if(delBtn) delBtn.addEventListener('click', ()=> excluirMaterial(m.id));
       materialsList.appendChild(row);
@@ -2714,6 +3593,18 @@
     }
     showToast('Material removido do catálogo');
     renderMateriais();
+  }
+
+  ligarFerramentasCat('materiais', renderMateriais);
+  ligarFerramentasCat('valores',   renderValores);
+
+  // Obra nova (ou outra obra) não pode herdar a busca da anterior — senão o
+  // técnico abre o passo e vê "nenhum material encontrado" sem entender por quê.
+  function limparFiltroCat(){
+    filtroCat.materiais = {texto:'', so:false};
+    filtroCat.valores   = {texto:'', so:false};
+    const mb = document.getElementById('materiaisBusca'); if(mb) mb.value = '';
+    const vb = document.getElementById('valoresBusca');   if(vb) vb.value = '';
   }
 
   // catálogo de materiais/serviços é por empresa — carrega uma vez por
@@ -2780,6 +3671,11 @@
 
   let activeItem = null, activeMultiIdx = null, photoStaged = false, stagedFileMeta = null;
   let stagedMime = null, stagedCoords = null;
+  // De onde veio a foto. A marca d'agua com GPS/endereco/hora so e aplicada
+  // na foto tirada dentro do app; quem fotografa pelo app da camera e anexa
+  // da galeria escapa do carimbo. Registrar a origem deixa isso visivel pro
+  // analista em vez de virar um buraco silencioso na prova da obra.
+  let stagedOrigem = null;
   let cameraStream = null;
   let logoImage = new Image();
   logoImage.src = 'data:image/png;base64,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';
@@ -2964,6 +3860,7 @@
     stagedFileMeta = 'foto_' + Date.now() + '.jpg';
     stagedMime = 'image/jpeg';
     stagedCoords = carimbo.coordsText;
+    stagedOrigem = 'camera';
     photoStaged = true;
     showResultState();
   }
@@ -2997,6 +3894,9 @@
     captureObsInput.value = (item.multiple && existing) ? (existing.legend || '') : '';
     meterField.classList.toggle('show', !!item.needsMeter);
     meterInput.value = existing ? existing.meter || '' : '';
+    dbmField.classList.toggle('show', !!item.pedeDbm);
+    dbmInput.value = existing && existing.dbm != null ? existing.dbm : '';
+    avaliarDbm();
     if(existing && existing.imgSrc){
       attachedImg.src = existing.imgSrc;
       attachedImg.style.display = ehPdf(existing) ? 'none' : '';
@@ -3040,6 +3940,7 @@
     stagedFileMeta = file.name;
     stagedMime = file.type || '';
     stagedCoords = null;
+    stagedOrigem = 'galeria';
     const reader = new FileReader();
     reader.onload = async (e)=>{
       const ehPdfArquivo = (file.type === 'application/pdf')
@@ -3087,6 +3988,7 @@
         fileMeta: file.name,
         mime: ehPdfArquivo ? 'application/pdf' : 'image/jpeg',
         coords: null,
+        origem: 'galeria',
         legend: legendaCompartilhada,
         obs: ''
       });
@@ -3117,9 +4019,18 @@
     showChoiceState();
   });
 
-  document.getElementById('closeCapture').addEventListener('click', ()=>{
+  function fecharCaptura(){
     stopCamera();
     overlay.classList.remove('show');
+  }
+  document.getElementById('closeCapture').addEventListener('click', fecharCaptura);
+  document.getElementById('cancelarCaptura').addEventListener('click', fecharCaptura);
+
+  // Esc fecha também — no desktop o analista abre foto o tempo todo pra conferir
+  document.addEventListener('keydown', (e)=>{
+    if(e.key !== 'Escape') return;
+    if(overlay.classList.contains('show')) fecharCaptura();
+    else if(assinOverlay.classList.contains('show')) fecharAssinatura();
   });
 
   // O botao voltar do Android nao dispara o closeCapture: sem isto o stream
@@ -3157,6 +4068,8 @@
       fileMeta: stagedFileMeta,
       mime: stagedMime || 'image/jpeg',
       coords: stagedCoords || null,
+      origem: stagedOrigem || null,
+      dbm: activeItem.pedeDbm && dbmInput.value !== '' ? Number(dbmInput.value) : null,
       legend: existingLegend,
       obs: existingObs
     };
@@ -3189,7 +4102,13 @@
     document.getElementById('rvCodtcomp').textContent = c.codtcomp || '—';
     document.getElementById('rvEmpresa').textContent = c.empresa || '—';
 
-    const photosDone = photoItems.every(item=>{
+    // Foto anexada da galeria nao passou pelo carimbo de GPS/hora do app.
+    // Marcar na conferencia deixa o analista ver antes de aprovar.
+    const seloGaleria = (e)=> (e && e.origem === 'galeria')
+      ? '<span class="selo-galeria" title="Anexada da galeria \u2014 sem carimbo de GPS e hora do app">galeria</span>'
+      : '';
+
+    const photosDone = photoItems.filter(i => !i.opcional).every(item=>{
       const s = dataState.photos[item.id];
       return item.multiple ? (s && s.length > 0) : !!s;
     });
@@ -3230,7 +4149,7 @@
           arr.forEach((entry, idx)=>{
             const cell = document.createElement('div');
             cell.className = 'review-photo-cell';
-            cell.innerHTML = `<img src="${entry.imgSrc}"><div class="review-photo-label">${item.id}. ${item.title} &middot; caixa ${idx+1}</div>`;
+            cell.innerHTML = `<img src="${entry.imgSrc}"><div class="review-photo-label">${item.id}. ${item.title} &middot; caixa ${idx+1}${seloGaleria(entry)}</div>`;
             photoGrid.appendChild(cell);
           });
         }
@@ -3239,7 +4158,7 @@
         const cell = document.createElement('div');
         cell.className = 'review-photo-cell';
         cell.innerHTML = s
-          ? `<img src="${s.imgSrc}"><div class="review-photo-label">${item.id}. ${item.title}</div>`
+          ? `<img src="${s.imgSrc}"><div class="review-photo-label">${item.id}. ${item.title}${seloGaleria(s)}</div>`
           : `<div class="review-photo-empty">Sem foto</div><div class="review-photo-label">${item.id}. ${item.title}</div>`;
         photoGrid.appendChild(cell);
       }
@@ -3264,7 +4183,11 @@
       usedMaterials.forEach(m=>{
         const row = document.createElement('div');
         row.className = 'review-row';
-        row.innerHTML = `<span class="k">${m.name}</span><span class="v">${dataState.materialsQty[m.id]}</span>`;
+        const ex = dataState.materialsExtra[m.id] || {};
+        row.innerHTML = `<span class="k">${esc(m.name)}`
+          + (ex.serie ? `<br><span class="mat-serie-eco">${esc(ex.serie)}</span>` : '')
+          + (ex.retirado ? ' <span class="mat-tag-retirado">retirado</span>' : '')
+          + `</span><span class="v">${esc(dataState.materialsQty[m.id])}</span>`;
         reviewMaterials.appendChild(row);
       });
     }
@@ -3321,6 +4244,8 @@
         indice:'CLIENTE NO LOCAL DA INSTALAÇÃO (PTO)'},
     7: {titulo:'Foto do sinal do cliente',
         indice:'FOTO DO SINAL DO CLIENTE'},
+    9: {titulo:'Assinatura do cliente',
+        indice:'ASSINATURA DO CLIENTE'},
     8: {titulo:'Chegada no poste do cliente',
         indice:'CHEGADA NO POSTE DO CLIENTE'},
   };
@@ -3498,7 +4423,8 @@
     const itemPto = photoItems.find(i => i.id === 6);
     const itemSinal = photoItems.find(i => i.id === 7);
     const itemPoste = photoItems.find(i => i.id === 8);
-    const outrosItems = photoItems.filter(i => ![1,2,3,4,5,6,7,8].includes(i.id));
+    const outrosItems = photoItems.filter(i => ![1,2,3,4,5,6,7,8,9].includes(i.id));
+    const itemAssinatura = photoItems.find(i => i.assinatura);
 
     // seção em grade: 1 foto = página inteira, 2 fotos = lado a lado
     // (usada pra identificação do cliente, sinal e PTO)
@@ -3553,6 +4479,12 @@
     outrosItems.forEach(item=>{
       secoes.push(secaoGrade(item));
     });
+
+    // Assinatura por último: é o aceite do cliente, fecha o relatório.
+    // Só entra se existir — obra de rede não tem cliente no local pra assinar.
+    if(itemAssinatura && st.photos[itemAssinatura.id]){
+      secoes.push(secaoGrade(itemAssinatura));
+    }
 
     let cursor = 3;
     const indice = secoes.map((sec, i)=>{
@@ -3756,7 +4688,11 @@
         doc.text('Nenhum material informado.', M, y);
       } else {
         usados.forEach(m=>{
-          const lines = doc.splitTextToSize('\u2022 ' + m.name + ' \u2014 Qtd: ' + (st.materialsQty||{})[m.id], CW);
+          const ex = (st.materialsExtra || {})[m.id] || {};
+          const txt = '\u2022 ' + m.name + ' \u2014 Qtd: ' + (st.materialsQty||{})[m.id]
+            + (ex.serie ? '  \u2014 S/N: ' + ex.serie : '')
+            + (ex.retirado ? '  (RETIRADO)' : '');
+          const lines = doc.splitTextToSize(txt, CW);
           doc.text(lines, M, y); y += lines.length * 5.5 + 2;
         });
       }
@@ -3802,10 +4738,26 @@
 
     // Gerar o relatório é o sinal de que o serviço acabou: o envio vai
     // junto. Sem conexão, entra na fila e sobe sozinho depois.
-    const jaFechada = ['enviado','aprovado'].includes(statusObraAtual);
-    if(jaFechada){
-      showToast('PDF gerado \u2014 esta obra já está no servidor');
-      return;
+    // Técnico refazendo uma obra APROVADA: em vez de barrar, deixa reenviar —
+    // e a obra volta pra fila do escritório (o envio já grava status 'enviado').
+    if(vaiReabrirAprovacao()){
+      if(!confirm(
+          'Esta obra já foi APROVADA pelo escritório.\n\n'
+        + 'Reenviar tira a aprovação e manda de volta pra revisão.\n\nContinuar?')){
+        showToast('PDF gerado \u2014 nada foi reenviado');
+        return;
+      }
+      dataState.reabertaMarca = {
+        em: new Date().toISOString(),
+        por: (techNameDisplay.textContent || '').trim(),
+        statusAnterior: 'aprovado',
+      };
+    } else {
+      const jaFechada = ['enviado','aprovado'].includes(statusObraAtual);
+      if(jaFechada){
+        showToast('PDF gerado \u2014 esta obra já está no servidor');
+        return;
+      }
     }
 
     if(!supabaseConfigured){
@@ -4158,10 +5110,12 @@
         dados: {
           contract: dataState.contract,
           materialsQty: dataState.materialsQty,
+          materialsExtra: dataState.materialsExtra,
           valuesQty: dataState.valuesQty,
           arquivos: uploaded,
           meta: buildMetaSnapshot(),
           tecnico: (techNameDisplay.textContent || '').trim(),
+          reaberta: dataState.reabertaMarca || undefined,
         }
       };
       // corrigindo uma obra que ja existe: atualiza a linha em vez de duplicar
@@ -4173,6 +5127,8 @@
         : await supabaseClient.from(SUPABASE_TABLE).insert(payload);
       if(resp.error) throw resp.error;
       sendStatus.textContent = 'Relatório enviado com sucesso.';
+      dataState.reabertaMarca = null;
+      registrarUso();   // alimenta os atalhos de "você costuma usar"
       statusObraAtual = 'enviado';
       idbApagar('atual');
       showToast('Relatório enviado para o servidor');
@@ -4181,7 +5137,9 @@
         .map(v => ({desc: v.desc, qtd: Number(dataState.valuesQty[v.code]), preco: v.price}));
       const materiaisFinal = materials
         .filter(m => Number(dataState.materialsQty[m.id]) > 0)
-        .map(m => ({nome: m.name, qtd: Number(dataState.materialsQty[m.id])}));
+        .map(m => ({nome: m.name, qtd: Number(dataState.materialsQty[m.id]),
+                    serie: (dataState.materialsExtra[m.id] || {}).serie || null,
+                    retirado: !!(dataState.materialsExtra[m.id] || {}).retirado}));
       reportsList.unshift({
         contrato: contractNumero,
         cliente: dataState.contract.empresa || 'Empresa não informada',
@@ -4215,10 +5173,25 @@
   // reabre uma obra aprovada nem reenvia pra fila de revisão) — só grava o
   // que foi alterado (ex.: materiais/valores) e volta pra lista de obras,
   // pra quem está lançando/corrigindo várias obras em sequência.
+  // Obra aprovada que o TÉCNICO mexe perde a aprovação e volta pra fila do
+  // escritório. Antes o "Salvar" gravava por cima sem tocar no status — a obra
+  // seguia aprovada com número diferente do que foi validado, e ia pra medição
+  // assim. O escritório continua corrigindo sem reabrir: é ele quem aprova.
+  function vaiReabrirAprovacao(){
+    return ehTecnico() && statusObraAtual === 'aprovado';
+  }
+
   async function salvarEVoltar(){
     if(!obraEditandoId){ showToast('Abra uma obra existente para usar "Salvar"'); return; }
     if(!supabaseConfigured){ showToast('Chaves do Supabase ainda não configuradas'); return; }
     if(!online){ showToast('Sem conexão — tente de novo quando reconectar'); return; }
+
+    const reabrir = vaiReabrirAprovacao();
+    if(reabrir && !confirm(
+        'Esta obra já foi APROVADA pelo escritório.\n\n'
+      + 'Se você salvar, ela perde a aprovação e volta pra fila de revisão, '
+      + 'pra ser validada de novo.\n\nContinuar?')) return;
+
     const rotulo = saveJobBtn.textContent;
     saveJobBtn.disabled = true; saveJobBtn.textContent = 'Salvando...';
     try{
@@ -4228,6 +5201,7 @@
         dados: {
           contract: dataState.contract,
           materialsQty: dataState.materialsQty,
+          materialsExtra: dataState.materialsExtra,
           valuesQty: dataState.valuesQty,
           arquivos: uploaded,
           meta: buildMetaSnapshot(),
@@ -4235,9 +5209,24 @@
         },
         atualizado_em: new Date().toISOString(),
       };
+      if(reabrir){
+        campos.status = 'enviado';
+        // marca a reabertura pro analista não reaprovar no automático sem
+        // perceber que essa obra já tinha passado por ele antes
+        campos.dados.reaberta = {
+          em: new Date().toISOString(),
+          por: (techNameDisplay.textContent || '').trim(),
+          statusAnterior: 'aprovado',
+        };
+      }
       const {error} = await supabaseClient.from(SUPABASE_TABLE).update(campos).eq('id', obraEditandoId);
       if(error) throw error;
-      showToast('Salvo — voltando pra lista de obras');
+      if(reabrir){
+        statusObraAtual = 'enviado';
+        showToast('Salvo — a obra voltou pra revisão do escritório');
+      } else {
+        showToast('Salvo — voltando pra lista de obras');
+      }
       idbApagar('atual');
       navegarMenu('obras');
     } catch(err){
@@ -4805,6 +5794,7 @@
     empresas :'<rect x="4" y="3" width="16" height="18" rx="1.5"/><path d="M9 21v-4h6v4"/><path d="M9 7h.01M15 7h.01M9 11h.01M15 11h.01"/>',
     sair     :'<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/>',
     nova     :'<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/><path d="M12 11v6"/><path d="M9 14h6"/>',
+    medicao  :'<path d="M3 20h18"/><path d="M6 20V9"/><path d="M11 20V4"/><path d="M16 20v-7"/><path d="M21 20v-4"/>',
   };
 
   let rotaAtual = '';
@@ -4819,6 +5809,7 @@
     if(ehTecnico()) L.push({id:'nova', t:'Nova obra', ic:'nova'});
     L.push({id:'obras',     t: ehRevisor() ? 'Obras' : 'Minhas obras', ic:'obras', badge:true});
     L.push({id:'historico', t:'Histórico', ic:'historico'});
+    if(ehRevisor()) L.push({id:'medicao',    t:'Medição',    ic:'medicao'});
     if(ehRevisor()) L.push({id:'relatorios', t:'Relatórios', ic:'relatorios'});
     if(ehAdmin())   L.push({id:'config',     t:'Configurações', ic:'config'});
     if(ehSuper())   L.push({id:'empresas',   t:'Empresas', ic:'empresas'});
@@ -4860,7 +5851,7 @@
   const TITULOS = {
     dashboard:'Dashboard', despacho:'Despacho', tecnicos:'Técnicos',
     obras:'Obras', historico:'Histórico', relatorios:'Relatórios',
-    config:'Configurações', empresas:'Empresas', nova:'Nova obra',
+    config:'Configurações', empresas:'Empresas', nova:'Nova obra', medicao:'Medição',
   };
 
   function navegarMenu(rota){
@@ -4878,6 +5869,7 @@
       case 'dashboard': showAppView('quadro'); renderQuadro(); break;
       case 'despacho':  despacharCard.click(); break;
       case 'nova':      abrirObraNova(); break;
+      case 'medicao':   showAppView('medicao'); prepararMedicao(); break;
       case 'tecnicos':  showAppView('usuarios'); escopoTecnicos = true; escopoEmpresas = false; filtroUsuarios = 'tecnico'; renderUsuarios(); break;
       case 'obras':     filtroObras = 'abertas';   refreshJobsList(); break;
       case 'historico': filtroObras = 'historico'; refreshJobsList(); break;
@@ -4936,6 +5928,7 @@
   // dias, então "quantas cada um tem em aberto" é a informação que
   // decide para quem vai a próxima.
   const quadroScreen = document.getElementById('quadroScreen');
+  const medicaoScreen = document.getElementById('medicaoScreen');
   const quadroCard   = document.getElementById('quadroCard');
 
   const ROTULO_STATUS = {
@@ -5475,11 +6468,56 @@
     });
   }
 
+  // ---------- Obra duplicada ----------
+  // Duas pessoas lançando a mesma leva, ou o mesmo contrato caindo duas vezes
+  // na planilha, viram obra repetida — que depois aparece duas vezes na
+  // medição. Avisa, mas NÃO bloqueia: o mesmo contrato pode voltar em
+  // manutenção ou remanejamento, e quem sabe disso é quem está lançando.
+  const ROTULO_STATUS_OBRA = {
+    despachada:'despachada', em_execucao:'em execução', enviado:'enviada',
+    aprovado:'aprovada', reprovado:'devolvida',
+  };
+
+  async function obrasComContrato(numero, empId, ignorarId){
+    if(!numero || !supabaseConfigured || !online) return [];
+    try{
+      let q = supabaseClient.from(SUPABASE_TABLE)
+        .select('id, contrato, status, dados, criado_em')
+        .eq('contrato', numero);
+      if(empId) q = q.eq('empresa_id', empId);
+      const {data, error} = await q;
+      if(error) return [];
+      return (data || []).filter(r => !ignorarId || r.id !== ignorarId);
+    } catch(e){ return []; }
+  }
+
+  function textoDuplicidade(achadas){
+    if(!achadas.length) return null;
+    const det = achadas.slice(0, 3).map(r=>{
+      const d = r.dados || {};
+      const quem = d.tecnico ? ' — ' + d.tecnico : '';
+      const quando = (d.contract || {}).data ? ' — ' + toDateBR(d.contract.data) : '';
+      return (ROTULO_STATUS_OBRA[r.status] || r.status || 'sem status') + quem + quando;
+    });
+    const sobra = achadas.length > 3 ? ' e mais ' + (achadas.length - 3) : '';
+    return {
+      titulo: achadas.length === 1
+        ? 'Já existe uma obra com esse contrato'
+        : 'Já existem ' + achadas.length + ' obras com esse contrato',
+      linhas: det,
+      sobra,
+    };
+  }
+
   // busca contrato ja cadastrado e preenche o resto
   document.getElementById('dNumero').addEventListener('blur', async ()=>{
     const num = document.getElementById('dNumero').value.trim();
     const aviso = document.getElementById('dLookup');
     if(!num || !supabaseConfigured || !online){ aviso.textContent = ''; return; }
+    // ANTES da busca do contrato: o "if(!data) return" logo abaixo sai da função
+    // inteira, e contrato que ainda não está na tabela `contratos` é justamente
+    // o caso mais comum numa obra nova — a checagem de duplicidade nunca rodaria.
+    avisarDuplicidadeDespacho(num);
     aviso.textContent = 'Procurando contrato...';
     try{
       const {data} = await supabaseClient.from('contratos').select('*').eq('numero', num).maybeSingle();
@@ -5493,6 +6531,20 @@
       aviso.textContent = 'Dados preenchidos do cadastro.';
     } catch(e){ aviso.textContent = ''; }
   });
+
+  async function avisarDuplicidadeDespacho(num){
+    const caixa = document.getElementById('dDuplicada');
+    caixa.style.display = 'none';
+    caixa.innerHTML = '';
+    const achadas = await obrasComContrato(num, empresaAlvoDespacho());
+    const t = textoDuplicidade(achadas);
+    if(!t) return;
+    caixa.innerHTML = '<strong>' + esc(t.titulo) + '</strong>'
+      + '<ul>' + t.linhas.map(l => '<li>' + esc(l) + '</li>').join('') + '</ul>'
+      + '<span class="dup-nota">Se for manutenção ou remanejamento no mesmo contrato, pode seguir. '
+      + 'Se for engano, confira na aba Obras antes de despachar.' + esc(t.sobra) + '</span>';
+    caixa.style.display = 'block';
+  }
 
   // lista de tecnicos, com a carga de cada um
   async function carregarTecnicos(){
@@ -5674,7 +6726,10 @@
       } else {
         showToast('Obra ' + numero + ' cadastrada — atribua o técnico na aba Obras quando decidir');
       }
-      irParaInicio();
+      // Antes voltava pro Dashboard. Quem acabou de cadastrar uma obra quase
+      // sempre vai cadastrar a próxima ou conferir a que entrou — a lista de
+      // Obras é o lugar certo pra cair.
+      navegarMenu('obras');
     } catch(err){
       st.textContent = 'Não deu pra despachar: ' + (err.message || err);
       showToast('Falha no despacho');
@@ -7389,6 +8444,7 @@
     usersScreen.classList.toggle('show', view === 'usuarios');
     despachoScreen.classList.toggle('show', view === 'despacho');
     quadroScreen.classList.toggle('show', view === 'quadro');
+    medicaoScreen.classList.toggle('show', view === 'medicao');
     wizardScreen.classList.toggle('show', view === 'wizard');
     bottomBar.style.display = (view === 'wizard' && steps[currentStep] !== 'review') ? 'flex' : 'none';
     if(view !== 'wizard') empilhar({tela: view});   // o wizard empilha por passo, no showStep
@@ -7400,7 +8456,15 @@
     dataState.photos = {};
     dataState.docsAtt = {};
     dataState.materialsQty = {};
+    dataState.materialsExtra = {};
     dataState.valuesQty = {};
+    dataState.reabertaMarca = null;
+    ['fDuplicada','dDuplicada'].forEach(id=>{
+      const c = document.getElementById(id);
+      if(c){ c.style.display = 'none'; c.innerHTML = ''; }
+    });
+    passosVisitados = new Set();
+    limparFiltroCat();
     ['fNumero','fData','fEndereco','fCodtcomp','fCidade','fCep','fCoord','fEmpresa'].forEach(id=>{
       const el = document.getElementById(id);
       if(el) el.value = '';
@@ -7502,6 +8566,7 @@
       const total = jobTotal(job);
       const card = document.createElement('div');
       card.className = 'job-card';
+      card.dataset.contrato = job.contrato;   // alvo do "abrir a próxima pendente"
 
       const header = document.createElement('div');
       header.className = 'job-item';
@@ -7510,6 +8575,7 @@
           <div class="job-item-title">Contrato ${esc(job.contrato)}</div>
           <div class="job-item-sub">${esc(job.cliente)} &middot; ${esc(job.data)}${job.tecnico && ehRevisor() ? ' &middot; ' + esc(job.tecnico) : ''}</div>
           ${job.status === 'reprovado' && (job.row && job.row.revisao && job.row.revisao.observacao) ? `<div class="job-item-sub" style="color:var(--accent);margin-top:3px;">↩ ${esc(job.row.revisao.observacao)}</div>` : ''}
+          ${job.reaberta && job.status === 'enviado' ? `<div class="selo-reaberta">obra já aprovada &mdash; alterada pelo técnico${job.reaberta.por ? ' ' + esc(job.reaberta.por) : ''}, revalidar</div>` : ''}
           <div class="job-item-sub" style="color:var(--success);margin-top:2px;">${total > 0 ? formatBRL(total) : 'valor pendente'}</div>
         </div>
         <div class="job-status ${job.status}" style="${job.status === 'aprovado' ? 'color:var(--success);border-color:var(--success);' : job.status === 'reprovado' ? 'color:var(--accent);border-color:var(--accent);' : ''}">${
@@ -7535,7 +8601,7 @@
       if(job.materiais && job.materiais.length){
         materiaisHtml = '<div class="job-service-section-t">Materiais</div>' + job.materiais.map(m => `
           <div class="job-service-row">
-            <span class="k">${esc(m.nome)}</span>
+            <span class="k">${esc(m.nome)}${m.serie ? `<br><span class="mat-serie-eco">${esc(m.serie)}</span>` : ''}${m.retirado ? ' <span class="mat-tag-retirado">retirado</span>' : ''}</span>
             <span class="v">${esc(m.qtd)}</span>
           </div>
         `).join('');
@@ -7609,6 +8675,8 @@
         </button>` : ''}
         ${ehRevisor() && job.row && job.status === 'enviado' ? `
         <div class="revisao-box">
+          <div class="motivos-prontos">${MOTIVOS_REPROVA.map(mt =>
+            `<button type="button" class="motivo-chip" data-motivo="${esc(mt)}">${esc(mt)}</button>`).join('')}</div>
           <textarea placeholder="Observação da revisão (obrigatória para reprovar)">${esc((job.row.revisao||{}).observacao || '')}</textarea>
           <div style="display:flex;gap:8px;margin-top:8px;">
             <button class="job-edit-btn" type="button" data-acao="aprovar" style="flex:1;border-color:var(--success);color:var(--success);">Aprovar</button>
@@ -7710,8 +8778,24 @@
           if(error){ showToast('Não deu pra salvar: ' + error.message); return; }
           job.status = novoStatus;
           showToast(novoStatus === 'aprovado' ? 'Obra aprovada' : 'Obra devolvida pro técnico');
-          refreshJobsList();
+          // Fila de revisão: em vez de voltar pra lista e procurar a próxima na
+          // mão, já abre a seguinte que está esperando revisão. Numa leva de
+          // dezenas de obras isso é a diferença entre revisar e desistir.
+          const proxima = proximaPendente(job);
+          await refreshJobsList();
+          if(proxima) abrirCartaoDaObra(proxima);
         }
+        // chips de motivo: preenchem a observação em vez de digitar tudo de novo
+        caixaRevisao.querySelectorAll('.motivo-chip').forEach(ch=>{
+          ch.addEventListener('click', (e)=>{
+            e.stopPropagation();
+            const atual = obs.value.trim();
+            const texto = ch.dataset.motivo;
+            if(atual.includes(texto)) return;
+            obs.value = atual ? atual + '; ' + texto : texto;
+            obs.focus();
+          });
+        });
         caixaRevisao.querySelector('[data-acao="aprovar"]')
           .addEventListener('click', (e)=>{ e.stopPropagation(); revisar('aprovado', e.currentTarget); });
         caixaRevisao.querySelector('[data-acao="reprovar"]')
@@ -7726,6 +8810,256 @@
       card.appendChild(details);
       jobsList.appendChild(card);
     });
+  }
+
+  // ---------- Boletim de medição ----------
+  // Só agregação: usa a obra aprovada que já está no banco e soma por código de
+  // serviço, que é como a operadora paga. Não guarda nada de novo — o período
+  // fechado como documento (rascunho/enviado/aprovado) é o passo seguinte.
+  const medDe = document.getElementById('medDe');
+  const medAte = document.getElementById('medAte');
+  const medTecnico = document.getElementById('medTecnico');
+  const medResultado = document.getElementById('medResultado');
+  let medicaoAtual = null;   // guarda o último resultado pra exportar
+
+  function ymd(d){ return d.toISOString().slice(0,10); }
+
+  function prepararMedicao(){
+    garantirCatalogo();
+    if(!medDe.value || !medAte.value) periodoMes(0);
+    montarAtalhosPeriodo();
+    montarSeletorTecnico();
+  }
+
+  function periodoMes(voltar){
+    const hoje = new Date();
+    const ini = new Date(hoje.getFullYear(), hoje.getMonth() - voltar, 1);
+    const fim = new Date(hoje.getFullYear(), hoje.getMonth() - voltar + 1, 0);
+    medDe.value = ymd(ini);
+    medAte.value = ymd(fim);
+  }
+
+  function montarAtalhosPeriodo(){
+    const caixa = document.getElementById('medAtalhos');
+    caixa.innerHTML = '';
+    const nomeMes = v =>{
+      const h = new Date();
+      return new Date(h.getFullYear(), h.getMonth() - v, 1)
+        .toLocaleDateString('pt-BR', {month:'long', year:'numeric'});
+    };
+    [[0,'Este mês'], [1, nomeMes(1)], [2, nomeMes(2)]].forEach(([v, rot])=>{
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'med-atalho'; b.textContent = rot;
+      b.addEventListener('click', ()=>{ periodoMes(v); gerarMedicao(); });
+      caixa.appendChild(b);
+    });
+  }
+
+  async function montarSeletorTecnico(){
+    if(!supabaseConfigured || !online) return;
+    try{
+      const emp = empresaContexto ? empresaContexto.id : minhaEmpresa();
+      let q = supabaseClient.from('perfis').select('id, nome').eq('papel', 'tecnico');
+      if(emp) q = q.eq('empresa_id', emp);
+      const {data} = await q;
+      const escolhido = medTecnico.value;
+      medTecnico.innerHTML = '<option value="">Todos</option>';
+      (data || []).forEach(t=>{
+        const o = document.createElement('option');
+        o.value = t.id; o.textContent = t.nome || '(sem nome)';
+        medTecnico.appendChild(o);
+      });
+      medTecnico.value = escolhido;
+    } catch(e){ /* sem lista de técnicos, o filtro fica só em "Todos" */ }
+  }
+
+  async function gerarMedicao(){
+    const de = medDe.value, ate = medAte.value;
+    if(!de || !ate){ showToast('Escolha as duas datas'); return; }
+    if(de > ate){ showToast('A data inicial está depois da final'); return; }
+    const btn = document.getElementById('medGerar');
+    btn.disabled = true; btn.textContent = 'Somando...';
+    medResultado.innerHTML = '<div class="med-vazio">Buscando obras aprovadas...</div>';
+    try{
+      const emp = empresaContexto ? empresaContexto.id : minhaEmpresa();
+      let q = supabaseClient.from(SUPABASE_TABLE)
+        .select('id, contrato, dados, tecnico_id, status, atualizado_em')
+        .eq('status', 'aprovado');
+      if(emp) q = q.eq('empresa_id', emp);
+      if(medTecnico.value) q = q.eq('tecnico_id', medTecnico.value);
+      const {data, error} = await q;
+      if(error) throw error;
+
+      // A data que vale é a do contrato (quando o serviço foi feito), não a de
+      // aprovação — o escritório pode aprovar em setembro uma obra de agosto,
+      // e ela tem que cair na medição de agosto.
+      const obras = (data || []).filter(r=>{
+        const d = ((r.dados || {}).contract || {}).data;
+        return d && d >= de && d <= ate;
+      });
+      medicaoAtual = somarMedicao(obras, de, ate);
+      renderMedicao(medicaoAtual);
+    } catch(e){
+      medResultado.innerHTML = '<div class="med-vazio">Não deu pra buscar: '
+        + esc(e.message || e) + '</div>';
+    } finally {
+      btn.disabled = false; btn.textContent = 'Gerar';
+    }
+  }
+
+  function somarMedicao(obras, de, ate){
+    const porCodigo = {};
+    let total = 0;
+    const linhasObra = [];
+    obras.forEach(r=>{
+      const d = r.dados || {};
+      const qtds = d.valuesQty || {};
+      let totalObra = 0;
+      valuesItems.forEach(v=>{
+        const q = Number(qtds[v.code]) || 0;
+        if(q <= 0) return;
+        const sub = q * v.price;
+        totalObra += sub;
+        if(!porCodigo[v.code]) porCodigo[v.code] = {code:v.code, desc:v.desc, preco:v.price, qtd:0, sub:0, obras:0};
+        porCodigo[v.code].qtd += q;
+        porCodigo[v.code].sub += sub;
+        porCodigo[v.code].obras += 1;
+      });
+      total += totalObra;
+      linhasObra.push({
+        contrato: r.contrato,
+        data: (d.contract || {}).data || '',
+        tecnico: d.tecnico || '',
+        total: totalObra,
+      });
+    });
+    linhasObra.sort((a,b) => (a.data || '').localeCompare(b.data || ''));
+    return {
+      de, ate,
+      linhas: Object.values(porCodigo).sort((a,b) => a.code.localeCompare(b.code)),
+      obras: linhasObra,
+      total,
+    };
+  }
+
+  function renderMedicao(m){
+    if(!m.obras.length){
+      medResultado.innerHTML = '<div class="med-vazio">Nenhuma obra <strong>aprovada</strong> '
+        + 'com data entre ' + toDateBR(m.de) + ' e ' + toDateBR(m.ate) + '.<br>'
+        + 'Obras enviadas mas ainda não aprovadas não entram na medição.</div>';
+      return;
+    }
+    const linhas = m.linhas.map(l => `
+      <tr>
+        <td class="cod">${esc(l.code)}</td>
+        <td>${esc(l.desc)}</td>
+        <td class="num">${l.qtd.toLocaleString('pt-BR')}</td>
+        <td class="num">${formatBRL(l.preco)}</td>
+        <td class="num">${formatBRL(l.sub)}</td>
+      </tr>`).join('');
+    const zeradas = m.obras.filter(o => o.total === 0).length;
+    const obras = m.obras.map(o => `
+      <div class="med-obra-lin${o.total === 0 ? ' zerada' : ''}">
+        <span class="k">${esc(o.contrato)}${o.data ? ' &middot; ' + toDateBR(o.data) : ''}${o.tecnico ? ' &middot; ' + esc(o.tecnico) : ''}</span>
+        <span class="v">${formatBRL(o.total)}</span>
+      </div>`).join('');
+    medResultado.innerHTML = `
+      <div class="med-cab">
+        <div class="med-kpis">
+          <div class="med-kpi"><div class="med-kpi-n">${m.obras.length}</div><div class="med-kpi-r">obras</div></div>
+          <div class="med-kpi"><div class="med-kpi-n">${m.linhas.length}</div><div class="med-kpi-r">códigos</div></div>
+          <div class="med-kpi"><div class="med-kpi-n destaque">${formatBRL(m.total)}</div><div class="med-kpi-r">total</div></div>
+        </div>
+        <button class="med-exportar" id="medExportar" type="button">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+            stroke-linecap="round"><path d="M12 3v12"/><path d="M8 11l4 4 4-4"/><path d="M4 21h16"/></svg>
+          Baixar planilha
+        </button>
+      </div>
+      <div class="med-tabela-wrap">
+        <table class="med-tabela">
+          <thead><tr><th>Código</th><th>Serviço</th><th>Qtd</th><th>Unitário</th><th>Total</th></tr></thead>
+          <tbody>${linhas}</tbody>
+          <tfoot><tr><td colspan="4">Total do período</td><td class="num">${formatBRL(m.total)}</td></tr></tfoot>
+        </table>
+      </div>
+      ${zeradas ? `<div class="med-alerta">
+        <strong>${zeradas === 1 ? '1 obra aprovada não tem serviço lançado' : zeradas + ' obras aprovadas não têm serviço lançado'}.</strong>
+        Elas entram na lista abaixo com R$ 0,00 &mdash; é serviço executado que não vai ser faturado.
+        Vale conferir com o técnico antes de fechar o período.</div>` : ''}
+      <div class="med-secao-t">Obras incluídas</div>
+      <div class="med-tabela-wrap">${obras}</div>
+    `;
+    document.getElementById('medExportar').addEventListener('click', exportarMedicao);
+  }
+
+  function exportarMedicao(){
+    if(!medicaoAtual) return;
+    const m = medicaoAtual;
+    // ponto e vírgula + vírgula decimal + BOM: é o que o Excel em português
+    // abre direto, sem passar pelo assistente de importação
+    const dec = n => n.toFixed(2).replace('.', ',');
+    const cel = t => '"' + String(t == null ? '' : t).replace(/"/g, '""') + '"';
+    const L = [];
+    L.push(cel('Boletim de medição') + ';;;;');
+    L.push(cel('Período') + ';' + cel(toDateBR(m.de) + ' a ' + toDateBR(m.ate)) + ';;;');
+    if(medTecnico.value){
+      L.push(cel('Técnico') + ';' + cel(medTecnico.options[medTecnico.selectedIndex].textContent) + ';;;');
+    }
+    L.push(';;;;');
+    L.push(['Código','Serviço','Quantidade','Valor unitário','Total'].map(cel).join(';'));
+    m.linhas.forEach(l => L.push([cel(l.code), cel(l.desc), dec(l.qtd), dec(l.preco), dec(l.sub)].join(';')));
+    L.push(';;;;');
+    L.push(cel('TOTAL DO PERÍODO') + ';;;;' + dec(m.total));
+    L.push(';;;;');
+    L.push(cel('Obras incluídas') + ';;;;');
+    L.push(['Contrato','Data','Técnico','','Total'].map(cel).join(';'));
+    m.obras.forEach(o => L.push([cel(o.contrato), cel(toDateBR(o.data)), cel(o.tecnico), '', dec(o.total)].join(';')));
+
+    const blob = new Blob(['﻿' + L.join('\r\n')], {type:'text/csv;charset=utf-8;'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'medicao-' + m.de + '-a-' + m.ate + '.csv';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(()=> URL.revokeObjectURL(url), 1000);
+    showToast('Planilha baixada');
+  }
+
+  document.getElementById('medGerar').addEventListener('click', gerarMedicao);
+
+  // ---------- Fila de revisão ----------
+  // Motivos que se repetem toda semana. Ficam no código de propósito: uma
+  // tabela só pra isso seria mais peça pra manter do que valor entregue, e
+  // o analista pode editar o texto na caixa depois de tocar no chip.
+  const MOTIVOS_REPROVA = [
+    'Foto ilegível',
+    'Falta foto obrigatória',
+    'Metragem não confere',
+    'Material sem número de série',
+    'Serviço lançado errado',
+    'Documento executado desatualizado',
+  ];
+
+  // A próxima obra esperando revisão, na ordem em que aparecem na tela.
+  function proximaPendente(atual){
+    const fila = reportsList.filter(j => j.status === 'enviado' && j !== atual);
+    if(!fila.length) return null;
+    const i = reportsList.indexOf(atual);
+    // primeiro tenta a de baixo; se era a última, volta pra primeira da fila
+    return fila.find(j => reportsList.indexOf(j) > i) || fila[0];
+  }
+
+  function abrirCartaoDaObra(job){
+    const alvo = [...document.querySelectorAll('#jobsList .job-card')]
+      .find(c => c.dataset.contrato === String(job.contrato));
+    if(!alvo) return;
+    alvo.classList.add('open');
+    alvo.scrollIntoView({behavior:'smooth', block:'center'});
+    alvo.classList.add('piscando');
+    setTimeout(()=> alvo.classList.remove('piscando'), 1800);
   }
 
   // Abrir o assistente numa obra nova, do zero. Ficava só no clique do
@@ -7855,7 +9189,9 @@
           .map(v => ({desc:v.desc, qtd:Number(d.valuesQty[v.code]), preco:v.price}));
         const materiais = materials
           .filter(m => Number((d.materialsQty || {})[m.id]) > 0)
-          .map(m => ({nome:m.name, qtd:Number(d.materialsQty[m.id])}));
+          .map(m => ({nome:m.name, qtd:Number(d.materialsQty[m.id]),
+                      serie: ((d.materialsExtra || {})[m.id] || {}).serie || null,
+                      retirado: !!((d.materialsExtra || {})[m.id] || {}).retirado}));
         return {
           contrato: row.contrato,
           cliente: (d.contract || {}).empresa || 'Empresa não informada',
@@ -7864,6 +9200,7 @@
           data: (d.contract || {}).data ? toDateBR(d.contract.data) : '',
           tecnico: d.tecnico || '',
           servicos: servicos,
+          reaberta: d.reaberta || null,
           row: row,
         };
       });
@@ -7921,7 +9258,30 @@
     showToast('Contrato encontrado \u2014 dados preenchidos');
   }
 
-  fNumeroInput.addEventListener('blur', lookupContrato);
+  // Mesma checagem do despacho, do lado do técnico. Ignora a própria obra
+  // quando ele está corrigindo uma que já existe — senão avisaria de si mesma.
+  async function avisarDuplicidadeWizard(){
+    const caixa = document.getElementById('fDuplicada');
+    if(!caixa) return;
+    caixa.style.display = 'none';
+    caixa.innerHTML = '';
+    const num = fNumeroInput.value.trim();
+    if(!num) return;
+    const emp = obraEmpresaId || minhaEmpresa();
+    const achadas = await obrasComContrato(num, emp, obraEditandoId);
+    const t = textoDuplicidade(achadas);
+    if(!t) return;
+    caixa.innerHTML = '<strong>' + esc(t.titulo) + '</strong>'
+      + '<ul>' + t.linhas.map(l => '<li>' + esc(l) + '</li>').join('') + '</ul>'
+      + '<span class="dup-nota">Confira em "Minhas obras" antes de lançar de novo. '
+      + 'Se for outro serviço no mesmo contrato, pode seguir.' + esc(t.sobra) + '</span>';
+    caixa.style.display = 'block';
+  }
+
+  fNumeroInput.addEventListener('blur', ()=>{
+    lookupContrato();
+    avisarDuplicidadeWizard();
+  });
 
   // ---------- Contrato: salvar no dataState a cada digitacao ----------
   // Antes os dados so eram gravados ao clicar "Proximo"; se o tecnico
