@@ -2739,7 +2739,7 @@
 (function(){
   // Marque aqui a cada build enviado ao campo. O testador informa esta
   // string ao relatar um problema, senao nao da pra saber o que ele rodou.
-  const APP_VERSION = 'Enlace Ops · alpha-10.61 · 27/08/2026';
+  const APP_VERSION = 'Enlace Ops · alpha-10.62 · 27/08/2026';
 
   // ---------- Supabase config ----------
   // Troque pelos valores reais do seu projeto (Project Settings -> API no Supabase).
@@ -4569,32 +4569,31 @@
 
     const reviewMaterials = document.getElementById('reviewMaterials');
     reviewMaterials.innerHTML = '';
-    const usedMaterials = materials.filter(m => Number(dataState.materialsQty[m.id]) > 0);
+    const usedMaterials = materiaisDaObra(dataState);
     if(usedMaterials.length === 0){
       reviewMaterials.innerHTML = '<div class="review-row"><span class="k">Nenhum material informado</span></div>';
     } else {
       usedMaterials.forEach(m=>{
         const row = document.createElement('div');
         row.className = 'review-row';
-        const ex = dataState.materialsExtra[m.id] || {};
-        row.innerHTML = `<span class="k">${esc(m.name)}`
-          + (ex.serie ? `<br><span class="mat-serie-eco">${esc(ex.serie)}</span>` : '')
-          + (ex.retirado ? ' <span class="mat-tag-retirado">retirado</span>' : '')
-          + `</span><span class="v">${esc(dataState.materialsQty[m.id])}</span>`;
+        row.innerHTML = `<span class="k">${esc(m.nome)}`
+          + (m.serie ? `<br><span class="mat-serie-eco">${esc(m.serie)}</span>` : '')
+          + (m.retirado ? ' <span class="mat-tag-retirado">retirado</span>' : '')
+          + `</span><span class="v">${esc(m.qtd)}</span>`;
         reviewMaterials.appendChild(row);
       });
     }
 
     const reviewValores = document.getElementById('reviewValores');
     reviewValores.innerHTML = '';
-    const usedValues = valuesItems.filter(v => Number(dataState.valuesQty[v.code]) > 0);
+    const usedValues = servicosDaObra(dataState);
     let valuesTotal = 0;
     if(usedValues.length === 0){
       reviewValores.innerHTML = '<div class="review-row"><span class="k">Nenhum serviço informado</span></div>';
     } else {
       usedValues.forEach(v=>{
-        const qty = Number(dataState.valuesQty[v.code]);
-        const subtotal = qty * v.price;
+        const qty = v.qtd;
+        const subtotal = qty * v.preco;
         valuesTotal += subtotal;
         const row = document.createElement('div');
         row.className = 'review-row';
@@ -5073,7 +5072,10 @@
         doc.text('\u2022 ' + item.title + ': ' + (s ? 'anexado' : 'pendente'), M, y); y += 6;
       });
 
-      const usados = materials.filter(m => Number((st.materialsQty||{})[m.id]) > 0);
+      // pelo helper, não por materials.filter: o que a obra tem gravado não
+      // pode sumir do documento que vai pra operadora só porque o item saiu
+      // do catálogo (ou porque o catálogo ainda não terminou de carregar)
+      const usados = materiaisDaObra(st);
       doc.addPage(); header();
       y = CONTENT_TOP + 4;
       doc.setFont('helvetica','bold'); doc.setFontSize(13);
@@ -5083,16 +5085,15 @@
         doc.text('Nenhum material informado.', M, y);
       } else {
         usados.forEach(m=>{
-          const ex = (st.materialsExtra || {})[m.id] || {};
-          const txt = '\u2022 ' + m.name + ' \u2014 Qtd: ' + (st.materialsQty||{})[m.id]
-            + (ex.serie ? '  \u2014 S/N: ' + ex.serie : '')
-            + (ex.retirado ? '  (RETIRADO)' : '');
+          const txt = '\u2022 ' + m.nome + ' \u2014 Qtd: ' + m.qtd
+            + (m.serie ? '  \u2014 S/N: ' + m.serie : '')
+            + (m.retirado ? '  (RETIRADO)' : '');
           const lines = doc.splitTextToSize(txt, CW);
           doc.text(lines, M, y); y += lines.length * 5.5 + 2;
         });
       }
 
-      const servicos = valuesItems.filter(v => Number((st.valuesQty||{})[v.code]) > 0);
+      const servicos = servicosDaObra(st);
       doc.addPage(); header();
       y = CONTENT_TOP + 4;
       doc.setFont('helvetica','bold'); doc.setFontSize(13);
@@ -5103,8 +5104,8 @@
         doc.text('Nenhum serviço informado.', M, y);
       } else {
         servicos.forEach(v=>{
-          const qty = Number((st.valuesQty||{})[v.code]);
-          const sub = qty * v.price;
+          const qty = v.qtd;
+          const sub = qty * v.preco;
           total += sub;
           const lines = doc.splitTextToSize('\u2022 ' + v.code + ' \u2014 ' + v.desc + ' (x' + qty + '): ' + formatBRL(sub), CW);
           doc.text(lines, M, y); y += lines.length * 5.5 + 2;
@@ -6756,6 +6757,61 @@
   let mesReferencia = (()=>{ const d = new Date(); d.setDate(1); d.setHours(0,0,0,0); return d; })();
 
   // valor total já lançado numa obra (mesmo cálculo usado nos cards de Obras)
+  // Materiais e serviços de uma obra salva.
+  //
+  // Isto era um `materials.filter(...)` solto, repetido em vários lugares, e
+  // tinha um buraco sério: a lista só mostrava o que estava NO CATÁLOGO
+  // CARREGADO. Duas consequências, as duas vistas em produção:
+  //
+  //   1. antes do catálogo da empresa chegar, `materials` ainda é a lista
+  //      embutida de 8 itens — então a mesma obra mostrava 1 material pra uma
+  //      pessoa e 4 pra outra, só por causa de quem tinha carregado o catálogo;
+  //   2. material apagado do catálogo sumia das obras ANTIGAS, inclusive do
+  //      PDF que vai pra operadora. Documento de faturamento não pode perder
+  //      linha em silêncio.
+  //
+  // Agora o que está gravado na obra sempre aparece: o que o catálogo conhece
+  // sai com nome, o que não conhece sai com o número do item.
+  function materiaisDaObra(d){
+    const qtds = (d || {}).materialsQty || {};
+    const extra = (d || {}).materialsExtra || {};
+    const linha = (id, nome, q) => ({
+      nome, qtd: q,
+      serie: (extra[id] || {}).serie || null,
+      retirado: !!(extra[id] || {}).retirado,
+    });
+    const lista = [];
+    materials.forEach(m=>{
+      const q = Number(qtds[m.id]) || 0;
+      if(q > 0) lista.push(linha(m.id, m.name, q));
+    });
+    Object.keys(qtds).forEach(id=>{
+      const q = Number(qtds[id]) || 0;
+      if(q <= 0) return;
+      if(materials.some(m => String(m.id) === String(id))) return;
+      lista.push(linha(id, 'Item ' + id + ' (fora do catálogo)', q));
+    });
+    return lista;
+  }
+
+  function servicosDaObra(d){
+    const qtds = (d || {}).valuesQty || {};
+    const lista = [];
+    valuesItems.forEach(v=>{
+      const q = Number(qtds[v.code]) || 0;
+      if(q > 0) lista.push({code: v.code, desc: v.desc, qtd: q, preco: v.price});
+    });
+    Object.keys(qtds).forEach(code=>{
+      const q = Number(qtds[code]) || 0;
+      if(q <= 0) return;
+      if(valuesItems.some(v => String(v.code) === String(code))) return;
+      // sem preço no catálogo não dá pra inventar valor — entra com 0 e
+      // aparecendo, pra alguém notar em vez de sumir da conta
+      lista.push({code, desc: 'Serviço ' + code + ' (fora do catálogo)', qtd: q, preco: 0});
+    });
+    return lista;
+  }
+
   function valorObraRow(o){
     const vq = (o.dados || {}).valuesQty || {};
     return valuesItems.reduce((sum, v) => sum + ((Number(vq[v.code]) || 0) * v.price), 0);
@@ -6814,8 +6870,9 @@
         qObrasQuadro = qObrasQuadro.eq('empresa_id', empresaContexto.id);
         qEqsQuadro = qEqsQuadro.eq('empresa_id', empresaContexto.id);
       }
+      // idem: o valor em R$ dos indicadores sai do catálogo de serviços
       const [{data:tecs, error}, {data:obras}, {data:eqs}] =
-        await Promise.all([qTecsQuadro, qObrasQuadro, qEqsQuadro]);
+        await Promise.all([qTecsQuadro, qObrasQuadro, qEqsQuadro, garantirCatalogo()]);
       if(error) throw error;
 
       const nomeEq = {};
@@ -9058,29 +9115,99 @@
 
   window.addEventListener('online', ()=> setTimeout(processarFila, 1500));
 
-  // ---------- Service worker: o app abre sem internet ----------
+  // ---------- Service worker: abre sem internet e se atualiza sozinho ----------
+  //
+  // Antes: depois de subir uma versão nova no GitHub, o aparelho continuava
+  // abrindo a antiga até alguém limpar o cache na mão — e toda atualização
+  // virava recado no grupo pedindo pro pessoal "atualizar a página".
+  //
+  // Agora são três coisas juntas:
+  //   1. o sw.js serve o HTML pela rede primeiro (cache só sem sinal), então
+  //      abrir o app já basta pra estar na versão nova;
+  //   2. o app procura versão nova sozinho — ao abrir, ao voltar pra tela e de
+  //      15 em 15 minutos — pra quem deixa o app aberto o dia inteiro;
+  //   3. quando acha, aplica NA HORA se a pessoa não estiver no meio de nada,
+  //      e só pergunta quando estiver. Recarregar a tela de alguém que está
+  //      preenchendo uma obra perderia o trabalho dela.
   let swAguardando = null;
+  let swRegistro = null;
+  let ultimaChecagem = 0;
+
+  // Está no meio de alguma coisa? Aí não troca sozinho.
+  function podeTrocarSozinho(){
+    try{
+      if(wizardScreen && wizardScreen.classList.contains('show')) return false;  // obra aberta
+      if(document.querySelector('.capture-overlay.show')) return false;          // foto/assinatura/documento
+      if(document.querySelector('.scan-overlay.show')) return false;             // lendo código de barras
+      const ativo = document.activeElement;
+      if(ativo && /^(INPUT|TEXTAREA|SELECT)$/.test(ativo.tagName)) return false; // digitando
+      return true;
+    } catch(e){ return false; }
+  }
+
+  function aplicarAtualizacao(){
+    const alvo = swAguardando || (swRegistro && swRegistro.waiting);
+    if(alvo) alvo.postMessage('atualizar-agora');
+    // não recarrega aqui: quem recarrega é o 'controllerchange', quando o
+    // service worker novo de fato assumiu. Recarregar antes disso só traria
+    // a página velha de novo.
+    setTimeout(()=>{ if(!recarregando) location.reload(); }, 3000);   // rede reserva
+  }
+
+  function versaoNovaPronta(){
+    if(podeTrocarSozinho()) aplicarAtualizacao();
+    else mostrarAvisoAtualizacao();
+  }
+
+  async function procurarAtualizacao(forcar){
+    if(!swRegistro || !online) return;
+    const agora = Date.now();
+    if(!forcar && agora - ultimaChecagem < 5 * 60 * 1000) return;
+    ultimaChecagem = agora;
+    try{ await swRegistro.update(); } catch(e){}
+  }
+
+  let recarregando = false;
 
   if('serviceWorker' in navigator){
     navigator.serviceWorker.register('sw.js').then(reg=>{
-      // avisa quando houver versao nova, em vez de trocar no meio do trabalho
+      swRegistro = reg;
+
+      // já tinha uma versão nova esperando de uma visita anterior
+      if(reg.waiting && navigator.serviceWorker.controller){
+        swAguardando = reg.waiting;
+        versaoNovaPronta();
+      }
+
       reg.addEventListener('updatefound', ()=>{
         const novo = reg.installing;
+        if(!novo) return;
         novo.addEventListener('statechange', ()=>{
+          // sem controller é a PRIMEIRA instalação: não há versão velha na
+          // tela, nada pra avisar nem pra recarregar
           if(novo.state === 'installed' && navigator.serviceWorker.controller){
             swAguardando = novo;
-            mostrarAvisoAtualizacao();
+            versaoNovaPronta();
           }
         });
       });
+
+      procurarAtualizacao(true);
     }).catch(e => console.warn('service worker não registrou:', e));
 
-    let recarregando = false;
     navigator.serviceWorker.addEventListener('controllerchange', ()=>{
       if(recarregando) return;
       recarregando = true;
       location.reload();
     });
+
+    // quem deixa o app aberto o dia inteiro nunca passaria pelo register de
+    // novo — estes dois é que pegam a atualização pra essa pessoa
+    document.addEventListener('visibilitychange', ()=>{
+      if(document.visibilityState === 'visible') procurarAtualizacao(false);
+    });
+    setInterval(()=> procurarAtualizacao(false), 15 * 60 * 1000);
+    window.addEventListener('online', ()=> procurarAtualizacao(true));
   }
 
   function mostrarAvisoAtualizacao(){
@@ -9091,14 +9218,13 @@
       + 'background:var(--accent);color:var(--accent-ink);border-radius:7px;padding:12px 14px;'
       + 'display:flex;align-items:center;gap:10px;font-size:13px;font-weight:600;'
       + 'box-shadow:0 6px 24px rgba(0,0,0,.4);';
-    bar.innerHTML = '<span style="flex:1;">Nova versão disponível</span>'
+    bar.innerHTML = '<span style="flex:1;">Versão nova disponível</span>'
       + '<button style="background:var(--accent-ink);color:var(--accent);border:0;border-radius:7px;'
-      + 'padding:7px 12px;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;">Atualizar</button>';
+      + 'min-height:38px;padding:7px 14px;font-family:inherit;font-size:12px;font-weight:700;'
+      + 'cursor:pointer;">Atualizar</button>';
     bar.querySelector('button').addEventListener('click', ()=>{
-      if(swAguardando) swAguardando.postMessage ? swAguardando.postMessage('atualizar-agora')
-                                                : navigator.serviceWorker.controller.postMessage('atualizar-agora');
-      if(navigator.serviceWorker.waiting) navigator.serviceWorker.waiting.postMessage('atualizar-agora');
-      location.reload();
+      bar.querySelector('button').textContent = 'Atualizando...';
+      aplicarAtualizacao();
     });
     document.body.appendChild(bar);
   }
@@ -10009,6 +10135,7 @@
     if(de > ate){ showToast('A data inicial está depois da final'); return; }
     const btn = document.getElementById('medGerar');
     const ehMaterial = modoMedicao === 'materiais';
+    await garantirCatalogo();   // somar com o catálogo pela metade dá boletim errado
     btn.disabled = true; btn.textContent = 'Somando...';
     medResultado.innerHTML = '<div class="med-vazio">Buscando obras'
       + (ehMaterial ? '...' : ' aprovadas...') + '</div>';
@@ -11069,20 +11196,19 @@
       if(ehTecnico() && perfilAtual){
         qObrasJobs = qObrasJobs.eq('tecnico_id', perfilAtual.id);
       }
-      const [{data, error}, {data: tecsJobs}] = await Promise.all([qObrasJobs, qTecJobs]);
+      // ESPERAR o catálogo antes de montar a lista. Sem este await, `materials`
+      // e `valuesItems` ainda são as listas embutidas quando o map roda, e a
+      // mesma obra aparecia com 1 material pro analista e 4 pro superadmin —
+      // só porque um deles já tinha passado por uma tela que carrega catálogo.
+      const [{data, error}, {data: tecsJobs}] = await Promise.all([
+        qObrasJobs, qTecJobs, garantirCatalogo()]);
       tecnicosJobsCache = tecsJobs || [];
       if(error || !data) return;
 
       const doServidor = data.map(row=>{
         const d = row.dados || {};
-        const servicos = valuesItems
-          .filter(v => Number((d.valuesQty || {})[v.code]) > 0)
-          .map(v => ({code:v.code, desc:v.desc, qtd:Number(d.valuesQty[v.code]), preco:v.price}));
-        const materiais = materials
-          .filter(m => Number((d.materialsQty || {})[m.id]) > 0)
-          .map(m => ({nome:m.name, qtd:Number(d.materialsQty[m.id]),
-                      serie: ((d.materialsExtra || {})[m.id] || {}).serie || null,
-                      retirado: !!((d.materialsExtra || {})[m.id] || {}).retirado}));
+        const servicos = servicosDaObra(d);
+        const materiais = materiaisDaObra(d);
         return {
           contrato: row.contrato,
           cliente: (d.contract || {}).empresa || 'Empresa não informada',
