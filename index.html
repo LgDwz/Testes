@@ -198,10 +198,113 @@
     border:none;color:var(--accent-ink);border-radius:8px;font-family:'Barlow Condensed',sans-serif;
     font-weight:700;font-size:15px;text-transform:uppercase;letter-spacing:.04em;}
   .med-btn:disabled{background:var(--bg-elev-2);color:var(--text-faint);cursor:not-allowed;}
+  .med-modos{display:flex;gap:8px;padding:2px 16px 14px;}
+  .med-modo{flex:1 1 0;min-height:38px;cursor:pointer;background:var(--bg-elev);
+    border:1px solid var(--border);color:var(--text-dim);border-radius:9px;padding:8px 10px;
+    font-family:'Inter',sans-serif;font-size:12px;line-height:1.35;text-align:center;}
+  .med-modo b{display:block;font-weight:600;color:var(--text);font-size:12.5px;}
+  .med-modo.ativo{border-color:var(--accent);background:var(--accent-dim);}
+  .med-modo.ativo b{color:var(--accent);}
   .med-atalhos{display:flex;flex-wrap:wrap;gap:6px;padding:0 16px 14px;}
   .med-atalho{min-height:34px;cursor:pointer;background:var(--bg-elev-2);border:1px solid var(--border);
     color:var(--text-dim);border-radius:17px;padding:7px 13px;font-family:'Inter',sans-serif;font-size:11.5px;}
   .med-atalho:hover{border-color:var(--accent);color:var(--accent);}
+  /* Fila de despacho — arrastar a obra até o técnico */
+  .fila-despacho{margin:0 16px 18px;border:1px solid var(--border);border-radius:12px;
+    background:var(--bg-elev);padding:13px 14px;}
+  .fila-cab{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:11px;}
+  .fila-t{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.1em;
+    text-transform:uppercase;color:var(--warning);}
+  .fila-n{background:var(--bg-elev-2);border-radius:20px;padding:1px 9px;font-size:11px;color:var(--text);}
+  .fila-dica{font-size:11.5px;color:var(--text-faint);margin-left:auto;}
+  .fila-itens{display:flex;flex-wrap:wrap;gap:8px;}
+  .fila-obra{display:flex;flex-direction:column;gap:2px;min-height:44px;justify-content:center;
+    padding:7px 13px;border:1px solid var(--warning);border-radius:9px;
+    background:rgba(240,180,60,.08);cursor:grab;user-select:none;
+    touch-action:none;   /* senão o navegador rola a tela em vez de arrastar */
+    max-width:100%;}
+  .fila-obra:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+  .fila-obra-n{font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--text);}
+  .fila-obra-c{font-size:11px;color:var(--text-dim);max-width:210px;overflow:hidden;
+    text-overflow:ellipsis;white-space:nowrap;}
+  .fila-obra.escolhida{border-color:var(--accent);background:var(--accent-dim);}
+  .fila-obra.escolhida .fila-obra-n{color:var(--accent);}
+  .fila-obra.saindo{opacity:.35;}
+  .fila-obra.fantasma{position:fixed;z-index:12000;pointer-events:none;
+    transform:translate(-50%,-50%) rotate(-1.5deg);box-shadow:0 12px 28px rgba(0,0,0,.5);
+    background:var(--bg-elev-2);cursor:grabbing;}
+  .fila-escolhida{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:11px;
+    padding-top:11px;border-top:1px solid var(--border);font-size:12.5px;color:var(--text-dim);}
+  .fila-escolhida strong{color:var(--accent);font-family:'IBM Plex Mono',monospace;}
+  .fila-cancelar{margin-left:auto;min-height:34px;cursor:pointer;background:transparent;
+    border:1px solid var(--border);color:var(--text-dim);border-radius:17px;padding:0 12px;font-size:11.5px;}
+  .fila-cancelar:hover{border-color:var(--danger);color:var(--danger);}
+  body.arrastando-obra{cursor:grabbing;}
+  body.arrastando-obra .tec{transition:none;}
+  .tec.alvo{border-color:var(--accent) !important;background:var(--accent-dim) !important;
+    box-shadow:0 0 0 2px var(--accent) inset;}
+  /* com uma obra na mão, o cartão inteiro é botão — o cursor tem que dizer isso */
+  body.escolhendo-tecnico .tec{cursor:pointer;}
+  body.escolhendo-tecnico .tec:hover{border-color:var(--accent);}
+  @media (prefers-reduced-motion:reduce){ .fila-obra.fantasma{transform:translate(-50%,-50%);} }
+
+  /* Comunicados */
+  .com-barra{padding:0 16px;margin-bottom:4px;}
+  .com-aviso{border:1px solid var(--accent);background:var(--accent-dim);border-radius:10px;
+    padding:13px 15px;margin-bottom:10px;}
+  .com-aviso.urgente{border-color:var(--warning);background:rgba(240,180,60,.12);}
+  .com-aviso-t{font-weight:600;font-size:13.5px;color:var(--accent);margin-bottom:5px;}
+  .com-aviso.urgente .com-aviso-t{color:var(--warning);}
+  .com-aviso-c{font-size:13px;line-height:1.55;color:var(--text);white-space:pre-wrap;margin-bottom:11px;}
+  .com-aviso-ok{min-height:44px;width:100%;cursor:pointer;background:var(--accent);color:var(--accent-ink);
+    border:none;border-radius:8px;font-family:'Inter',sans-serif;font-size:13px;font-weight:600;}
+  .com-aviso.urgente .com-aviso-ok{background:var(--warning);color:var(--bg);}
+  .com-aviso-ok:disabled{opacity:.6;cursor:default;}
+
+  .com-linha{border-bottom:1px solid var(--border);padding:11px 0;}
+  .com-linha:last-child{border-bottom:none;}
+  .com-linha-topo{display:flex;align-items:baseline;gap:10px;margin-bottom:3px;}
+  .com-linha-topo b{font-size:13px;color:var(--text);flex:1;min-width:0;}
+  .com-linha.urgente .com-linha-topo b{color:var(--warning);}
+  .com-placar{flex:0 0 auto;font-family:'IBM Plex Mono',monospace;font-size:10.5px;
+    color:var(--text-dim);border:1px solid var(--border);border-radius:20px;padding:2px 9px;}
+  .com-placar.ok{color:var(--success);border-color:var(--success);}
+  .com-linha p{font-size:12.5px;color:var(--text-dim);line-height:1.5;margin:0 0 7px;white-space:pre-wrap;}
+  .com-linha-acoes{display:flex;gap:8px;flex-wrap:wrap;}
+  .com-linha-acoes button{min-height:34px;cursor:pointer;background:transparent;border:1px solid var(--border);
+    color:var(--text-dim);border-radius:17px;padding:0 12px;font-size:11.5px;
+    font-family:'IBM Plex Mono',monospace;}
+  .com-linha-acoes button:hover{border-color:var(--accent);color:var(--accent);}
+  .pnl-novo{margin-left:auto;min-height:34px;cursor:pointer;background:transparent;
+    border:1px solid var(--accent);color:var(--accent);border-radius:17px;padding:0 12px;
+    font-family:'IBM Plex Mono',monospace;font-size:11px;white-space:nowrap;}
+  .pnl-novo:hover{background:var(--accent);color:var(--accent-ink);}
+
+  .com-quem-t{font-weight:600;font-size:14px;margin-bottom:14px;}
+  .com-quem-secao{font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.1em;
+    text-transform:uppercase;margin:16px 0 6px;}
+  .com-quem-secao.falta{color:var(--warning);}
+  .com-quem-secao.leu{color:var(--success);}
+  .com-quem-lin{padding:9px 0;border-bottom:1px solid var(--border);font-size:13px;}
+  .com-quem-vazio{color:var(--text-faint);font-size:12.5px;padding:6px 0;}
+
+  .med-fecha{display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:13px 15px;
+    border-radius:10px;margin-bottom:14px;font-size:12.5px;line-height:1.5;}
+  .med-fecha div{flex:1 1 240px;min-width:0;}
+  .med-fecha.aberta{background:var(--bg-elev);border:1px solid var(--border);color:var(--text-dim);}
+  .med-fecha.fechada{background:rgba(46,204,113,.09);border:1px solid var(--success);color:var(--text);}
+  .med-fecha strong{color:var(--text);}
+  .med-fecha.fechada strong{color:var(--success);}
+  .med-fecha-btn{flex:0 0 auto;min-height:40px;cursor:pointer;background:transparent;
+    border:1px solid var(--accent);color:var(--accent);border-radius:8px;padding:9px 16px;
+    font-family:'Inter',sans-serif;font-size:12.5px;font-weight:600;}
+  .med-fecha-btn:hover{background:var(--accent);color:var(--accent-ink);}
+  .med-fecha-btn.reabrir{border-color:var(--warning);color:var(--warning);}
+  .med-fecha-btn.reabrir:hover{background:var(--warning);color:var(--bg);}
+  .med-fecha-btn:disabled{opacity:.5;cursor:default;}
+  .med-toggle{display:flex;align-items:center;gap:9px;min-height:44px;cursor:pointer;
+    font-size:12.5px;color:var(--text-dim);margin:2px 0 10px;}
+  .med-toggle input{width:17px;height:17px;accent-color:var(--accent);cursor:pointer;}
   .med-resultado{padding:0 16px 40px;}
   .med-vazio{padding:34px 16px;text-align:center;color:var(--text-dim);font-size:13.5px;line-height:1.6;
     border:1px dashed var(--border);border-radius:10px;}
@@ -578,6 +681,10 @@
   /* CAPTURE OVERLAY (reused) */
   .capture-overlay{position:absolute;inset:0;background:var(--bg);z-index:20;display:none;flex-direction:column;}
   .capture-overlay.show{display:flex;}
+  /* Overlay aberto de dentro de uma tela rolada: com position:absolute o
+     cabeçalho dele (e o X de fechar) fica lá em cima, fora da vista e
+     debaixo da barra do app. Preso na tela resolve os dois. */
+  .capture-overlay.fixa{position:fixed;z-index:9000;}
   .capture-head{display:flex;align-items:center;justify-content:space-between;padding:16px;border-bottom:1px solid var(--border);}
   .capture-head-title{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:18px;text-transform:uppercase;}
   .close-btn{background:none;border:1px solid var(--border);color:var(--text-dim);
@@ -763,6 +870,22 @@
     font-family:'IBM Plex Mono',monospace;letter-spacing:0.02em;
   }
   .adm-chip.ativo{background:var(--accent-dim);border-color:var(--accent);color:var(--accent);}
+  .jobs-filtro-linha{display:flex;align-items:flex-start;gap:10px;}
+  .jobs-filtro-linha .adm-filtros{flex:1;min-width:0;}
+  .jobs-export{flex:0 0 auto;min-height:34px;margin-top:-1px;cursor:pointer;
+    background:transparent;border:1px solid var(--success);color:var(--success);
+    border-radius:999px;padding:0 13px;display:inline-flex;align-items:center;gap:6px;
+    font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.04em;white-space:nowrap;}
+  .jobs-export:hover{background:var(--success);color:var(--bg);}
+  .jobs-export:disabled{opacity:.45;cursor:default;}
+  /* no celular os dois chips + o botão não cabem na mesma linha: o segundo
+     chip ficava cortado atrás do botão e parecia defeito. */
+  @media (max-width:520px){
+    .jobs-filtro-linha{flex-wrap:wrap;}
+    .jobs-filtro-linha .adm-filtros{flex:1 1 100%;padding-bottom:8px;}
+    .jobs-export{margin-left:auto;margin-top:0;}
+  }
+
   .adm-chip.alerta{border-color:var(--warning);color:var(--warning);}
   .user-row.pendente{border-color:var(--warning);background:var(--warning-dim);}
   .user-row.eu{border-color:var(--accent);}
@@ -1981,6 +2104,10 @@
         <div class="ph-s" id="medSub">Obras aprovadas no período, somadas por código de serviço.</div>
       </div>
     </div>
+    <div class="med-modos" id="medModos">
+      <button type="button" class="med-modo ativo" data-modo="servicos"><b>Serviços</b>o que vai ser faturado</button>
+      <button type="button" class="med-modo" data-modo="materiais"><b>Materiais</b>o que foi gasto no período</button>
+    </div>
     <div class="med-filtros">
       <div class="med-campo">
         <label class="med-rot" for="medDe">De</label>
@@ -2062,6 +2189,8 @@
 
     <div class="kpis" id="quadroKpis"></div>
 
+    <div class="fila-despacho" id="filaDespacho" style="display:none;"></div>
+
     <div class="sec-h">
       <div class="sec-t">Técnicos disponíveis</div>
       <div class="sec-r">
@@ -2092,6 +2221,7 @@
         <div class="pnl-h">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#4FC0FF" stroke-width="1.8"><path d="M3 11v3a1 1 0 0 0 1 1h3l5 4V6L7 10H4a1 1 0 0 0-1 1z"/><path d="M16 8.5a4.5 4.5 0 0 1 0 7"/></svg>
           <div class="pnl-t">Comunicados</div>
+          <button class="pnl-novo" id="btnNovoComunicado" type="button" style="display:none;">+ Novo</button>
         </div>
         <div class="pnl-b" id="pnlCom"></div>
       </div>
@@ -2272,9 +2402,17 @@
       </button>
       <input class="adm-busca" id="jobsBusca" placeholder="Buscar por contrato, cliente, técnico ou status" autocomplete="off" style="margin-top:12px;margin-bottom:0;">
       <div class="faixa-painel" id="faixaFiltroPainel" style="display:none;"></div>
-      <div class="adm-filtros" id="jobsStatusFiltro" style="margin-top:10px;margin-bottom:0;padding-bottom:0;">
-        <div class="adm-chip ativo" data-filtro="abertas">Pendentes/Rejeitadas</div>
-        <div class="adm-chip" data-filtro="historico">Aprovadas</div>
+      <div class="jobs-filtro-linha" style="margin-top:10px;">
+        <div class="adm-filtros" id="jobsStatusFiltro" style="margin-top:0;margin-bottom:0;padding-bottom:0;">
+          <div class="adm-chip ativo" data-filtro="abertas">Pendentes/Rejeitadas</div>
+          <div class="adm-chip" data-filtro="historico">Aprovadas</div>
+        </div>
+        <button class="jobs-export" id="btnExportObras" type="button"
+                title="Exportar esta lista para Excel" aria-label="Exportar esta lista para Excel">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+               stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 9v12"/></svg>
+          EXCEL
+        </button>
       </div>
     </div>
     <!-- dono do produto de fora de qualquer empresa não pode cair direto na
@@ -2284,6 +2422,7 @@
       <select class="field-input" id="jobsEmpresaAlvo"><option value="">Carregando...</option></select>
       <button class="review-btn pdf" id="btnJobsEmpresaEntrar" style="width:100%;margin-top:10px;">Entrar</button>
     </div>
+    <div class="com-barra" id="comunicadosBarra" style="display:none;"></div>
     <div id="jobsList" style="padding:0 16px 24px;"></div>
   </div>
 
@@ -2543,6 +2682,35 @@
     </div>
   </div>
 
+  <div class="capture-overlay fixa" id="comunicadoOverlay">
+    <div class="capture-head">
+      <div class="capture-head-title" id="comunicadoTitle">Novo comunicado</div>
+      <button class="close-btn" id="closeComunicado">&#10005;</button>
+    </div>
+    <div style="flex:1;overflow-y:auto;padding:14px 16px;">
+      <div id="comunicadoForm">
+        <div class="field-label" style="margin-top:0;">Título *</div>
+        <input class="field-input" id="comTitulo" maxlength="90" autocomplete="off"
+               placeholder="Ex: Mudança no ponto de retirada de material">
+        <div class="field-label">Aviso *</div>
+        <textarea class="field-input" id="comCorpo" rows="6" style="resize:vertical;"
+               placeholder="Escreva como você falaria no rádio: curto e direto."></textarea>
+        <label class="med-toggle">
+          <input type="checkbox" id="comUrgente">
+          <span>Marcar como urgente (aparece em âmbar, no topo)</span>
+        </label>
+        <div class="field-label">Some sozinho em (opcional)</div>
+        <input class="field-input" id="comExpira" type="date">
+        <div style="font-size:11.5px;color:var(--text-faint);margin:6px 0 16px;line-height:1.5;">
+          Vai para todos os técnicos da empresa. Cada um confirma com um toque, e o
+          painel mostra quem ainda não leu.
+        </div>
+        <button class="review-btn pdf" id="comEnviar" style="width:100%;">Enviar pra equipe</button>
+      </div>
+      <div id="comunicadoBody" style="display:none;"></div>
+    </div>
+  </div>
+
   <div class="capture-overlay" id="tecObrasOverlay">
     <div class="capture-head">
       <div class="capture-head-title" id="tecObrasTitle">Obras do técnico</div>
@@ -2571,7 +2739,7 @@
 (function(){
   // Marque aqui a cada build enviado ao campo. O testador informa esta
   // string ao relatar um problema, senao nao da pra saber o que ele rodou.
-  const APP_VERSION = 'Enlace Ops · alpha-10.59 · 26/08/2026';
+  const APP_VERSION = 'Enlace Ops · alpha-10.61 · 27/08/2026';
 
   // ---------- Supabase config ----------
   // Troque pelos valores reais do seu projeto (Project Settings -> API no Supabase).
@@ -5211,6 +5379,7 @@
 
   async function excluirObra(job, btn){
     if(!ehAdmin()){ showToast('Só o administrador pode excluir obras'); return; }
+    if(travadoPorFechamento(dataIsoObra(job), 'esta obra não pode mais ser excluída')) return;
     if(!job.row){ showToast('Esta obra não está no servidor'); return; }
 
     const rotulo = btn ? btn.textContent : '';
@@ -5307,7 +5476,7 @@
     return (c ^ 0xFFFFFFFF) >>> 0;
   }
 
-  function montarZip(arquivos){
+  function montarZip(arquivos, tipo){
     const enc = new TextEncoder();
     const partes = [], central = [];
     let deslocamento = 0;
@@ -5355,8 +5524,175 @@
     fim.setUint32(12, tamCentral, true);
     fim.setUint32(16, deslocamento, true);
     return new Blob([...partes, ...central, new Uint8Array(fim.buffer)],
-                    {type:'application/zip'});
+                    {type: tipo || 'application/zip'});
   }
+
+  // ---------- Planilha .xlsx escrita à mão ----------
+  // Um .xlsx é um .zip com uns XML dentro, e o montarZip() acima já existe —
+  // então dá pra gerar planilha de verdade sem SheetJS (que sozinho é maior
+  // que metade deste app e teria que ser mais um arquivo pra funcionar
+  // offline). CSV abriria no Excel também, mas não tem aba, nem número
+  // formatado, nem cabeçalho congelado: quem recebe teria que arrumar tudo
+  // na mão toda vez.
+  function xmlEsc(s){
+    return String(s == null ? '' : s)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;').replace(/'/g,'&apos;')
+      .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g,'');   // caractere de controle invalida o arquivo inteiro
+  }
+
+  function colLetra(n){          // 1 -> A, 27 -> AA
+    let s = '';
+    while(n > 0){ const r = (n - 1) % 26; s = String.fromCharCode(65 + r) + s; n = (n - 1 - r) / 26; }
+    return s;
+  }
+
+  // "2026-08-26" -> número de série do Excel (dias desde 30/12/1899)
+  function serialData(iso){
+    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso || ''));
+    if(!m) return null;
+    return Date.UTC(+m[1], +m[2] - 1, +m[3]) / 86400000 + 25569;
+  }
+
+  // Estilos: 0 geral · 1 cabeçalho · 2 moeda · 3 data · 4 negrito · 5 moeda negrito
+  const XLSX_ESTILOS = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+    + '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+    + '<numFmts count="2">'
+    + '<numFmt numFmtId="164" formatCode="&quot;R$&quot;\\ #,##0.00"/>'
+    + '<numFmt numFmtId="165" formatCode="dd/mm/yyyy"/>'
+    + '</numFmts>'
+    + '<fonts count="3">'
+    + '<font><sz val="11"/><name val="Calibri"/></font>'
+    + '<font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font>'
+    + '<font><b/><sz val="11"/><name val="Calibri"/></font>'
+    + '</fonts>'
+    + '<fills count="3">'
+    + '<fill><patternFill patternType="none"/></fill>'
+    + '<fill><patternFill patternType="gray125"/></fill>'
+    + '<fill><patternFill patternType="solid"><fgColor rgb="FF12325C"/><bgColor indexed="64"/></patternFill></fill>'
+    + '</fills>'
+    + '<borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>'
+    + '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>'
+    + '<cellXfs count="6">'
+    + '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>'
+    + '<xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"/>'
+    + '<xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>'
+    + '<xf numFmtId="165" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>'
+    + '<xf numFmtId="0" fontId="2" fillId="0" borderId="0" xfId="0" applyFont="1"/>'
+    + '<xf numFmtId="164" fontId="2" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyFont="1"/>'
+    + '</cellXfs>'
+    + '<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>'
+    + '</styleSheet>';
+
+  // célula: null | texto | número | {v, t:'n'|'s'|'d', s:índiceDeEstilo}
+  function celulaXml(ref, cel){
+    if(cel === null || cel === undefined || cel === '') return '';
+    let v = cel, t = null, s = 0;
+    if(typeof cel === 'object'){ v = cel.v; t = cel.t || null; s = cel.s || 0; }
+    if(v === null || v === undefined || v === '') return s ? '<c r="' + ref + '" s="' + s + '"/>' : '';
+    if(!t) t = (typeof v === 'number') ? 'n' : 's';
+    const est = s ? ' s="' + s + '"' : '';
+    if(t === 'd'){
+      const n = serialData(v);
+      if(n === null) return '<c r="' + ref + '"' + (s ? est : '') + ' t="inlineStr"><is><t>' + xmlEsc(v) + '</t></is></c>';
+      return '<c r="' + ref + '" s="' + (s || 3) + '"><v>' + n + '</v></c>';
+    }
+    if(t === 'n'){
+      const n = Number(v);
+      if(!isFinite(n)) return '';
+      return '<c r="' + ref + '"' + est + '><v>' + n + '</v></c>';
+    }
+    return '<c r="' + ref + '"' + est + ' t="inlineStr"><is><t xml:space="preserve">'
+      + xmlEsc(v) + '</t></is></c>';
+  }
+
+  // aba: {nome, larguras:[n,...], linhas:[[cel,...]], semFiltro:bool}
+  function abaXml(aba){
+    const linhas = aba.linhas || [];
+    let maxCol = 1;
+    linhas.forEach(l => { if(l && l.length > maxCol) maxCol = l.length; });
+    const corpo = linhas.map((l, i)=>{
+      const n = i + 1;
+      const cels = (l || []).map((c, j) => celulaXml(colLetra(j + 1) + n, c)).join('');
+      return '<row r="' + n + '">' + cels + '</row>';
+    }).join('');
+    const cols = (aba.larguras && aba.larguras.length)
+      ? '<cols>' + aba.larguras.map((w, i) =>
+          '<col min="' + (i+1) + '" max="' + (i+1) + '" width="' + w + '" customWidth="1"/>').join('') + '</cols>'
+      : '';
+    const ultima = colLetra(maxCol) + Math.max(linhas.length, 1);
+    // congelar o cabeçalho e ligar o filtro: numa planilha de 300 linhas isso
+    // é a diferença entre conferir e se perder
+    return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+      + '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+      + '<dimension ref="A1:' + ultima + '"/>'
+      + '<sheetViews><sheetView workbookViewId="0">'
+      + '<pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/>'
+      + '<selection pane="bottomLeft" activeCell="A2" sqref="A2"/>'
+      + '</sheetView></sheetViews>'
+      + '<sheetFormatPr defaultRowHeight="15"/>'
+      + cols
+      + '<sheetData>' + corpo + '</sheetData>'
+      + (aba.semFiltro || linhas.length < 2 ? ''
+          : '<autoFilter ref="A1:' + colLetra(maxCol) + (aba.filtroAte || linhas.length) + '"/>')
+      + '</worksheet>';
+  }
+
+  function montarXlsx(abas){
+    const enc = new TextEncoder();
+    const arq = [];
+    const tipos = ['<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+      + '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
+      + '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
+      + '<Default Extension="xml" ContentType="application/xml"/>'
+      + '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>'
+      + '<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>'];
+    const folhas = [], rels = [];
+    abas.forEach((aba, i)=>{
+      const n = i + 1;
+      tipos.push('<Override PartName="/xl/worksheets/sheet' + n + '.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>');
+      folhas.push('<sheet name="' + xmlEsc(String(aba.nome).slice(0, 31).replace(/[\[\]\*\?\/\\:]/g, '-'))
+        + '" sheetId="' + n + '" r:id="rId' + n + '"/>');
+      rels.push('<Relationship Id="rId' + n + '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet' + n + '.xml"/>');
+      arq.push({nome:'xl/worksheets/sheet' + n + '.xml', dados: enc.encode(abaXml(aba))});
+    });
+    rels.push('<Relationship Id="rId' + (abas.length + 1) + '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>');
+    tipos.push('</Types>');
+
+    const pacote = [
+      {nome:'[Content_Types].xml', dados: enc.encode(tipos.join(''))},
+      {nome:'_rels/.rels', dados: enc.encode('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        + '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+        + '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>'
+        + '</Relationships>')},
+      {nome:'xl/workbook.xml', dados: enc.encode('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        + '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"'
+        + ' xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
+        + '<sheets>' + folhas.join('') + '</sheets></workbook>')},
+      {nome:'xl/_rels/workbook.xml.rels', dados: enc.encode('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        + '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+        + rels.join('') + '</Relationships>')},
+      {nome:'xl/styles.xml', dados: enc.encode(XLSX_ESTILOS)},
+    ].concat(arq);
+
+    return montarZip(pacote, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  }
+
+  function baixarXlsx(nomeArquivo, abas){
+    const url = URL.createObjectURL(montarXlsx(abas));
+    const a = document.createElement('a');
+    a.href = url; a.download = nomeArquivo;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=> URL.revokeObjectURL(url), 4000);
+  }
+
+  const CAB = t => ({v:t, t:'s', s:1});      // célula de cabeçalho
+  // arredondar no centavo ao gravar: 12 x 0,80 em ponto flutuante dá
+  // 9.600000000000001, e numa planilha de faturamento isso vira diferença de
+  // centavo na soma que ninguém consegue explicar depois
+  const DIN = n => ({v: Math.round((Number(n) || 0) * 100) / 100, t:'n', s:2});
+  const DAT = d => ({v:d, t:'d', s:3});      // data
+  const NEG = t => ({v:t, t:(typeof t === 'number' ? 'n' : 's'), s:4});   // negrito
 
   // Um clique = relatório fotográfico + asbuilt + diagrama unifilar, num zip só.
   // Antes esse botão baixava só o relatório e os anexos ficavam em dois outros
@@ -5478,6 +5814,8 @@
       showToast('Salvo localmente \u2014 sem conexão no momento');
       return;
     }
+    if(travadoPorFechamento(dataState.contract.data, 'esta obra não pode mais ser enviada')) return;
+
     const contractNumero = dataState.contract.numero || ('sem-numero-' + Date.now());
     reviewSendBtn.disabled = true;
     reviewSendBtn.textContent = 'Enviando...';
@@ -5516,7 +5854,7 @@
       showToast('Relatório enviado para o servidor');
       const servicosFinal = valuesItems
         .filter(v => Number(dataState.valuesQty[v.code]) > 0)
-        .map(v => ({desc: v.desc, qtd: Number(dataState.valuesQty[v.code]), preco: v.price}));
+        .map(v => ({code: v.code, desc: v.desc, qtd: Number(dataState.valuesQty[v.code]), preco: v.price}));
       const materiaisFinal = materials
         .filter(m => Number(dataState.materialsQty[m.id]) > 0)
         .map(m => ({nome: m.name, qtd: Number(dataState.materialsQty[m.id]),
@@ -5594,6 +5932,8 @@
     // Obra nova: guarda como rascunho, sem gerar PDF nem mandar pra revisão.
     // Ela aparece na lista de Obras e é retomada depois pelo botão "Abrir".
     if(!obraEditandoId) return salvarObraNova();
+
+    if(travadoPorFechamento(dataState.contract.data, 'esta obra não pode mais ser alterada')) return;
 
     const reabrir = vaiReabrirAprovacao();
     if(reabrir && !confirm(
@@ -6488,6 +6828,11 @@
         (porTec[o.tecnico_id] = porTec[o.tecnico_id] || []).push(o);
       });
 
+      // obra sem dono é o que a fila de arrasto mostra. Aprovada e rascunho
+      // ficam de fora: uma já acabou, a outra ainda não é obra.
+      filaDespacho = (obras || []).filter(o => !o.tecnico_id
+        && o.status !== 'aprovado' && o.status !== 'rascunho');
+
       const conta = s => (obras||[]).filter(o => o.status === s).length;
       const emCampo    = conta('despachada') + conta('em_execucao');
       const aguardandoDespacho = conta('pendente');
@@ -6627,6 +6972,7 @@
 
       const el = document.createElement('div');
       el.className = 'tec';
+      el.dataset.tecId = t.id;          // alvo do arrasto e do toque
       el.innerHTML = `
         <div class="tec-id">
           <span class="tec-av">${esc(ini)}<i class="${est}"></i></span>
@@ -6660,7 +7006,14 @@
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 6l6 6-6 6"/></svg>
         </button>`;
 
-      el.querySelector('.tec-go').addEventListener('click', ()=>{
+      // obra na mão pelo caminho do toque: o cartão inteiro vira o alvo
+      el.addEventListener('click', (ev)=>{
+        if(!obraNaMao) return;
+        if(ev.target.closest && ev.target.closest('.tec-status-sel')) return;
+        despacharPara(obraNaMao, t);
+      });
+      el.querySelector('.tec-go').addEventListener('click', (ev)=>{
+        if(obraNaMao){ ev.stopPropagation(); return; }   // já despachou no clique acima
         navegarMenu('despacho');
         setTimeout(()=>{
           const s = document.getElementById('dTecnico');
@@ -6689,6 +7042,7 @@
   }
 
   function pintarRodape(obras){
+    pintarFilaDespacho();
     const hoje = new Date().toISOString().slice(0,10);
     const doDia = (obras||[]).filter(o=>
       (o.despachado_em && o.despachado_em.slice(0,10) === hoje) ||
@@ -6708,9 +7062,11 @@
       }).join('');
     }
 
-    document.getElementById('pnlCom').innerHTML =
-      '<div class="aviso"><i></i><div><b>Nenhum comunicado no momento</b>'
-      + '<p>Avisos da operação aparecem aqui quando houver.</p></div></div>';
+    // o painel era texto fixo desde sempre; agora ele é o próprio comunicado
+    const bNovoCom = document.getElementById('btnNovoComunicado');
+    if(bNovoCom) bNovoCom.style.display = ehOperador() ? '' : 'none';
+    pintarComunicadosPainel();
+    carregarComunicados();
   }
 
   document.getElementById('tecBusca').addEventListener('input', ()=>{
@@ -8368,8 +8724,20 @@
          dados:{contract:contrato('9000004','Clínica Exemplo','R MODELO, 555'), tecnico:'Marcos Vieira',
                 arquivos:{photos:{},projectDocs:{},docsAtt:{}}, meta:{photos:{},projectDocs:{},docsAtt:{}},
                 materialsQty:{}, valuesQty:{}}},
+        // esta é a única com serviço e material lançados de propósito: sem
+        // isso a Medição e o consumo de material abriam sempre zerados na
+        // demonstração, e não dava pra mostrar (nem testar) a conta
         {id:5, contrato:'9000005', status:'aprovado',    empresa_id:1, tecnico_id:'d-t3',
          dados:{contract:contrato('9000005','Condomínio Jardim','AV AMOSTRA, 70'), tecnico:'Rafael Nunes',
+                arquivos:{photos:{},projectDocs:{},docsAtt:{}}, meta:{photos:{},projectDocs:{},docsAtt:{}},
+                materialsQty:{1:180, 8:1}, materialsExtra:{8:{serie:'ZTEGD4A1B2C3'}},
+                valuesQty:{'02.18':12, '03.06':2, '04.01':1}}},
+        {id:6, contrato:'9000006', status:'pendente',    empresa_id:1, tecnico_id:null,
+         dados:{contract:contrato('9000006','Auto Peças Exemplo','R AMOSTRA, 1200'),
+                arquivos:{photos:{},projectDocs:{},docsAtt:{}}, meta:{photos:{},projectDocs:{},docsAtt:{}},
+                materialsQty:{}, valuesQty:{}}},
+        {id:7, contrato:'9000007', status:'pendente',    empresa_id:1, tecnico_id:null,
+         dados:{contract:contrato('9000007','Restaurante Demo','AV TESTE, 4501'),
                 arquivos:{photos:{},projectDocs:{},docsAtt:{}}, meta:{photos:{},projectDocs:{},docsAtt:{}},
                 materialsQty:{}, valuesQty:{}}},
       ],
@@ -8377,6 +8745,9 @@
     let atual = null, seq = 100;
 
     const consulta = (tab)=>{
+      // tabela que o demo não conhece (medicoes, comunicados...) nasce vazia
+      // em vez de derrubar o insert com "push of undefined"
+      if(!db[tab]) db[tab] = [];
       let filtros = [], lim = null;
       const dados = ()=>{
         let r = (db[tab]||[]).filter(l => filtros.every(f => f(l)));
@@ -9111,16 +9482,122 @@
     } catch(err){ return false; }
   }
 
+  const ROTULO_STATUS_LISTA = {pendente:'Pendente', despachada:'Despachada', em_execucao:'Em execução',
+    enviado:'Enviado', rascunho:'Rascunho', aprovado:'Aprovado', reprovado:'Reprovado'};
+
+  // O que está na tela AGORA: o recorte do filtro mais o que foi digitado na
+  // busca. Exportar sempre "tudo" seria mais fácil de programar e pior de usar
+  // — quem filtrou a tela quer aquilo, não o banco inteiro.
+  function obrasNaTela(){
+    const termo = (document.getElementById('jobsBusca').value || '').trim().toLowerCase();
+    return obrasDoFiltro().filter(job=>{
+      if(!termo) return true;
+      const rot = ROTULO_STATUS_LISTA[job.status] || job.status;
+      return [job.contrato, job.cliente, job.tecnico, job.status, rot]
+        .some(v => String(v || '').toLowerCase().includes(termo));
+    });
+  }
+
+  // A data que vale é a do contrato. Na lista ela já vem em dd/mm/aaaa; a
+  // planilha precisa de data de verdade pra ordenar e filtrar por mês.
+  function dataIsoObra(job){
+    const d = job.row && job.row.dados && job.row.dados.contract && job.row.dados.contract.data;
+    if(d && /^\d{4}-\d{2}-\d{2}/.test(d)) return d.slice(0, 10);
+    const m = /^(\d{2})\/(\d{2})\/(\d{4})/.exec(String(job.data || ''));
+    return m ? (m[3] + '-' + m[2] + '-' + m[1]) : '';
+  }
+
+  function exportarObrasXlsx(btn){
+    const lista = obrasNaTela();
+    if(!lista.length){ showToast('Não tem obra nessa lista pra exportar'); return; }
+    if(btn) btn.disabled = true;
+    try{
+      const recorte = (filtroObras === 'historico' ? 'Aprovadas' : 'Em aberto')
+        + (filtroPainel ? ' - ' + filtroPainel.rot : '');
+
+      // --- aba 1: uma linha por obra
+      const abaObras = [[CAB('Contrato'), CAB('Cliente'), CAB('Data'), CAB('Técnico'), CAB('Status'),
+                         CAB('Serviços'), CAB('Materiais'), CAB('Total R$')]];
+      // --- aba 2: uma linha por serviço lançado
+      const abaServ = [[CAB('Contrato'), CAB('Cliente'), CAB('Data'), CAB('Técnico'),
+                        CAB('Código'), CAB('Serviço'), CAB('Qtd'), CAB('Unitário'), CAB('Total R$')]];
+      // --- aba 3: uma linha por material lançado
+      const abaMat = [[CAB('Contrato'), CAB('Cliente'), CAB('Data'), CAB('Técnico'),
+                       CAB('Material'), CAB('Qtd'), CAB('Série'), CAB('Retirado')]];
+
+      const porServico = {}, porMaterial = {};
+      let totalGeral = 0;
+
+      lista.forEach(job=>{
+        const iso = dataIsoObra(job);
+        const base = [job.contrato, job.cliente, DAT(iso), job.tecnico || ''];
+        const tot = jobTotal(job);
+        totalGeral += tot;
+        abaObras.push(base.concat([
+          ROTULO_STATUS_LISTA[job.status] || job.status,
+          (job.servicos || []).length,
+          (job.materiais || []).length,
+          DIN(tot),
+        ]));
+
+        (job.servicos || []).forEach(sv=>{
+          const q = Number(sv.qtd) || 0, p = Number(sv.preco) || 0;
+          abaServ.push(base.concat([sv.code || '', sv.desc, q, DIN(p), DIN(q * p)]));
+          const ch = sv.code || sv.desc;
+          if(!porServico[ch]) porServico[ch] = {code: sv.code || '', desc: sv.desc, preco: p, qtd: 0, sub: 0, obras: 0};
+          porServico[ch].qtd += q; porServico[ch].sub += q * p; porServico[ch].obras += 1;
+        });
+
+        (job.materiais || []).forEach(mt=>{
+          const q = Number(mt.qtd) || 0;
+          abaMat.push(base.concat([mt.nome, q, mt.serie || '', mt.retirado ? 'sim' : '']));
+          if(!porMaterial[mt.nome]) porMaterial[mt.nome] = {nome: mt.nome, inst: 0, retir: 0, obras: 0};
+          // material marcado como retirado saiu do campo, não entrou: somar os
+          // dois no mesmo balde daria consumo maior do que o real
+          if(mt.retirado) porMaterial[mt.nome].retir += q;
+          else porMaterial[mt.nome].inst += q;
+          porMaterial[mt.nome].obras += 1;
+        });
+      });
+
+      const linhaTotal = abaObras.length + 1;
+      abaObras.push([NEG('TOTAL'), null, null, null, null, null, null, {v: totalGeral, t:'n', s:5}]);
+
+      const resServ = [[CAB('Código'), CAB('Serviço'), CAB('Qtd total'), CAB('Unitário'), CAB('Total R$'), CAB('Obras')]];
+      Object.values(porServico)
+        .sort((a,b) => String(a.code).localeCompare(String(b.code)))
+        .forEach(l => resServ.push([l.code, l.desc, l.qtd, DIN(l.preco), DIN(l.sub), l.obras]));
+      const totServ = resServ.length + 1;
+      resServ.push([NEG('TOTAL'), null, null, null, {v: totalGeral, t:'n', s:5}, null]);
+
+      const resMat = [[CAB('Material'), CAB('Instalado'), CAB('Retirado'), CAB('Líquido'), CAB('Obras')]];
+      Object.values(porMaterial)
+        .sort((a,b) => b.inst - a.inst || a.nome.localeCompare(b.nome))
+        .forEach(l => resMat.push([l.nome, l.inst, l.retir, l.inst - l.retir, l.obras]));
+
+      const hoje = new Date().toISOString().slice(0, 10);
+      baixarXlsx('Obras-' + recorte.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'') + '-' + hoje + '.xlsx', [
+        {nome:'Obras',            larguras:[13,38,12,26,14,10,11,14], linhas: abaObras, filtroAte: linhaTotal - 1},
+        {nome:'Serviços',         larguras:[13,38,12,26,10,52,8,13,14], linhas: abaServ},
+        {nome:'Materiais',        larguras:[13,38,12,26,52,8,20,10],   linhas: abaMat},
+        {nome:'Resumo serviços',  larguras:[10,52,11,13,14,8],         linhas: resServ, filtroAte: totServ - 1},
+        {nome:'Resumo materiais', larguras:[52,12,11,11,8],            linhas: resMat},
+      ]);
+      showToast(lista.length + (lista.length === 1 ? ' obra exportada' : ' obras exportadas'));
+    } catch(e){
+      showToast('Não deu pra montar a planilha: ' + (e.message || e));
+    } finally {
+      if(btn) btn.disabled = false;
+    }
+  }
+
+  const btnExpObras = document.getElementById('btnExportObras');
+  if(btnExpObras) btnExpObras.addEventListener('click', (e)=> exportarObrasXlsx(e.currentTarget));
+
   function renderJobsList(){
     jobsList.innerHTML = '';
     const termoJobs = (document.getElementById('jobsBusca').value || '').trim().toLowerCase();
-    const lista = obrasDoFiltro().filter(job=>{
-      if(!termoJobs) return true;
-      const statusLabel = {pendente:'Pendente', despachada:'Despachada', em_execucao:'Em execução',
-        enviado:'Enviado', rascunho:'Rascunho', aprovado:'Aprovado', reprovado:'Reprovado'}[job.status] || job.status;
-      return [job.contrato, job.cliente, job.tecnico, job.status, statusLabel]
-        .some(v => String(v || '').toLowerCase().includes(termoJobs));
-    });
+    const lista = obrasNaTela();   // mesma conta que o botão de exportar usa
 
     pintarFaixaPainel();
     if(!lista.length){
@@ -9321,6 +9798,9 @@
         const painel = details.querySelector('.status-painel');
         btnAbrirStatus.addEventListener('click', (e)=>{
           e.stopPropagation();
+          // avisar aqui, e não depois de escolher o status: abrir a lista pra
+          // depois dizer "não pode" faz a pessoa trabalhar à toa
+          if(travadoPorFechamento(dataIsoObra(job), 'o status não pode mais mudar')) return;
           const aberto = painel.style.display !== 'none';
           painel.style.display = aberto ? 'none' : 'block';
           btnAbrirStatus.classList.toggle('on', !aberto);
@@ -9405,6 +9885,7 @@
       if(caixaRevisao){
         const obs = caixaRevisao.querySelector('textarea');
         async function revisar(novoStatus, btn){
+          if(travadoPorFechamento(dataIsoObra(job), 'o status não pode mais mudar')) return;
           if(novoStatus === 'reprovado' && !obs.value.trim()){
             obs.focus();
             showToast('Escreva o que precisa ser corrigido');
@@ -9474,6 +9955,7 @@
 
   function prepararMedicao(){
     garantirCatalogo();
+    carregarPeriodosFechados();
     if(!medDe.value || !medAte.value) periodoMes(0);
     montarAtalhosPeriodo();
     montarSeletorTecnico();
@@ -9526,13 +10008,19 @@
     if(!de || !ate){ showToast('Escolha as duas datas'); return; }
     if(de > ate){ showToast('A data inicial está depois da final'); return; }
     const btn = document.getElementById('medGerar');
+    const ehMaterial = modoMedicao === 'materiais';
     btn.disabled = true; btn.textContent = 'Somando...';
-    medResultado.innerHTML = '<div class="med-vazio">Buscando obras aprovadas...</div>';
+    medResultado.innerHTML = '<div class="med-vazio">Buscando obras'
+      + (ehMaterial ? '...' : ' aprovadas...') + '</div>';
     try{
       const emp = empresaContexto ? empresaContexto.id : minhaEmpresa();
       let q = supabaseClient.from(SUPABASE_TABLE)
-        .select('id, contrato, dados, tecnico_id, status, atualizado_em')
-        .eq('status', 'aprovado');
+        .select('id, contrato, dados, tecnico_id, status, atualizado_em');
+      // material sai do estoque quando o técnico instala, não quando o
+      // escritório aprova — por isso o recorte de status muda com o modo
+      q = (ehMaterial && !consumoSoAprovadas)
+        ? q.in('status', STATUS_EXECUTADO)
+        : q.eq('status', 'aprovado');
       if(emp) q = q.eq('empresa_id', emp);
       if(medTecnico.value) q = q.eq('tecnico_id', medTecnico.value);
       const {data, error} = await q;
@@ -9545,14 +10033,718 @@
         const d = ((r.dados || {}).contract || {}).data;
         return d && d >= de && d <= ate;
       });
-      medicaoAtual = somarMedicao(obras, de, ate);
-      renderMedicao(medicaoAtual);
+      if(ehMaterial){
+        consumoAtual = somarMateriais(obras);
+        renderConsumo(consumoAtual);
+      } else {
+        medicaoAtual = somarMedicao(obras, de, ate);
+        renderMedicao(medicaoAtual);
+      }
     } catch(e){
       medResultado.innerHTML = '<div class="med-vazio">Não deu pra buscar: '
         + esc(e.message || e) + '</div>';
     } finally {
       btn.disabled = false; btn.textContent = 'Gerar';
     }
+  }
+
+  // ---------- Despachar arrastando ----------
+  // Antes: tocar em "+ Despachar" no cartão do técnico, esperar a tela de
+  // cadastro abrir, achar a obra num select. Três telas pra uma decisão que o
+  // analista já tomou olhando o quadro. Aqui a obra sem técnico fica numa
+  // fila em cima dos cartões e vai pro técnico com o dedo.
+  //
+  // NÃO uso a API de drag-and-drop do HTML5 de propósito: ela não existe em
+  // toque (Android/iOS), que é metade de quem usa isso. Pointer events
+  // funcionam nos dois, e ainda deixam o mesmo código servir pro mouse.
+  let filaDespacho = [];       // obras sem técnico
+  let obraNaMao = null;        // obra escolhida por toque (o caminho sem arrastar)
+  let arrasto = null;          // {obra, el, fantasma, alvo, x0, y0, ativo}
+
+  function pintarFilaDespacho(){
+    const cx = document.getElementById('filaDespacho');
+    if(!cx) return;
+    if(!ehOperador() || !filaDespacho.length){
+      cx.style.display = 'none'; cx.innerHTML = ''; obraNaMao = null;
+      return;
+    }
+    cx.style.display = '';
+    cx.innerHTML =
+      '<div class="fila-cab"><span class="fila-t">Aguardando despacho</span>'
+      + '<span class="fila-n">' + filaDespacho.length + '</span>'
+      + '<span class="fila-dica">arraste até o técnico &mdash; ou toque na obra e depois nele</span></div>'
+      + '<div class="fila-itens">'
+      + filaDespacho.map(o=>{
+          const c = (o.dados || {}).contract || {};
+          return '<div class="fila-obra" data-obra="' + esc(o.id) + '" role="button" tabindex="0">'
+            + '<span class="fila-obra-n">' + esc(o.contrato) + '</span>'
+            + '<span class="fila-obra-c">' + esc(c.empresa || c.endereco || 'sem cliente') + '</span>'
+            + '</div>';
+        }).join('')
+      + '</div>'
+      + '<div class="fila-escolhida" id="filaEscolhida" style="display:none;"></div>';
+
+    cx.querySelectorAll('.fila-obra').forEach(el=>{
+      const o = filaDespacho.find(x => String(x.id) === el.dataset.obra);
+      el.addEventListener('pointerdown', (e)=> comecarArrasto(e, el, o));
+      el.addEventListener('keydown', (e)=>{
+        if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); escolherObra(o); }
+      });
+    });
+    pintarEscolhida();
+  }
+
+  // ----- caminho do toque: escolhe a obra, depois toca no técnico
+  function escolherObra(o){
+    obraNaMao = (obraNaMao && obraNaMao.id === o.id) ? null : o;
+    pintarEscolhida();
+  }
+
+  function pintarEscolhida(){
+    const faixa = document.getElementById('filaEscolhida');
+    document.querySelectorAll('.fila-obra').forEach(el=>{
+      el.classList.toggle('escolhida', !!obraNaMao && el.dataset.obra === String(obraNaMao.id));
+    });
+    document.body.classList.toggle('escolhendo-tecnico', !!obraNaMao);
+    if(!faixa) return;
+    if(!obraNaMao){ faixa.style.display = 'none'; faixa.innerHTML = ''; return; }
+    faixa.style.display = '';
+    faixa.innerHTML = '<span>Obra <strong>' + esc(obraNaMao.contrato)
+      + '</strong> na mão &mdash; toque no técnico que vai receber.</span>'
+      + '<button type="button" class="fila-cancelar">Cancelar</button>';
+    faixa.querySelector('.fila-cancelar').addEventListener('click', ()=>{ obraNaMao = null; pintarEscolhida(); });
+  }
+
+  // ----- caminho do arrasto
+  function comecarArrasto(e, el, obra){
+    if(e.button !== undefined && e.button !== 0) return;
+    arrasto = {obra, el, fantasma:null, alvo:null, x0:e.clientX, y0:e.clientY, ativo:false};
+    try{ el.setPointerCapture(e.pointerId); }catch(err){}
+    el.addEventListener('pointermove', moverArrasto);
+    el.addEventListener('pointerup', soltarArrasto);
+    el.addEventListener('pointercancel', cancelarArrasto);
+  }
+
+  function moverArrasto(e){
+    if(!arrasto) return;
+    const dx = e.clientX - arrasto.x0, dy = e.clientY - arrasto.y0;
+    // só vira arrasto depois de 8px: sem essa folga, um toque com a mão
+    // tremendo (dentro de um carro, de luva) virava arrasto e nunca toque
+    if(!arrasto.ativo && Math.hypot(dx, dy) < 8) return;
+    if(!arrasto.ativo){
+      arrasto.ativo = true;
+      obraNaMao = null; pintarEscolhida();
+      const f = arrasto.el.cloneNode(true);
+      f.className = 'fila-obra fantasma';
+      const r = arrasto.el.getBoundingClientRect();
+      f.style.width = r.width + 'px';
+      document.body.appendChild(f);
+      arrasto.fantasma = f;
+      arrasto.el.classList.add('saindo');
+      document.body.classList.add('arrastando-obra');
+    }
+    arrasto.fantasma.style.left = e.clientX + 'px';
+    arrasto.fantasma.style.top  = e.clientY + 'px';
+
+    // esconder o fantasma antes do elementFromPoint: senão o que está
+    // debaixo do dedo é sempre ele mesmo
+    arrasto.fantasma.style.visibility = 'hidden';
+    const sob = document.elementFromPoint(e.clientX, e.clientY);
+    arrasto.fantasma.style.visibility = '';
+    const card = sob && sob.closest ? sob.closest('.tec') : null;
+    if(card !== arrasto.alvo){
+      if(arrasto.alvo) arrasto.alvo.classList.remove('alvo');
+      arrasto.alvo = card;
+      if(card) card.classList.add('alvo');
+    }
+  }
+
+  function limparArrasto(){
+    if(!arrasto) return;
+    if(arrasto.fantasma) arrasto.fantasma.remove();
+    if(arrasto.alvo) arrasto.alvo.classList.remove('alvo');
+    arrasto.el.classList.remove('saindo');
+    arrasto.el.removeEventListener('pointermove', moverArrasto);
+    arrasto.el.removeEventListener('pointerup', soltarArrasto);
+    arrasto.el.removeEventListener('pointercancel', cancelarArrasto);
+    document.body.classList.remove('arrastando-obra');
+    arrasto = null;
+  }
+
+  function cancelarArrasto(){ limparArrasto(); }
+
+  function soltarArrasto(e){
+    if(!arrasto) return;
+    const {obra, alvo, ativo} = arrasto;
+    limparArrasto();
+    if(!ativo){ escolherObra(obra); return; }   // foi toque, não arrasto
+    if(!alvo) return;
+    const tec = tecCache.find(t => String(t.id) === String(alvo.dataset.tecId));
+    if(tec) despacharPara(obra, tec);
+  }
+
+  async function despacharPara(obra, tec){
+    if(!supabaseConfigured || !online){ showToast('Sem conexão — tente de novo depois'); return; }
+    if(travadoPorFechamento(((obra.dados||{}).contract||{}).data, 'esta obra não pode mais ser despachada')) return;
+    obraNaMao = null; pintarEscolhida();
+    showToast('Despachando ' + obra.contrato + ' para ' + tec.nome + '...');
+    try{
+      const d = obra.dados || {};
+      const {error} = await supabaseClient.from(SUPABASE_TABLE).update({
+        tecnico_id: tec.id,
+        status: 'despachada',
+        despachado_por: perfilAtual && perfilAtual.id !== 'demo' ? perfilAtual.id : null,
+        despachado_em: new Date().toISOString(),
+        dados: {...d, tecnico: tec.nome},
+      }).eq('id', obra.id);
+      if(error) throw error;
+      showToast('Contrato ' + obra.contrato + ' despachado para ' + tec.nome);
+      renderQuadro();   // recarrega: a fila encolhe e a carga do técnico sobe
+    } catch(err){
+      showToast('Não deu pra despachar: ' + (err.message || err));
+    }
+  }
+
+  // ---------- Comunicados ----------
+  // O painel do Despacho mostrava "Nenhum comunicado no momento" e nunca mais
+  // nada — era enfeite. O aviso de operação seguia indo por WhatsApp, onde
+  // some no meio de foto de obra e ninguém sabe quem leu. Aqui o escritório
+  // escreve, todo mundo confirma com um toque, e o quadro diz QUEM falta —
+  // que é a única coisa que o WhatsApp não dá.
+  let comunicadosCache = [];      // ativos e não vencidos, da empresa
+  let leiturasPorCom = {};        // {id: [perfil_id, ...]}
+  let comunicadosCarregando = false;
+
+  function empresaDosComunicados(){
+    return empresaContexto ? empresaContexto.id : minhaEmpresa();
+  }
+
+  async function carregarComunicados(){
+    if(!supabaseConfigured || !online || comunicadosCarregando) return;
+    comunicadosCarregando = true;
+    try{
+      const emp = empresaDosComunicados();
+      let q = supabaseClient.from('comunicados').select('*').eq('ativo', true);
+      if(emp) q = q.eq('empresa_id', emp);
+      const {data, error} = await q;
+      if(error) throw error;
+      const hoje = new Date().toISOString().slice(0, 10);
+      comunicadosCache = (data || [])
+        .filter(c => !c.expira_em || c.expira_em >= hoje)
+        .sort((a,b) => String(b.criado_em || '').localeCompare(String(a.criado_em || '')));
+
+      leiturasPorCom = {};
+      if(comunicadosCache.length){
+        const ids = comunicadosCache.map(c => c.id);
+        const {data: ls} = await supabaseClient.from('comunicado_leituras')
+          .select('comunicado_id, perfil_id').in('comunicado_id', ids);
+        (ls || []).forEach(l=>{
+          (leiturasPorCom[l.comunicado_id] = leiturasPorCom[l.comunicado_id] || []).push(String(l.perfil_id));
+        });
+      }
+    } catch(e){
+      // tabela ainda não criada: o painel volta a dizer que não há comunicado,
+      // em vez de mostrar erro de banco pra quem só queria despachar obra
+      comunicadosCache = []; leiturasPorCom = {};
+    } finally {
+      comunicadosCarregando = false;
+    }
+    pintarComunicadosPainel();
+    pintarComunicadosBarra();
+  }
+
+  function meuId(){ return perfilAtual ? String(perfilAtual.id) : ''; }
+
+  // O denominador do "5 de 8 leram" são os técnicos da empresa. Quem tem essa
+  // lista carregada muda com a tela: Obras enche tecnicosJobsCache, Despacho
+  // enche tecCache. try/catch porque `let` em zona morta LANÇA no typeof.
+  function equipeParaLeitura(){
+    try{ if(tecnicosJobsCache && tecnicosJobsCache.length) return tecnicosJobsCache; }catch(e){}
+    try{ if(tecCache && tecCache.length) return tecCache.filter(t => t.id); }catch(e){}
+    return [];
+  }
+  function jaLi(c){ return (leiturasPorCom[c.id] || []).includes(meuId()); }
+
+  function naoLeram(c){
+    const leram = leiturasPorCom[c.id] || [];
+    return equipeParaLeitura().filter(t => !leram.includes(String(t.id)));
+  }
+
+  async function confirmarLeitura(c, btn){
+    if(btn){ btn.disabled = true; btn.textContent = 'Confirmando...'; }
+    try{
+      const {error} = await supabaseClient.from('comunicado_leituras')
+        .insert({comunicado_id: c.id, perfil_id: perfilAtual.id});
+      // linha repetida não é erro de verdade: quer dizer que já estava lido
+      if(error && !/duplicate|unique/i.test(String(error.message))) throw error;
+      (leiturasPorCom[c.id] = leiturasPorCom[c.id] || []).push(meuId());
+      showToast('Leitura confirmada');
+      pintarComunicadosBarra();
+      pintarComunicadosPainel();
+    } catch(err){
+      showToast('Não deu pra confirmar: ' + (err.message || err));
+      if(btn){ btn.disabled = false; btn.textContent = 'Li e entendi'; }
+    }
+  }
+
+  // ----- a barra que aparece pra quem ainda não leu
+  function pintarComunicadosBarra(){
+    const cx = document.getElementById('comunicadosBarra');
+    if(!cx) return;
+    const pendentes = comunicadosCache.filter(c => !jaLi(c));
+    if(!pendentes.length){ cx.style.display = 'none'; cx.innerHTML = ''; return; }
+    cx.style.display = '';
+    cx.innerHTML = pendentes.map(c => `
+      <div class="com-aviso ${c.prioridade === 'urgente' ? 'urgente' : ''}" data-com="${esc(c.id)}">
+        <div class="com-aviso-t">${c.prioridade === 'urgente' ? '&#9888; URGENTE &middot; ' : ''}${esc(c.titulo)}</div>
+        <div class="com-aviso-c">${esc(c.corpo)}</div>
+        <button type="button" class="com-aviso-ok">Li e entendi</button>
+      </div>`).join('');
+    cx.querySelectorAll('.com-aviso').forEach(el=>{
+      const c = comunicadosCache.find(x => String(x.id) === el.dataset.com);
+      el.querySelector('.com-aviso-ok').addEventListener('click', (e)=> confirmarLeitura(c, e.currentTarget));
+    });
+  }
+
+  // ----- o painel do Despacho, com o placar de leitura
+  function pintarComunicadosPainel(){
+    const cx = document.getElementById('pnlCom');
+    if(!cx) return;
+    const total = equipeParaLeitura().length;
+    if(!comunicadosCache.length){
+      cx.innerHTML = '<div class="aviso"><i></i><div><b>Nenhum comunicado no momento</b>'
+        + '<p>' + (ehOperador() ? 'Toque em <b>+ Novo</b> pra avisar a equipe.'
+                                : 'Avisos da operação aparecem aqui quando houver.') + '</p></div></div>';
+      return;
+    }
+    cx.innerHTML = comunicadosCache.map(c=>{
+      const leram = (leiturasPorCom[c.id] || []).length;
+      const faltam = total ? total - leram : 0;
+      return '<div class="com-linha' + (c.prioridade === 'urgente' ? ' urgente' : '') + '" data-com="' + esc(c.id) + '">'
+        + '<div class="com-linha-topo">'
+        +   '<b>' + (c.prioridade === 'urgente' ? '&#9888; ' : '') + esc(c.titulo) + '</b>'
+        +   '<span class="com-placar' + (total && faltam === 0 ? ' ok' : '') + '">'
+        +     (total ? leram + ' de ' + total + ' leram' : leram + ' leram') + '</span>'
+        + '</div>'
+        + '<p>' + esc(c.corpo) + '</p>'
+        + '<div class="com-linha-acoes">'
+        +   (total && faltam > 0 ? '<button type="button" data-acao="quem">Quem falta (' + faltam + ')</button>' : '')
+        +   (ehOperador() ? '<button type="button" data-acao="arquivar">Arquivar</button>' : '')
+        + '</div>'
+        + '</div>';
+    }).join('');
+    cx.querySelectorAll('.com-linha').forEach(el=>{
+      const c = comunicadosCache.find(x => String(x.id) === el.dataset.com);
+      const bq = el.querySelector('[data-acao="quem"]');
+      if(bq) bq.addEventListener('click', ()=> mostrarQuemFalta(c));
+      const ba = el.querySelector('[data-acao="arquivar"]');
+      if(ba) ba.addEventListener('click', (e)=> arquivarComunicado(c, e.currentTarget));
+    });
+  }
+
+  function mostrarQuemFalta(c){
+    const faltam = naoLeram(c);
+    const leram = (leiturasPorCom[c.id] || []);
+    const nome = id => {
+      const t = equipeParaLeitura().find(x => String(x.id) === String(id));
+      return t ? (t.nome || t.email || id) : id;
+    };
+    comBody.innerHTML = '<div class="com-quem-t">' + esc(c.titulo) + '</div>'
+      + '<div class="com-quem-secao falta">Ainda não leram (' + faltam.length + ')</div>'
+      + (faltam.length
+          ? faltam.map(t => '<div class="com-quem-lin">' + esc(t.nome || t.email) + '</div>').join('')
+          : '<div class="com-quem-vazio">Todo mundo confirmou.</div>')
+      + '<div class="com-quem-secao leu">Já leram (' + leram.length + ')</div>'
+      + (leram.length
+          ? leram.map(id => '<div class="com-quem-lin">' + esc(nome(id)) + '</div>').join('')
+          : '<div class="com-quem-vazio">Ninguém ainda.</div>');
+    comTitle.textContent = 'Quem leu';
+    comForm.style.display = 'none';
+    comBody.style.display = '';
+    comOverlay.classList.add('show');
+  }
+
+  async function arquivarComunicado(c, btn){
+    if(!confirm('Arquivar "' + c.titulo + '"?\n\nEle some do painel e do aviso dos técnicos. '
+      + 'O registro de quem leu continua guardado.')) return;
+    if(btn){ btn.disabled = true; btn.textContent = 'Arquivando...'; }
+    try{
+      const {error} = await supabaseClient.from('comunicados')
+        .update({ativo: false}).eq('id', c.id);
+      if(error) throw error;
+      showToast('Comunicado arquivado');
+      await carregarComunicados();
+    } catch(err){
+      showToast('Não deu pra arquivar: ' + (err.message || err));
+      if(btn){ btn.disabled = false; btn.textContent = 'Arquivar'; }
+    }
+  }
+
+  // ----- escrever um comunicado
+  const comOverlay = document.getElementById('comunicadoOverlay');
+  const comTitle   = document.getElementById('comunicadoTitle');
+  const comForm    = document.getElementById('comunicadoForm');
+  const comBody    = document.getElementById('comunicadoBody');
+
+  function abrirNovoComunicado(){
+    if(!ehOperador()){ showToast('Só o escritório escreve comunicado'); return; }
+    comTitle.textContent = 'Novo comunicado';
+    comBody.style.display = 'none';
+    comForm.style.display = '';
+    document.getElementById('comTitulo').value = '';
+    document.getElementById('comCorpo').value = '';
+    document.getElementById('comUrgente').checked = false;
+    document.getElementById('comExpira').value = '';
+    comOverlay.classList.add('show');
+    setTimeout(()=> document.getElementById('comTitulo').focus(), 120);
+  }
+
+  async function enviarComunicado(btn){
+    const titulo = document.getElementById('comTitulo').value.trim();
+    const corpo  = document.getElementById('comCorpo').value.trim();
+    if(!titulo){ showToast('Escreva um título'); document.getElementById('comTitulo').focus(); return; }
+    if(!corpo){ showToast('Escreva o aviso'); document.getElementById('comCorpo').focus(); return; }
+    const urgente = document.getElementById('comUrgente').checked;
+    const expira  = document.getElementById('comExpira').value || null;
+
+    btn.disabled = true; btn.textContent = 'Enviando...';
+    try{
+      const req = supabaseClient.from('comunicados').insert({
+        empresa_id: empresaDosComunicados(),
+        titulo, corpo,
+        prioridade: urgente ? 'urgente' : 'normal',
+        // ativo e criado_em têm DEFAULT no banco, mas o modo demonstração não
+        // tem DEFAULT nenhum — sem gravar aqui, o comunicado nascia sem
+        // "ativo" e sumia do próprio painel que acabou de criar ele
+        ativo: true,
+        criado_em: new Date().toISOString(),
+        expira_em: expira,
+        criado_por: perfilAtual && perfilAtual.id !== 'demo' ? perfilAtual.id : null,
+      });
+      // quem escreveu não precisa confirmar que leu o próprio aviso
+      const {data, error} = (req && typeof req.select === 'function')
+        ? await req.select('id').maybeSingle()
+        : await req;
+      if(error) throw error;
+      const novoId = data && data.id;
+      if(novoId && perfilAtual && perfilAtual.id !== 'demo'){
+        try{ await supabaseClient.from('comunicado_leituras')
+               .insert({comunicado_id: novoId, perfil_id: perfilAtual.id}); } catch(e){}
+      }
+      comOverlay.classList.remove('show');
+      showToast('Comunicado enviado pra equipe');
+      await carregarComunicados();
+    } catch(err){
+      showToast('Não deu pra enviar: ' + (err.message || err));
+    } finally {
+      btn.disabled = false; btn.textContent = 'Enviar pra equipe';
+    }
+  }
+
+  if(comOverlay){
+    document.getElementById('closeComunicado')
+      .addEventListener('click', ()=> comOverlay.classList.remove('show'));
+    document.getElementById('comEnviar')
+      .addEventListener('click', (e)=> enviarComunicado(e.currentTarget));
+  }
+  const btnNovoCom = document.getElementById('btnNovoComunicado');
+  if(btnNovoCom) btnNovoCom.addEventListener('click', abrirNovoComunicado);
+
+  // ---------- Fechamento de medição ----------
+  // Um mês fechado é um mês já faturado. Depois que o boletim foi pra Ligga,
+  // qualquer alteração numa obra daquele período faz o número da tela deixar
+  // de bater com o número que foi cobrado — e ninguém fica sabendo. Fechar
+  // congela o total e tranca as obras; pra corrigir, reabre com motivo.
+  let periodosFechados = [];     // [{id, de, ate, total, obras, fechada_por_nome, ...}]
+
+  async function carregarPeriodosFechados(){
+    if(!supabaseConfigured || !online) return;
+    try{
+      const emp = empresaContexto ? empresaContexto.id : minhaEmpresa();
+      let q = supabaseClient.from('medicoes').select('*').eq('status', 'fechada');
+      if(emp) q = q.eq('empresa_id', emp);
+      const {data, error} = await q;
+      if(error) throw error;
+      periodosFechados = data || [];
+    } catch(e){
+      // tabela ainda não criada, ou sem conexão: segue sem travar nada. O
+      // banco continua sendo a rede de segurança se o SQL já tiver rodado.
+      periodosFechados = [];
+    }
+  }
+
+  function periodoFechadoEm(iso){
+    if(!iso) return null;
+    const d = String(iso).slice(0, 10);
+    return periodosFechados.find(p => d >= p.de && d <= p.ate) || null;
+  }
+
+  // Avisa e devolve true quando a ação tem que parar. O aviso diz o período,
+  // não só "está fechado" — quem lê precisa saber qual mês reabrir.
+  function travadoPorFechamento(iso, oQue){
+    const p = periodoFechadoEm(iso);
+    if(!p) return false;
+    showToast('Medição de ' + toDateBR(p.de) + ' a ' + toDateBR(p.ate)
+      + ' já foi fechada — ' + (oQue || 'não dá pra alterar esta obra')
+      + '. Reabra o período na tela de Medição.');
+    return true;
+  }
+
+  async function fecharPeriodo(btn){
+    if(!medicaoAtual) return;
+    const m = medicaoAtual;
+    if(!ehOperador()){ showToast('Só o escritório fecha medição'); return; }
+    if(!confirm(
+        'Fechar a medição de ' + toDateBR(m.de) + ' a ' + toDateBR(m.ate) + '?\n\n'
+      + 'Total: ' + formatBRL(m.total) + ' em ' + m.obras.length + ' obra(s).\n\n'
+      + 'Depois de fechado, nenhuma obra com data nesse período pode ser alterada '
+      + '— nem pelo técnico, nem pelo escritório. Pra corrigir, é preciso reabrir.')) return;
+
+    const rotulo = btn ? btn.textContent : '';
+    if(btn){ btn.disabled = true; btn.textContent = 'Fechando...'; }
+    try{
+      const {error} = await supabaseClient.from('medicoes').insert({
+        empresa_id: empresaContexto ? empresaContexto.id : minhaEmpresa(),
+        de: m.de, ate: m.ate,
+        total: m.total,
+        obras: m.obras.length,
+        // o boletim vai congelado: preço de catálogo muda, e recalcular um mês
+        // antigo com o preço de hoje daria outro número
+        resumo: {linhas: m.linhas, obras: m.obras, fechadoComVersao: APP_VERSION},
+        status: 'fechada',            // idem: DEFAULT existe no banco, no demo não
+        fechada_em: new Date().toISOString(),
+        fechada_por: perfilAtual && perfilAtual.id !== 'demo' ? perfilAtual.id : null,
+      });
+      if(error) throw error;
+      await carregarPeriodosFechados();
+      showToast('Medição fechada — o período está travado');
+      renderMedicao(medicaoAtual);
+    } catch(err){
+      const msg = String(err.message || err);
+      showToast(/duplicate|unique/i.test(msg)
+        ? 'Esse período já foi fechado antes'
+        : 'Não deu pra fechar: ' + msg);
+      if(btn){ btn.disabled = false; btn.textContent = rotulo; }
+    }
+  }
+
+  async function reabrirPeriodo(p, btn){
+    if(!ehOperador()){ showToast('Só o escritório reabre medição'); return; }
+    const motivo = prompt(
+      'Reabrir a medição de ' + toDateBR(p.de) + ' a ' + toDateBR(p.ate) + '.\n\n'
+      + 'Escreva o motivo (fica registrado):');
+    if(motivo === null) return;
+    if(!motivo.trim()){ showToast('Escreva o motivo pra reabrir'); return; }
+    if(btn){ btn.disabled = true; btn.textContent = 'Reabrindo...'; }
+    try{
+      const {error} = await supabaseClient.from('medicoes').update({
+        status: 'reaberta',
+        reaberta_por: perfilAtual && perfilAtual.id !== 'demo' ? perfilAtual.id : null,
+        reaberta_em: new Date().toISOString(),
+        motivo_reabertura: motivo.trim(),
+      }).eq('id', p.id);
+      if(error) throw error;
+      await carregarPeriodosFechados();
+      showToast('Período reaberto — as obras voltaram a aceitar alteração');
+      if(medicaoAtual) renderMedicao(medicaoAtual);
+    } catch(err){
+      showToast('Não deu pra reabrir: ' + (err.message || err));
+      if(btn){ btn.disabled = false; btn.textContent = 'Reabrir período'; }
+    }
+  }
+
+  // A faixa que aparece em cima do boletim quando o período já está fechado.
+  function faixaFechamento(m){
+    const p = periodosFechados.find(x => x.de === m.de && x.ate === m.ate);
+    if(!p){
+      return ehOperador()
+        ? '<div class="med-fecha aberta">'
+          + '<div><strong>Período em aberto.</strong> As obras desse mês ainda podem ser '
+          + 'alteradas. Feche quando o boletim já tiver sido enviado.</div>'
+          + '<button type="button" class="med-fecha-btn" id="medFechar">Fechar período</button>'
+          + '</div>'
+        : '';
+    }
+    const quando = p.fechada_em ? new Date(p.fechada_em).toLocaleDateString('pt-BR') : '';
+    return '<div class="med-fecha fechada">'
+      + '<div><strong>Medição fechada' + (quando ? ' em ' + quando : '') + '.</strong> '
+      + 'Total congelado em ' + formatBRL(p.total) + '. Obra com data nesse período '
+      + 'não aceita mais alteração.</div>'
+      + (ehOperador() ? '<button type="button" class="med-fecha-btn reabrir" id="medReabrir">Reabrir período</button>' : '')
+      + '</div>';
+  }
+
+  function ligarFaixaFechamento(){
+    const bf = document.getElementById('medFechar');
+    if(bf) bf.addEventListener('click', (e)=> fecharPeriodo(e.currentTarget));
+    const br = document.getElementById('medReabrir');
+    if(br && medicaoAtual){
+      const p = periodosFechados.find(x => x.de === medicaoAtual.de && x.ate === medicaoAtual.ate);
+      if(p) br.addEventListener('click', (e)=> reabrirPeriodo(p, e.currentTarget));
+    }
+  }
+
+  // ---------- Medição: dois modos ----------
+  // Serviço e material respondem a perguntas diferentes. Serviço é "quanto a
+  // gente vai receber por este mês"; material é "quanto saiu do estoque". Por
+  // isso o recorte de status também é diferente: faturamento só conta obra
+  // APROVADA, mas o material já saiu do estoque no dia em que o técnico
+  // instalou — esperar a aprovação pra contabilizar deixaria o controle
+  // sempre atrasado em relação à prateleira.
+  let modoMedicao = 'servicos';
+  let consumoAtual = null;
+  let consumoSoAprovadas = false;
+  const STATUS_EXECUTADO = ['em_execucao','enviado','aprovado','reprovado'];
+
+  function trocarModoMedicao(modo){
+    if(modo === modoMedicao) return;
+    modoMedicao = modo;
+    document.querySelectorAll('#medModos .med-modo')
+      .forEach(b => b.classList.toggle('ativo', b.dataset.modo === modo));
+    const sub = document.getElementById('medSub');
+    if(sub) sub.textContent = modo === 'materiais'
+      ? 'Material lançado nas obras do período, somado por item.'
+      : 'Obras aprovadas no período, somadas por código de serviço.';
+    medResultado.innerHTML = '<div class="med-vazio">Escolha o período e toque em <strong>Gerar</strong>.</div>';
+    if(medDe.value && medAte.value) gerarMedicao();
+  }
+
+  document.querySelectorAll('#medModos .med-modo').forEach(b=>{
+    b.addEventListener('click', ()=> trocarModoMedicao(b.dataset.modo));
+  });
+
+  function somarMateriais(obras){
+    const porItem = {};
+    let totalInst = 0, totalRetir = 0, naoAprovadas = 0;
+    const linhasObra = [];
+    obras.forEach(r=>{
+      const d = r.dados || {};
+      const qtds = d.materialsQty || {};
+      const extra = d.materialsExtra || {};
+      let itensObra = 0;
+      materials.forEach(m=>{
+        const q = Number(qtds[m.id]) || 0;
+        if(q <= 0) return;
+        const retirado = !!(extra[m.id] || {}).retirado;
+        if(!porItem[m.name]) porItem[m.name] = {nome:m.name, inst:0, retir:0, obras:0};
+        if(retirado){ porItem[m.name].retir += q; totalRetir += q; }
+        else        { porItem[m.name].inst  += q; totalInst  += q; }
+        porItem[m.name].obras += 1;
+        itensObra += q;
+      });
+      if(r.status !== 'aprovado') naoAprovadas += 1;
+      linhasObra.push({
+        contrato: r.contrato,
+        data: (d.contract || {}).data || '',
+        tecnico: nomeDoVinculo(r.tecnico_id) || d.tecnico || '',
+        status: r.status,
+        itens: itensObra,
+      });
+    });
+    linhasObra.sort((a,b) => (a.data || '').localeCompare(b.data || ''));
+    return {
+      linhas: Object.values(porItem).sort((a,b) => b.inst - a.inst || a.nome.localeCompare(b.nome)),
+      obras: linhasObra,
+      totalInst, totalRetir, naoAprovadas,
+    };
+  }
+
+  function renderConsumo(c){
+    if(!c.obras.length){
+      medResultado.innerHTML = '<div class="med-vazio">Nenhuma obra com data entre '
+        + toDateBR(medDe.value) + ' e ' + toDateBR(medAte.value) + '.</div>';
+      return;
+    }
+    const semItem = c.obras.filter(o => o.itens === 0).length;
+    const linhas = c.linhas.map(l => `
+      <tr>
+        <td>${esc(l.nome)}</td>
+        <td class="num">${l.inst.toLocaleString('pt-BR')}</td>
+        <td class="num">${l.retir ? l.retir.toLocaleString('pt-BR') : '&mdash;'}</td>
+        <td class="num">${(l.inst - l.retir).toLocaleString('pt-BR')}</td>
+        <td class="num">${l.obras}</td>
+      </tr>`).join('');
+    const obras = c.obras.map(o => `
+      <div class="med-obra-lin${o.itens === 0 ? ' zerada' : ''}">
+        <span class="k">${esc(o.contrato)}${o.data ? ' &middot; ' + toDateBR(o.data) : ''}${o.tecnico ? ' &middot; ' + esc(o.tecnico) : ''}${o.status !== 'aprovado' ? ' &middot; ' + esc(ROTULO_STATUS_LISTA[o.status] || o.status) : ''}</span>
+        <span class="v">${o.itens.toLocaleString('pt-BR')}</span>
+      </div>`).join('');
+    medResultado.innerHTML = `
+      <div class="med-cab">
+        <div class="med-kpis">
+          <div class="med-kpi"><div class="med-kpi-n">${c.obras.length}</div><div class="med-kpi-r">obras</div></div>
+          <div class="med-kpi"><div class="med-kpi-n">${c.linhas.length}</div><div class="med-kpi-r">itens</div></div>
+          <div class="med-kpi"><div class="med-kpi-n destaque">${(c.totalInst - c.totalRetir).toLocaleString('pt-BR')}</div><div class="med-kpi-r">unidades gastas</div></div>
+        </div>
+        <button class="med-exportar" id="medExportar" type="button">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+            stroke-linecap="round"><path d="M12 3v12"/><path d="M8 11l4 4 4-4"/><path d="M4 21h16"/></svg>
+          Baixar planilha
+        </button>
+      </div>
+      <label class="med-toggle">
+        <input type="checkbox" id="consumoSoAprov"${consumoSoAprovadas ? ' checked' : ''}>
+        <span>Contar só obras já aprovadas</span>
+      </label>
+      <div class="med-tabela-wrap">
+        <table class="med-tabela">
+          <thead><tr><th>Material</th><th>Instalado</th><th>Retirado</th><th>Líquido</th><th>Obras</th></tr></thead>
+          <tbody>${linhas}</tbody>
+          <tfoot><tr><td>Total do período</td>
+            <td class="num">${c.totalInst.toLocaleString('pt-BR')}</td>
+            <td class="num">${c.totalRetir.toLocaleString('pt-BR')}</td>
+            <td class="num">${(c.totalInst - c.totalRetir).toLocaleString('pt-BR')}</td>
+            <td class="num">&mdash;</td></tr></tfoot>
+        </table>
+      </div>
+      ${!consumoSoAprovadas && c.naoAprovadas ? `<div class="med-alerta">
+        <strong>${c.naoAprovadas === 1 ? '1 obra ainda não foi aprovada' : c.naoAprovadas + ' obras ainda não foram aprovadas'}.</strong>
+        O material delas está contado aqui porque já saiu do estoque &mdash; mas se
+        alguma for devolvida e corrigida, o número muda. Pra ver só o que já está
+        fechado, marque a caixa acima.</div>` : ''}
+      ${semItem ? `<div class="med-alerta">
+        <strong>${semItem === 1 ? '1 obra sem material lançado' : semItem + ' obras sem material lançado'}.</strong>
+        Aparecem com 0 na lista abaixo &mdash; ou não usaram material, ou o técnico esqueceu de lançar.</div>` : ''}
+      <div class="med-secao-t">Obras incluídas</div>
+      <div class="med-tabela-wrap">${obras}</div>
+    `;
+    document.getElementById('medExportar').addEventListener('click', exportarConsumo);
+    const cx = document.getElementById('consumoSoAprov');
+    if(cx) cx.addEventListener('change', ()=>{ consumoSoAprovadas = cx.checked; gerarMedicao(); });
+  }
+
+  function periodoRotulo(){
+    return toDateBR(medDe.value) + ' a ' + toDateBR(medAte.value);
+  }
+
+  function tecnicoRotulo(){
+    return medTecnico.value ? medTecnico.options[medTecnico.selectedIndex].textContent : 'Todos';
+  }
+
+  function exportarConsumo(){
+    if(!consumoAtual) return;
+    const c = consumoAtual;
+    const resumo = [[CAB('Material'), CAB('Instalado'), CAB('Retirado'), CAB('Líquido'), CAB('Obras')]];
+    c.linhas.forEach(l => resumo.push([l.nome, l.inst, l.retir, l.inst - l.retir, l.obras]));
+    const ate = resumo.length;
+    resumo.push([NEG('TOTAL'), NEG(c.totalInst), NEG(c.totalRetir), NEG(c.totalInst - c.totalRetir), null]);
+
+    const cab = [[CAB('Consumo de material'), null],
+                 ['Período', periodoRotulo()],
+                 ['Técnico', tecnicoRotulo()],
+                 ['Obras contadas', consumoSoAprovadas ? 'só aprovadas' : 'executadas (inclui não aprovadas)'],
+                 ['Gerado em', DAT(new Date().toISOString().slice(0,10))]];
+
+    const porObra = [[CAB('Contrato'), CAB('Data'), CAB('Técnico'), CAB('Status'), CAB('Itens')]];
+    c.obras.forEach(o => porObra.push([o.contrato, DAT(o.data), o.tecnico,
+                                       ROTULO_STATUS_LISTA[o.status] || o.status, o.itens]));
+
+    baixarXlsx('Consumo-material-' + medDe.value + '-a-' + medAte.value + '.xlsx', [
+      {nome:'Consumo',   larguras:[52,12,11,11,8], linhas: resumo, filtroAte: ate},
+      {nome:'Por obra',  larguras:[14,12,26,14,10], linhas: porObra},
+      {nome:'Filtros',   larguras:[22,42],          linhas: cab, semFiltro:true},
+    ]);
+    showToast('Planilha baixada');
   }
 
   function somarMedicao(obras, de, ate){
@@ -9577,7 +10769,7 @@
       linhasObra.push({
         contrato: r.contrato,
         data: (d.contract || {}).data || '',
-        tecnico: d.tecnico || '',
+        tecnico: nomeDoVinculo(r.tecnico_id) || d.tecnico || '',
         total: totalObra,
       });
     });
@@ -9612,6 +10804,7 @@
         <span class="v">${formatBRL(o.total)}</span>
       </div>`).join('');
     medResultado.innerHTML = `
+      ${faixaFechamento(m)}
       <div class="med-cab">
         <div class="med-kpis">
           <div class="med-kpi"><div class="med-kpi-n">${m.obras.length}</div><div class="med-kpi-r">obras</div></div>
@@ -9639,40 +10832,36 @@
       <div class="med-tabela-wrap">${obras}</div>
     `;
     document.getElementById('medExportar').addEventListener('click', exportarMedicao);
+    ligarFaixaFechamento();
   }
 
+  // Era CSV. Virou .xlsx de verdade quando o montarXlsx() apareceu: mesma
+  // planilha, mas com aba separada, valor somável e data que o Excel entende
+  // — em CSV o escritório tinha que arrumar tudo isso na mão todo mês.
   function exportarMedicao(){
     if(!medicaoAtual) return;
     const m = medicaoAtual;
-    // ponto e vírgula + vírgula decimal + BOM: é o que o Excel em português
-    // abre direto, sem passar pelo assistente de importação
-    const dec = n => n.toFixed(2).replace('.', ',');
-    const cel = t => '"' + String(t == null ? '' : t).replace(/"/g, '""') + '"';
-    const L = [];
-    L.push(cel('Boletim de medição') + ';;;;');
-    L.push(cel('Período') + ';' + cel(toDateBR(m.de) + ' a ' + toDateBR(m.ate)) + ';;;');
-    if(medTecnico.value){
-      L.push(cel('Técnico') + ';' + cel(medTecnico.options[medTecnico.selectedIndex].textContent) + ';;;');
-    }
-    L.push(';;;;');
-    L.push(['Código','Serviço','Quantidade','Valor unitário','Total'].map(cel).join(';'));
-    m.linhas.forEach(l => L.push([cel(l.code), cel(l.desc), dec(l.qtd), dec(l.preco), dec(l.sub)].join(';')));
-    L.push(';;;;');
-    L.push(cel('TOTAL DO PERÍODO') + ';;;;' + dec(m.total));
-    L.push(';;;;');
-    L.push(cel('Obras incluídas') + ';;;;');
-    L.push(['Contrato','Data','Técnico','','Total'].map(cel).join(';'));
-    m.obras.forEach(o => L.push([cel(o.contrato), cel(toDateBR(o.data)), cel(o.tecnico), '', dec(o.total)].join(';')));
 
-    const blob = new Blob(['﻿' + L.join('\r\n')], {type:'text/csv;charset=utf-8;'});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'medicao-' + m.de + '-a-' + m.ate + '.csv';
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(()=> URL.revokeObjectURL(url), 1000);
+    const resumo = [[CAB('Código'), CAB('Serviço'), CAB('Quantidade'), CAB('Valor unitário'), CAB('Total R$')]];
+    m.linhas.forEach(l => resumo.push([l.code, l.desc, l.qtd, DIN(l.preco), DIN(l.sub)]));
+    const ate = resumo.length;
+    resumo.push([NEG('TOTAL DO PERÍODO'), null, null, null, {v: m.total, t:'n', s:5}]);
+
+    const porObra = [[CAB('Contrato'), CAB('Data'), CAB('Técnico'), CAB('Total R$')]];
+    m.obras.forEach(o => porObra.push([o.contrato, DAT(o.data), o.tecnico, DIN(o.total)]));
+
+    const filtros = [[CAB('Boletim de medição'), null],
+                     ['Período', periodoRotulo()],
+                     ['Técnico', tecnicoRotulo()],
+                     ['Obras no período', m.obras.length],
+                     ['Total', DIN(m.total)],
+                     ['Gerado em', DAT(new Date().toISOString().slice(0,10))]];
+
+    baixarXlsx('Medicao-' + m.de + '-a-' + m.ate + '.xlsx', [
+      {nome:'Medição',  larguras:[11,54,12,15,15], linhas: resumo, filtroAte: ate},
+      {nome:'Por obra', larguras:[14,12,26,15],    linhas: porObra},
+      {nome:'Filtros',  larguras:[22,42],          linhas: filtros, semFiltro:true},
+    ]);
     showToast('Planilha baixada');
   }
 
@@ -9682,6 +10871,7 @@
   // histórico dentro de `dados` — num documento que vira faturamento, saber
   // quem tirou uma aprovação e quando importa mais do que o status em si.
   async function trocarStatusObra(job, novoStatus, btn){
+    if(travadoPorFechamento(dataIsoObra(job), 'o status não pode mais mudar')) return;
     if(!job.row || !supabaseConfigured || !online){
       showToast('Sem conexão — tente de novo depois'); return;
     }
@@ -9818,6 +11008,10 @@
   });
 
   async function refreshJobsList(){
+    // sem isto o técnico só descobre que o mês está fechado quando o salvar
+    // dá erro de permissão do banco — que é a pior hora possível
+    carregarPeriodosFechados();
+    carregarComunicados();
     const gate = document.getElementById('jobsEmpresaGate');
     const listEl = document.getElementById('jobsList');
     const btnNovaJobs = document.getElementById('btnNovaObraJobs');
@@ -9883,7 +11077,7 @@
         const d = row.dados || {};
         const servicos = valuesItems
           .filter(v => Number((d.valuesQty || {})[v.code]) > 0)
-          .map(v => ({desc:v.desc, qtd:Number(d.valuesQty[v.code]), preco:v.price}));
+          .map(v => ({code:v.code, desc:v.desc, qtd:Number(d.valuesQty[v.code]), preco:v.price}));
         const materiais = materials
           .filter(m => Number((d.materialsQty || {})[m.id]) > 0)
           .map(m => ({nome:m.name, qtd:Number(d.materialsQty[m.id]),
