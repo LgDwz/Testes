@@ -306,6 +306,23 @@
   body.escolhendo-tecnico .tec:hover{border-color:var(--accent);}
   @media (prefers-reduced-motion:reduce){ .fila-obra.fantasma{transform:translate(-50%,-50%);} }
 
+  .campo-dica{font-size:11.5px;color:var(--text-faint);margin-top:5px;line-height:1.45;}
+  .hab-wrap{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:7px;}
+  .hab-rot{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.08em;
+    text-transform:uppercase;color:var(--text-faint);}
+  .hab-chip{min-height:30px;cursor:pointer;background:transparent;border:1px solid var(--border);
+    color:var(--text-faint);border-radius:15px;padding:0 11px;font-size:11.5px;
+    font-family:'IBM Plex Mono',monospace;}
+  .hab-chip.on{border-color:var(--success);color:var(--success);background:var(--success-dim);}
+  .hab-chip:disabled{opacity:.5;cursor:default;}
+  /* selo do tipo de obra: convencional e modernização precisam se distinguir
+     de longe na lista, senão o analista abre a errada */
+  .selo-tipo{display:inline-flex;align-items:center;gap:5px;flex-shrink:0;
+    font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.06em;
+    text-transform:uppercase;border-radius:20px;padding:2px 9px;border:1px solid;}
+  .selo-tipo.convencional{color:var(--st-azul);border-color:var(--st-azul);background:var(--accent-dim);}
+  .selo-tipo.modernizacao{color:var(--st-ambar);border-color:var(--st-ambar);background:var(--warning-dim);}
+
   /* Comunicados */
   .com-barra{padding:0 16px;margin-bottom:4px;}
   .com-aviso{border:1px solid var(--accent);background:var(--accent-dim);border-radius:10px;
@@ -2298,6 +2315,14 @@
         <label class="med-rot" for="medAte">Até</label>
         <input class="med-data" id="medAte" type="date">
       </div>
+      <div class="med-campo">
+        <label class="med-rot" for="medTipo">Tipo de obra</label>
+        <select class="med-data" id="medTipo">
+          <option value="">Todos</option>
+          <option value="convencional">Convencional</option>
+          <option value="modernizacao">Modernização</option>
+        </select>
+      </div>
       <div class="med-campo med-campo-tec">
         <label class="med-rot" for="medTecnico">Técnico</label>
         <select class="med-data" id="medTecnico"><option value="">Todos</option></select>
@@ -2420,6 +2445,16 @@
       <div id="dEmpresaWrap" style="display:none;">
         <div class="field-label" style="margin-top:4px;">Empresa *</div>
         <select class="field-input" id="dEmpresaAlvo"><option value="">Escolha a empresa</option></select>
+      </div>
+
+      <!-- O tipo é a primeira decisão: ele muda o que o técnico vai ver no
+           assistente e qual relatório sai no fim. Por isso vem antes do número. -->
+      <div class="field-label" style="margin-top:4px;">Tipo de obra *</div>
+      <div class="med-modos" id="dTipoObra" style="padding:2px 0 14px;">
+        <button type="button" class="med-modo ativo" data-tipo="convencional">
+          <b>Convencional</b>ativação de cliente</button>
+        <button type="button" class="med-modo" data-tipo="modernizacao">
+          <b>Modernização</b>melhoria / manutenção de rede</button>
       </div>
       <div class="field-label" style="margin-top:4px;">Obra *</div>
       <input class="field-input" id="dNumero" inputmode="numeric" placeholder="Ex: 2438766" autocomplete="off">
@@ -2636,7 +2671,7 @@
       </div>
 
       <div class="field-row">
-        <div class="field-group">
+        <div class="field-group so-convencional">
           <label class="field-label">CODTCOMP</label>
           <input class="field-input" id="fCodtcomp" placeholder="Ex: COTPS130/2025 IPEM">
         </div>
@@ -2660,6 +2695,53 @@
       <div class="field-group" style="margin-bottom:0;">
         <label class="field-label">Empresa contratada</label>
         <input class="field-input" id="fEmpresa" placeholder="Ex: CÂMARA MUNICIPAL DE PARANAGUÁ">
+      </div>
+
+      <!-- Só aparece em obra de modernização: são os campos do relatório de
+           manutenção de rede que a ativação convencional não tem. -->
+      <div id="camposModernizacao" style="display:none;">
+        <div class="field-group">
+          <label class="field-label">Descrição da atividade</label>
+          <input class="field-input" id="fAtividade" placeholder="Ex: MELHORIA DE REDE – PNG - 201">
+          <div class="campo-dica">Deixe em branco que eu monto a partir da identificação da obra.</div>
+        </div>
+        <div class="field-row">
+          <div class="field-group">
+            <label class="field-label">Tipo de falha</label>
+            <input class="field-input" id="fTipoFalha" list="listaTipoFalha" placeholder="Ex: Atenuação">
+            <datalist id="listaTipoFalha">
+              <option value="Atenuação"></option>
+              <option value="Rompimento"></option>
+              <option value="Alta perda"></option>
+              <option value="Rede sem capacidade"></option>
+              <option value="Preventiva"></option>
+            </datalist>
+          </div>
+          <div class="field-group">
+            <label class="field-label">Causa da falha</label>
+            <input class="field-input" id="fCausaFalha" list="listaCausaFalha" placeholder="Ex: Melhoria de Rede">
+            <datalist id="listaCausaFalha">
+              <option value="Melhoria de Rede"></option>
+              <option value="Desgaste natural"></option>
+              <option value="Dano por terceiros"></option>
+              <option value="Ampliação"></option>
+            </datalist>
+          </div>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Solução aplicada</label>
+          <input class="field-input" id="fSolucao" placeholder="Ex: Troca da Fosc / Para Nap Conectorizada">
+        </div>
+        <div class="field-row">
+          <div class="field-group">
+            <label class="field-label">Elaboração (quem montou o relatório)</label>
+            <input class="field-input" id="fElaborador" placeholder="Nome de quem elabora">
+          </div>
+          <div class="field-group">
+            <label class="field-label">Aprovação Ligga</label>
+            <input class="field-input" id="fAprovadorLigga" value="Dionatan Pedro da Silva">
+          </div>
+        </div>
       </div>
     </section>
 
@@ -2932,7 +3014,7 @@
 (function(){
   // Marque aqui a cada build enviado ao campo. O testador informa esta
   // string ao relatar um problema, senao nao da pra saber o que ele rodou.
-  const APP_VERSION = 'Enlace Ops · alpha-10.64 · 27/08/2026';
+  const APP_VERSION = 'Enlace Ops · alpha-10.66 · 28/08/2026';
 
   // ---------- Supabase config ----------
   // Troque pelos valores reais do seu projeto (Project Settings -> API no Supabase).
@@ -2955,8 +3037,21 @@
       })
     : null;
 
-  const steps = ['contrato','docsProjeto','fotos','docsExecutados','materiais','valores','review'];
+  // Dois tipos de obra, dois assistentes. A ativação convencional passa pelos
+  // documentos executados (asbuilt, unifilar) porque eles fazem parte do
+  // relatório dela; a modernização não tem esse passo — o relatório de
+  // manutenção de rede da Ligga não pede nenhum dos dois.
+  const PASSOS_POR_TIPO = {
+    convencional: ['contrato','docsProjeto','fotos','docsExecutados','materiais','valores','review'],
+    modernizacao: ['contrato','docsProjeto','fotos','materiais','valores','review'],
+  };
+  let steps = PASSOS_POR_TIPO.convencional;
   const stepLabels = {contrato:'Contrato', docsProjeto:'Docs', fotos:'Fotos', docsExecutados:'Execut.', materiais:'Materiais', valores:'Valores'};
+
+  // Índice da revisão deixou de ser 6 fixo: com o assistente da modernização
+  // sendo mais curto, qualquer número mágico aqui vira passo errado.
+  function idxReview(){ return steps.length - 1; }
+  function ehReview(i){ return i === idxReview(); }
   let currentStep = 0;
   let online = true;
 
@@ -2967,7 +3062,48 @@
     {id:'diagrama_doc', title:"Diagrama unifilar", storeKey:'projectDocs', hasObs:true},
   ];
 
-  const photoItems = [
+  // Tipo da obra que está aberta no assistente. Toda obra tem um; as antigas
+  // são convencionais (é o que o banco preenche por padrão na migração).
+  let tipoObraAtual = 'convencional';
+
+  // ---------- Tipos de obra ----------
+  // Ativação convencional e modernização (manutenção/melhoria de rede) são
+  // dois serviços diferentes pra operadora: fotos diferentes, catálogo
+  // diferente e relatório com outro formato. O tipo fica gravado na obra e o
+  // assistente inteiro se adapta a ele — o técnico não escolhe nada, recebe a
+  // obra já do tipo certo.
+  const TIPOS_OBRA = {
+    convencional: {
+      rot: 'Convencional',
+      rotLongo: 'Ativação convencional',
+      tituloPdf: 'Relatório Ativação Convencional',
+      nomePdf: 'Relatorio-Ativacao-Convencional',
+      cabecalho: 'Relatório ativação convencional',
+      prefixoNumero: 'Contrato:',
+      rotNumero: 'Número do contrato',
+      exemploNumero: 'Ex: 2237754',
+    },
+    modernizacao: {
+      rot: 'Modernização',
+      rotLongo: 'Modernização / melhoria de rede',
+      tituloPdf: 'Relatório de Manutenção de Rede',
+      nomePdf: 'Relatorio-Manutencao-Rede',
+      cabecalho: 'Relatório Melhoria',
+      prefixoNumero: '',
+      rotNumero: 'Identificação da obra',
+      exemploNumero: 'Ex: PNG - 201',
+    },
+  };
+
+  function rotuloTipo(t){ return (TIPOS_OBRA[t] || TIPOS_OBRA.convencional).rot; }
+  function ehModernizacao(){ return tipoObraAtual === 'modernizacao'; }
+  function valorCampo(id){
+    const el = document.getElementById(id);
+    return el ? el.value.trim() : '';
+  }
+
+  // ---------- Itens de foto, por tipo ----------
+  const ITENS_CONVENCIONAL = [
     {id:1, title:"Início do cabo com metragem", needsMeter:true, multiple:false, storeKey:'photos'},
     {id:8, title:"Chegada no poste do cliente", needsMeter:false, multiple:false, storeKey:'photos'},
     // Assinatura entra em photoItems de propósito: herda upload, rascunho
@@ -2989,13 +3125,39 @@
      storeKey:'photos', pedeDbm:true},
   ];
 
+  // Modernização: o relatório é de ANTES e DEPOIS. No modelo da Ligga cada foto
+  // leva um título do tipo "Evidências da Fosc Antes" — o "Fosc" ali é o
+  // elemento, e muda de obra pra obra (Fosc, NAP, poste, reserva técnica).
+  // Por isso não dá pra fixar uma lista de itens como na convencional: são dois
+  // baldes, ANTES e DEPOIS, com quantas fotos forem necessárias, e a legenda de
+  // cada foto é que diz o elemento. A legenda por foto já existia nas caixas.
+  const ITENS_MODERNIZACAO = [
+    {id:101, title:"Evidências ANTES", needsMeter:false, multiple:true, storeKey:'photos',
+     dica:'Como estava antes da intervenção. Na legenda escreva o elemento — Fosc, NAP, poste…',
+     momento:'Antes'},
+    {id:102, title:"Evidências DEPOIS", needsMeter:false, multiple:true, storeKey:'photos',
+     dica:'Como ficou depois. Mesma legenda do elemento correspondente.',
+     momento:'Depois'},
+    {id:103, title:"Leitura de sinal (opcional)", needsMeter:false, multiple:false,
+     storeKey:'photos', pedeDbm:true, opcional:true},
+  ];
+
+  // `photoItems` continua sendo "a lista do tipo que está aberto agora" — assim
+  // todo o resto do assistente (checklist, conferência, upload, rascunho) segue
+  // funcionando sem saber que existe mais de um tipo.
+  let photoItems = ITENS_CONVENCIONAL;
+  const ITENS_POR_TIPO = {convencional: ITENS_CONVENCIONAL, modernizacao: ITENS_MODERNIZACAO};
+
+  function itensDoTipo(t){ return ITENS_POR_TIPO[t] || ITENS_CONVENCIONAL; }
+
+
   // Documentos executados (o técnico produz, depois do serviço)
   const docExecItems = [
     {id:'asbuilt', title:"Asbuilt atualizado (rota real + metragem)", storeKey:'docsAtt', refItem:'projeto_doc', refLabel:'Ver documento de rota anexado no passo 2'},
     {id:'diagrama_att', title:"Diagrama unifilar atualizado", storeKey:'docsAtt', refItem:'diagrama_doc', refLabel:'Ver diagrama anexado no passo 2'},
   ];
 
-  const materials = [
+  const MAT_CONVENCIONAL = [
     {id:1, name:"CABO OPT CFOA SM ASU/AS 80S 12 FIBRAS"},
     {id:2, name:"CABO OPT CFO SM ASU/AS 80 RA S 6 FIBRAS"},
     {id:3, name:"ALÇA PRÉ-FORMADA P/CABO ÓPTICO AS FIT A 6,4 A 7,4MM 4V AL440MM"},
@@ -3005,7 +3167,7 @@
     {id:7, name:"CORDÃO ÓPTICO SM SC/APC-SC/APC SIMPLEX 2,0MM 1,5M"},
     {id:8, name:"ONU/ONT GPON"},
   ];
-  const valuesItems = [
+  const SERV_CONVENCIONAL = [
     {code:'02.18', desc:"Deslocamento intermunicipal", price:0.80},
     {code:'02.05', desc:"Instalação de cabo óptico aéreo auto-sustentável de qualquer tipo e capacidade, exceto cabo tipo drop para ativação de cliente final (Metros)", price:1.21},
     {code:'03.06', desc:"Conexão/terminação de fibras ópticas, utilizando conector mecânico ou fusão (Unidade)", price:16.32},
@@ -3017,6 +3179,37 @@
     {code:'04.01', desc:"Abordagem de cliente em rede convencional com rede interna de até 250 metros *", price:160.00},
     {code:'03.01', desc:"Abertura e Fechamento de conjunto emendam óptica. (subterrâneo/aéreo).", price:30.50},
   ];
+
+  // Catálogo de modernização — os itens que aparecem no modelo do relatório de
+  // manutenção de rede que você mandou. Os preços de 03.04 e 03.06 são os
+  // mesmos códigos que já existem na convencional; os outros três eu NÃO tenho
+  // (o relatório não traz valor) e entram zerados, pra você preencher na tela
+  // de catálogo. Zero aparece na medição como serviço sem faturar, então some
+  // do radar não fica.
+  const MAT_MODERNIZACAO = [
+    {id:1, name:"CONECTOR OPT CAMPO DROP COMPACTO"},
+    {id:2, name:"PROTETOR EMENDA FIBRA OPT 60MMX1MM"},
+    {id:3, name:"CAIXA NAP CONEC 16 ASS FINAL"},
+  ];
+  const SERV_MODERNIZACAO = [
+    {code:'03.08', desc:"Substituição de caixa terminal óptica ou NAP externa, exceto caixa pré-conectorizada (Unidade)", price:0},
+    {code:'03.06', desc:"Conexão/terminação de fibras ópticas, utilizando conector mecânico ou fusão (Unidade)", price:16.32},
+    {code:'03.04', desc:"Injeção de cabo em conjunto de emenda óptica (subterrânea/aérea) (Unidade)", price:41.50},
+    {code:'03.24', desc:"Identificação de CEO/TFO (Unidade)", price:0},
+    {code:'03.19', desc:"Programação e Acompanhamento de RDM — Impacto até 50 circuitos ativos (Unidade)", price:0},
+  ];
+
+  // Duas listas separadas, como você pediu: o que é de um tipo nunca aparece na
+  // tela do outro. `materials` e `valuesItems` continuam sendo "a lista do tipo
+  // aberto agora" — é o que o assistente inteiro já usa.
+  const CATALOGO = {
+    convencional: {materiais: MAT_CONVENCIONAL, servicos: SERV_CONVENCIONAL},
+    modernizacao: {materiais: MAT_MODERNIZACAO, servicos: SERV_MODERNIZACAO},
+  };
+  function catalogoDe(t){ return CATALOGO[t] || CATALOGO.convencional; }
+  let materials   = CATALOGO.convencional.materiais;
+  let valuesItems = CATALOGO.convencional.servicos;
+
 
   const dataState = {
     contract: {},
@@ -3069,7 +3262,9 @@
 
   function renderStepper(){
     stepperBar.innerHTML = '';
-    steps.slice(0,6).forEach((s, i)=>{
+    // era slice(0,6): número fixo. Com o assistente da modernização sendo mais
+    // curto, isso desenhava um sexto passo "undefined" no fim da barra.
+    steps.slice(0, idxReview()).forEach((s, i)=>{
       const pronto  = passoCompleto(s);
       const parcial = !pronto && (passosVisitados.has(i) || i < currentStep);
       const node = document.createElement('div');
@@ -3108,10 +3303,76 @@
     valores: document.getElementById('stepValores'),
     review: document.getElementById('stepReview'),
   };
+  // ---------- Trocar o assistente de tipo ----------
+  // Um lugar só decide tudo que muda entre os dois tipos: passos, checklist de
+  // fotos, catálogo, rótulos e os campos extras do contrato. Espalhar esses
+  // "if" pelo app seria a receita pra um deles ficar pra trás numa mudança
+  // futura e a obra sair com metade de cada formato.
+  function aplicarTipoObra(tipo, opts){
+    const t = TIPOS_OBRA[tipo] ? tipo : 'convencional';
+    tipoObraAtual = t;
+    steps = PASSOS_POR_TIPO[t];
+    photoItems = itensDoTipo(t);
+    materials   = catalogoDe(t).materiais;
+    valuesItems = catalogoDe(t).servicos;
+
+    const cfg = TIPOS_OBRA[t];
+    const mod = (t === 'modernizacao');
+
+    const bloco = document.getElementById('camposModernizacao');
+    if(bloco) bloco.style.display = mod ? '' : 'none';
+    document.querySelectorAll('.so-convencional').forEach(el=>{
+      el.style.display = mod ? 'none' : '';
+    });
+
+    // o primeiro campo do passo 1 muda de nome e de teclado: contrato é número,
+    // identificação de modernização é texto ("PNG - 201")
+    const num = document.getElementById('fNumero');
+    if(num){
+      num.placeholder = cfg.exemploNumero;
+      if(mod) num.removeAttribute('inputmode');
+      else num.setAttribute('inputmode', 'numeric');
+      const rot = num.closest('.field-group') && num.closest('.field-group').querySelector('.field-label');
+      if(rot) rot.innerHTML = esc(cfg.rotNumero) + ' <span class="req">*</span>';
+    }
+
+    const sub = document.querySelector('#stepContrato .step-sub');
+    if(sub) sub.textContent = mod
+      ? 'Dados do relatório de manutenção de rede.'
+      : 'Preencha as informações do cabeçalho do relatório.';
+
+    const tituloFotos = document.querySelector('#stepFotos .step-title');
+    if(tituloFotos) tituloFotos.textContent = mod ? 'Evidências antes e depois' : 'Checklist de fotos';
+    const subFotos = document.querySelector('#stepFotos .step-sub');
+    if(subFotos) subFotos.textContent = mod
+      ? 'Cada foto leva uma legenda com o elemento — Fosc, NAP, poste. Ela vira o título no relatório.'
+      : (subFotos.dataset.original || subFotos.textContent);
+
+    atualizarNumeracaoPassos();
+    if(!opts || !opts.semRedesenhar){
+      if(steps[currentStep] === 'materiais') renderMateriais();
+      if(steps[currentStep] === 'valores')   renderValores();
+    }
+    garantirCatalogo(t);
+  }
+
+  // "Passo 3 de 6" tem que virar "Passo 3 de 5" quando o assistente é o curto.
+  function atualizarNumeracaoPassos(){
+    const total = steps.length - 1;   // a revisão não é passo numerado
+    steps.forEach((nome, i)=>{
+      if(nome === 'review') return;
+      const sec = sections[nome];
+      if(!sec) return;
+      const eyebrow = sec.querySelector('.step-eyebrow');
+      if(eyebrow) eyebrow.textContent = 'Passo ' + (i+1) + ' de ' + total;
+    });
+  }
+
+
 
   function showStep(i){
     currentStep = i;
-    if(i < 6) passosVisitados.add(i);
+    if(!ehReview(i)) passosVisitados.add(i);
     if(typeof empilhar === 'function') empilhar({tela:'wizard', passo:i});
     Object.values(sections).forEach(s=>s.classList.remove('show'));
     sections[steps[i]].classList.add('show');
@@ -3130,7 +3391,7 @@
       // "os materiais do CRM não aparecem".
       if(steps[i] === 'materiais') renderMateriais();
       if(steps[i] === 'valores')   renderValores();
-      nextBtn.textContent = i === 5 ? 'Gerar relatório' : 'Próximo';
+      nextBtn.textContent = (i === idxReview() - 1) ? 'Gerar relatório' : 'Próximo';
       // "Salvar" só faz sentido numa obra que já existe no servidor — pra
       // quem está corrigindo materiais/valores de várias obras seguidas,
       // sem precisar passar pela revisão/PDF de cada uma pra voltar à lista.
@@ -3140,7 +3401,8 @@
       saveJobBtn.style.display = '';
       saveJobBtn.textContent = obraEditandoId ? 'Salvar' : 'Salvar e sair';
     }
-    if(i < 6) renderStepper();
+    if(!ehReview(i)) renderStepper();
+    atualizarNumeracaoPassos();
     window.scrollTo(0,0);
   }
 
@@ -3151,7 +3413,8 @@
   nextBtn.addEventListener('click', ()=>{
     if(currentStep === 0){
       // numero e data estao marcados com * mas nada impedia avancar vazio
-      const faltando = [['fNumero','número do contrato'], ['fData','data']]
+      const rotNum = ehModernizacao() ? 'a identificação da obra' : 'o número do contrato';
+      const faltando = [['fNumero', rotNum], ['fData','a data']]
         .filter(([id]) => !document.getElementById(id).value.trim());
       if(faltando.length){
         const el = document.getElementById(faltando[0][0]);
@@ -3170,6 +3433,13 @@
         cep: document.getElementById('fCep').value,
         coordenadas: document.getElementById('fCoord').value,
         empresa: document.getElementById('fEmpresa').value,
+        // campos que só existem no relatório de manutenção de rede
+        atividade: valorCampo('fAtividade'),
+        tipoFalha: valorCampo('fTipoFalha'),
+        causaFalha: valorCampo('fCausaFalha'),
+        solucao: valorCampo('fSolucao'),
+        elaborador: valorCampo('fElaborador'),
+        aprovadorLigga: valorCampo('fAprovadorLigga'),
       };
     }
     // Passo Fotos: em vez de descobrir lá na conferência que faltou foto, o
@@ -3184,7 +3454,7 @@
       });
       if(faltamFotos.length) return avisarFaltando(faltamFotos);
     }
-    if(currentStep < 6) showStep(currentStep+1);
+    if(currentStep < idxReview()) showStep(currentStep+1);
   });
 
   // Aviso do que falta, com toque pra pular direto ao item. Fica na tela até o
@@ -3221,7 +3491,7 @@
     box.querySelector('.aviso-faltando-x').addEventListener('click', ()=> box.remove());
     box.querySelector('.aviso-faltando-seguir').addEventListener('click', ()=>{
       box.remove();
-      if(currentStep < 6) showStep(currentStep+1);
+      if(currentStep < idxReview()) showStep(currentStep+1);
     });
     document.body.appendChild(box);
   }
@@ -3324,6 +3594,26 @@
     // pra comparar/anexar as duas juntas; identificação (id 4) some daqui
     // e é renderizada logo depois, como item cheio abaixo do par.
     const idPar1 = 3, idPar2 = 5;
+    // Na modernização não existe par de caixa: são dois blocos (antes/depois)
+    // com quantas fotos precisar, cada um com sua explicação em cima.
+    if(ehModernizacao()){
+      photoItems.forEach(item=>{
+        if(item.dica){
+          const d = document.createElement('div');
+          d.className = 'campo-dica';
+          d.style.cssText = 'margin:2px 2px 8px;font-size:12.5px;';
+          d.textContent = item.dica;
+          const bloco = item.multiple ? buildMultiPhotoGroup(item) : buildSinglePhotoCard(item);
+          const env = document.createElement('div');
+          env.style.marginBottom = '18px';
+          env.appendChild(bloco); env.appendChild(d);
+          fotosChecklist.appendChild(env);
+        } else {
+          fotosChecklist.appendChild(item.multiple ? buildMultiPhotoGroup(item) : buildSinglePhotoCard(item));
+        }
+      });
+      return;
+    }
     photoItems.forEach(item=>{
       if(item.id === idPar2) return; // já foi colocado dentro do par abaixo
       if(item.id === idPar1){
@@ -3642,12 +3932,18 @@
     const group = document.createElement('div');
     group.className = 'multi-group' + (entries.length ? ' has-entries' : '');
     group.dataset.photoAnchor = item.id;   // alvo do aviso "faltam N fotos"
+    // "caixa" é o vocabulário da ativação convencional (caixa aberta, fechada).
+    // Na modernização a mesma mecânica guarda EVIDÊNCIA, e a legenda é o
+    // elemento (Fosc, NAP) — chamar de caixa ali confundiria o técnico.
+    const uni = ehModernizacao()
+      ? {sing:'evidência', plu:'evidências', rot:'Evidência', dica:'Elemento — Fosc, NAP, poste…'}
+      : {sing:'caixa', plu:'caixas', rot:'Caixa', dica:'Identificação da caixa / observação...'};
     const entriesHtml = entries.map((entry, idx)=>`
       <div class="multi-entry" data-idx="${idx}">
         <div class="multi-entry-thumb"><img src="${entry.imgSrc}"></div>
         <div class="multi-entry-body">
-          <div class="multi-entry-label">Caixa ${idx+1} &middot; ${entry.time}</div>
-          <input class="multi-entry-legend" placeholder="Identificação da caixa / observação..." value="${esc(entry.legend||'')}" data-item-id="${item.id}" data-idx="${idx}">
+          <div class="multi-entry-label">${uni.rot} ${idx+1} &middot; ${entry.time}</div>
+          <input class="multi-entry-legend" placeholder="${uni.dica}" value="${esc(entry.legend||'')}" data-item-id="${item.id}" data-idx="${idx}">
         </div>
         <button class="multi-entry-remove" data-item-id="${item.id}" data-idx="${idx}" aria-label="Remover">&#10005;</button>
       </div>
@@ -3658,14 +3954,16 @@
         <div class="multi-header-body">
           <div class="multi-title">${item.title}</div>
           <div class="multi-count ${entries.length ? 'done' : 'pending'}">${
-            entries.length ? entries.length + (entries.length === 1 ? ' caixa anexada' : ' caixas anexadas') : 'nenhuma caixa anexada ainda'
+            entries.length
+              ? entries.length + ' ' + (entries.length === 1 ? uni.sing + ' anexada' : uni.plu + ' anexadas')
+              : 'nenhuma ' + uni.sing + ' anexada ainda'
           }</div>
         </div>
       </div>
       ${entries.length ? `<div class="multi-entries">${entriesHtml}</div>` : ''}
       <button class="multi-add-btn" type="button">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
-        Adicionar ${entries.length ? 'outra' : ''} caixa
+        Adicionar ${entries.length ? 'outra' : ''} ${uni.sing}
       </button>
     `;
     group.querySelector('.multi-add-btn').addEventListener('click', ()=> openCapture(item, null));
@@ -4162,40 +4460,62 @@
   // catálogo de materiais/serviços é por empresa — carrega uma vez por
   // empresa e reaproveita; se ainda não rodou o SQL de instalação das
   // tabelas (ou offline), fica nos itens padrão embutidos no app.
-  let catalogoEmpresaCarregada = null;   // comparada com empresaDoCatalogo() a cada render
+  let catalogoEmpresaCarregada = new Set();   // chaves "empresa|tipo" já carregadas
   let catalogoCarregando = null;
-  async function garantirCatalogo(){
+  // Carrega o catálogo de UM tipo. A chave do cache é empresa+tipo: obra de
+  // modernização e obra convencional têm listas separadas, e a lista de uma
+  // não pode ser servida na tela da outra.
+  async function garantirCatalogo(tipo){
+    const alvo = tipo || tipoObraAtual || 'convencional';
     const empId = empresaDoCatalogo();
     if(!supabaseConfigured || !online || !empId) return;
-    if(catalogoEmpresaCarregada === empId || catalogoCarregando === empId) return;
-    catalogoCarregando = empId;
+    const chave = empId + '|' + alvo;
+    if(catalogoEmpresaCarregada.has(chave) || catalogoCarregando === chave) return;
+    catalogoCarregando = chave;
     try{
+      // .eq('tipo', ...) só funciona depois do sql-tipos-de-obra.sql. Antes
+      // dele a coluna não existe e a consulta dá erro — por isso o catch
+      // devolve a lista embutida em vez de deixar a tela vazia.
       const [matsResp, servsResp] = await Promise.all([
-        supabaseClient.from('materiais_catalogo').select('*').eq('empresa_id', empId).order('ordem'),
-        supabaseClient.from('servicos_catalogo').select('*').eq('empresa_id', empId).order('ordem'),
+        supabaseClient.from('materiais_catalogo').select('*')
+          .eq('empresa_id', empId).eq('tipo', alvo).order('ordem'),
+        supabaseClient.from('servicos_catalogo').select('*')
+          .eq('empresa_id', empId).eq('tipo', alvo).order('ordem'),
       ]);
       const {data:mats, error:errMats} = matsResp;
       const {data:servs, error:errServs} = servsResp;
-      if(errMats) console.warn('catálogo: falha ao buscar materiais_catalogo, mantendo lista anterior:', errMats);
-      if(errServs) console.warn('catálogo: falha ao buscar servicos_catalogo, mantendo lista anterior:', errServs);
+      if(errMats) console.warn('catálogo: falha em materiais_catalogo, mantendo lista anterior:', errMats);
+      if(errServs) console.warn('catálogo: falha em servicos_catalogo, mantendo lista anterior:', errServs);
+
+      const acervo = catalogoDe(alvo);
       if(!errMats && mats && mats.length){
-        materials.length = 0;
-        mats.forEach(m => materials.push({id: m.item_id, name: m.nome}));
+        acervo.materiais.length = 0;
+        mats.forEach(m => acervo.materiais.push({id: m.item_id, name: m.nome}));
       }
       if(!errServs && servs && servs.length){
-        valuesItems.length = 0;
-        servs.forEach(s => valuesItems.push({code: s.code, desc: s.descricao, price: Number(s.preco)}));
+        acervo.servicos.length = 0;
+        servs.forEach(x => acervo.servicos.push({code: x.code, desc: x.descricao, price: Number(x.preco)}));
       }
-      // só marca como "carregado" (e para de tentar de novo) se as DUAS consultas
-      // deram certo — antes, uma falha isolada numa das duas tabelas (ex.: uma
-      // instabilidade momentânea de rede) já travava o catálogo inteiro na
-      // lista antiga até a pessoa fechar e abrir o app de novo, mesmo que os
-      // dados corretos já estivessem no banco.
-      if(!errMats && !errServs) catalogoEmpresaCarregada = empId;
-      if(steps[currentStep] === 'materiais') renderMateriais();
-      if(steps[currentStep] === 'valores') renderValores();
-    } catch(e){ console.warn('catálogo: erro ao buscar catálogo da empresa, mantendo itens padrão:', e); }
+      // só marca como carregado se as DUAS deram certo — antes, uma falha
+      // isolada numa das tabelas travava o catálogo inteiro na lista antiga
+      // até fechar e abrir o app, mesmo com o dado certo já no banco.
+      if(!errMats && !errServs) catalogoEmpresaCarregada.add(chave);
+
+      if(alvo === tipoObraAtual){
+        materials = acervo.materiais;
+        valuesItems = acervo.servicos;
+        if(steps[currentStep] === 'materiais') renderMateriais();
+        if(steps[currentStep] === 'valores') renderValores();
+      }
+    } catch(e){ console.warn('catálogo: erro ao buscar, mantendo itens padrão:', e); }
     finally { catalogoCarregando = null; }
+  }
+
+  // Carrega os dois tipos de uma vez. A lista de Obras mostra obras dos dois na
+  // mesma tela, então precisa dos dois catálogos pra montar material e serviço
+  // de cada cartão — senão o cartão da modernização sairia vazio.
+  function garantirCatalogoDosDois(){
+    return Promise.all([garantirCatalogo('convencional'), garantirCatalogo('modernizacao')]);
   }
 
   // ---------- Capture overlay (generic, driven by item.storeKey) ----------
@@ -4637,6 +4957,11 @@
     // a observa\u00e7\u00e3o some antes de anexar, n\u00e3o depois: assim o t\u00e9cnico j\u00e1
     // sabe pra qual se\u00e7\u00e3o (aberta/fechada/etc.) a foto vai antes de tirar.
     captureObsField.style.display = item.multiple ? 'block' : 'none';
+    // na modernização a legenda é o ELEMENTO, e ela vira o título da foto no
+    // relatório — o texto do campo tem que dizer isso
+    captureObsInput.placeholder = ehModernizacao()
+      ? 'Elemento — Fosc, NAP, poste…'
+      : 'Identificação da caixa / observação...';
     captureObsInput.value = (item.multiple && existing) ? (existing.legend || '') : '';
     meterField.classList.toggle('show', !!item.needsMeter);
     meterInput.value = existing ? existing.meter || '' : '';
@@ -4986,6 +5311,257 @@
     }
   }
 
+  // ---------- PDF de modernização (Relatório de Manutenção de Rede) ----------
+  // Montado em cima do modelo que a Ligga aprova: capa com moldura verde e
+  // rótulos em destaque amarelo, página de evidências ANTES/DEPOIS em grade de
+  // duas colunas, e a última página com as duas tabelas (serviço e material).
+  // O cabeçalho com os dois logos é o mesmo da convencional — vem por parâmetro.
+  const VERDE_MOLDURA = [0, 128, 55];
+  const AMARELO_MARCA = [255, 242, 0];
+
+  function pdfModernizacao(ctx){
+    const {doc, st, c, opts, header, CONTENT_TOP, PW, PH, M, CW,
+           contrato, dataRel, tecnico, cfgTipo} = ctx;
+
+    const verde = ()=> doc.setDrawColor(VERDE_MOLDURA[0], VERDE_MOLDURA[1], VERDE_MOLDURA[2]);
+    const preto = ()=> doc.setDrawColor(0,0,0);
+
+    // rótulo com tarja amarela atrás, como no modelo
+    function marcado(txt, x, y, tam){
+      doc.setFont('helvetica','bold'); doc.setFontSize(tam || 10);
+      const w = doc.getTextWidth(txt);
+      doc.setFillColor(AMARELO_MARCA[0], AMARELO_MARCA[1], AMARELO_MARCA[2]);
+      doc.rect(x - 0.6, y - (tam || 10) * 0.36, w + 1.2, (tam || 10) * 0.48, 'F');
+      doc.setTextColor(0,0,0);
+      doc.text(txt, x, y);
+      return w;
+    }
+
+    // ================= PÁGINA 1 — CAPA =================
+    header();
+    let y = CONTENT_TOP;
+
+    verde(); doc.setLineWidth(0.8);
+    const topoMoldura = y;
+
+    // título
+    doc.setFillColor(217,217,217);
+    doc.rect(M, y, CW, 12, 'FD');
+    doc.setFont('helvetica','bold'); doc.setFontSize(17); doc.setTextColor(0,0,0);
+    doc.text('RELATÓRIO DE MANUTENÇÃO DE REDE', PW/2, y + 8.2, {align:'center'});
+    y += 12;
+
+    doc.setLineWidth(0.6);
+
+    // empresa contratada
+    const H_EMP = 17;
+    doc.rect(M, y, CW, H_EMP);
+    const wEmp = marcado('EMPRESA CONTRATADA', M + 3, y + 6, 10);
+    doc.setFont('helvetica','bold'); doc.setFontSize(10);
+    doc.text(': ' + (c.empresa || 'Cip Telecom'), M + 3 + wEmp, y + 6);
+    y += H_EMP;
+
+    // descrição da atividade
+    const H_ATIV = 42;
+    doc.rect(M, y, CW, H_ATIV);
+    const wAtiv = marcado('DESCRIÇÃO DA ATIVIDADE', M + 3, y + 6, 10);
+    doc.setFont('helvetica','bold'); doc.text(':', M + 3 + wAtiv, y + 6);
+    doc.setFont('helvetica','normal'); doc.setFontSize(10);
+    const atividade = (c.atividade || ('MELHORIA DE REDE – ' + contrato)).toUpperCase();
+    doc.text(doc.splitTextToSize(atividade, CW - 8), M + 3, y + 15);
+    y += H_ATIV;
+
+    // descrição da falha
+    const H_FALHA = 48;
+    doc.rect(M, y, CW, H_FALHA);
+    const wFal = marcado('DESCRIÇÃO DA FALHA', M + 3, y + 6, 10);
+    doc.setFont('helvetica','bold'); doc.text(':', M + 3 + wFal, y + 6);
+    let yf = y + 15;
+    [['Tipo de Falha: ', c.tipoFalha || '—'],
+     ['Causa Falha: ',  c.causaFalha || '—'],
+     ['Solução Aplicada: ', c.solucao || '—']].forEach(([rot, val])=>{
+      doc.setFont('helvetica','bold'); doc.setFontSize(10);
+      doc.text(rot, M + 3, yf);
+      const wr = doc.getTextWidth(rot);
+      doc.setFont('helvetica','bold');
+      const linhas = doc.splitTextToSize(String(val), CW - 8 - wr);
+      doc.text(linhas, M + 3 + wr, yf);
+      yf += 6 * Math.max(1, linhas.length);
+    });
+    y += H_FALHA;
+
+    // controle de revisão
+    const H_REV = 30;
+    doc.rect(M, y, CW, H_REV);
+    const wRev = marcado('CONTROLE DE REVISÃO', M + 3, y + 6, 10);
+    doc.setFont('helvetica','bold'); doc.text(':', M + 3 + wRev, y + 6);
+    doc.setFont('helvetica','bold'); doc.setFontSize(10);
+    doc.text('Rev. 01 (' + dataRel + ') ', M + 3, y + 16);
+    const wR2 = doc.getTextWidth('Rev. 01 (' + dataRel + ') ');
+    doc.setFont('helvetica','normal');
+    doc.text('– Elaboração Inicial', M + 3 + wR2, y + 16);
+    y += H_REV;
+
+    // responsáveis
+    const H_RESP = 62;
+    doc.rect(M, y, CW, H_RESP);
+    const meio = M + CW/2;
+    const wResp = doc.getTextWidth('Responsáveis:');
+    marcado('Responsáveis:', meio - wResp/2, y + 7, 10);
+
+    const colW = CW/3;
+    const assinantes = [
+      ['ELABORAÇÃO', c.elaborador || '', ''],
+      ['EXECUÇÃO',   tecnico || '',      dataRel],
+      ['APROVAÇÃO LIGGA', c.aprovadorLigga || 'Dionatan Pedro da Silva', '00/00/0000'],
+    ];
+    assinantes.forEach(([papel, nome, quando], i)=>{
+      const cx = M + colW*i + colW/2;
+      doc.setLineWidth(0.5); doc.setLineDashPattern([1.4, 1.2], 0); preto();
+      doc.line(cx - 24, y + 26, cx + 24, y + 26);
+      doc.setLineDashPattern([], 0); verde(); doc.setLineWidth(0.6);
+      doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(0,0,0);
+      doc.text(papel, cx, y + 32, {align:'center'});
+      doc.setFontSize(8.5);
+      // o campo fica marcado quando está vazio (é o que a pessoa preenche à mão)
+      const xr = M + colW*i + 6;
+      if(nome){
+        doc.text('NOME: ' + nome, xr, y + 44);
+      } else {
+        marcado('NOME:', xr, y + 44, 8.5);
+      }
+      if(quando){
+        doc.text('DATA: ' + quando, xr, y + 50);
+      } else {
+        marcado('DATA:', xr, y + 50);
+      }
+    });
+    y += H_RESP;
+
+    // a moldura verde por fora de tudo
+    verde(); doc.setLineWidth(0.9);
+    doc.rect(M, topoMoldura, CW, y - topoMoldura);
+    preto(); doc.setLineWidth(0.35);
+
+    // ================= PÁGINAS DE EVIDÊNCIA =================
+    // duas colunas, título amarelo em cima de cada foto — igual ao modelo
+    const itens = itensDoTipo('modernizacao');
+    const evid = [];
+    itens.filter(it => it.momento).forEach(it=>{
+      const guardadas = (st.photos || {})[it.id];
+      const lista = it.multiple ? (guardadas || []) : (guardadas ? [guardadas] : []);
+      lista.forEach(f=>{
+        // a legenda da foto múltipla é gravada em `legend`; a da foto única, em
+        // `obs`. As duas viram o nome do elemento no título da evidência.
+        const elemento = (f.legend || f.obs || '').trim();
+        evid.push({
+          rot: 'Evidências ' + (elemento ? 'da ' + elemento + ' ' : '') + it.momento,
+          src: f.dataUrl || f.imgSrc || null,
+        });
+      });
+    });
+
+    if(evid.length){
+      const COL_W = (CW - 10) / 2, IMG_H = 62;
+      let i = 0;
+      while(i < evid.length){
+        doc.addPage(); header();
+        let ey = CONTENT_TOP + 2;
+        for(let linha = 0; linha < 2 && i < evid.length; linha++){
+          for(let col = 0; col < 2 && i < evid.length; col++, i++){
+            const ex = M + col*(COL_W + 10);
+            const e = evid[i];
+            doc.setFont('helvetica','bold'); doc.setFontSize(9.5);
+            const wt = doc.getTextWidth(e.rot);
+            marcado(e.rot, ex + COL_W/2 - wt/2, ey + 4, 9.5);
+            if(e.src){
+              try{ doc.addImage(e.src, 'JPEG', ex, ey + 7, COL_W, IMG_H); }
+              catch(err){
+                doc.setFont('helvetica','normal'); doc.setFontSize(9);
+                doc.text('(imagem não pôde ser incluída)', ex + 2, ey + 20);
+              }
+            }
+            doc.setLineWidth(0.3); preto();
+            doc.rect(ex, ey + 7, COL_W, IMG_H);
+          }
+          ey += IMG_H + 22;
+        }
+      }
+    }
+
+    // ================= ÚLTIMA PÁGINA — SERVIÇOS E MATERIAIS =================
+    doc.addPage(); header();
+    let ty = CONTENT_TOP + 2;
+
+    doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(0,0,0);
+    doc.text('5.', M, ty + 5);
+    marcado('Descrição dos Serviços Executados e Material Utilizados', M + 6, ty + 5, 11);
+    doc.setFont('helvetica','bold');
+    doc.text(':', M + 6 + doc.getTextWidth('Descrição dos Serviços Executados e Material Utilizados'), ty + 5);
+    ty += 16;
+
+    const TAB_X = M + 12, TAB_W = CW - 24, COL_QTD = TAB_W * 0.42;
+
+    function tabela(titulo, linhas, ty0){
+      let yy = ty0;
+      verde(); doc.setLineWidth(0.5);
+      // cabeçalho
+      doc.rect(TAB_X, yy, COL_QTD, 8);
+      doc.rect(TAB_X + COL_QTD, yy, TAB_W - COL_QTD, 8);
+      doc.setFontSize(10);
+      const w1 = doc.getTextWidth('QUANTIDADE');
+      marcado('QUANTIDADE', TAB_X + COL_QTD/2 - w1/2, yy + 5.6, 10);
+      const w2 = doc.getTextWidth(titulo);
+      marcado(titulo, TAB_X + COL_QTD + (TAB_W - COL_QTD)/2 - w2/2, yy + 5.6, 10);
+      yy += 8;
+
+      doc.setFont('helvetica','normal'); doc.setFontSize(9.5);
+      linhas.forEach((l, idx)=>{
+        const texto = doc.splitTextToSize(l.texto, TAB_W - COL_QTD - 6);
+        const h = Math.max(9, 4.6 * texto.length + 4);
+        if(idx % 2 === 0){
+          doc.setFillColor(217,217,217);
+          doc.rect(TAB_X, yy, COL_QTD, h, 'F');
+          doc.rect(TAB_X + COL_QTD, yy, TAB_W - COL_QTD, h, 'F');
+        }
+        verde();
+        doc.rect(TAB_X, yy, COL_QTD, h);
+        doc.rect(TAB_X + COL_QTD, yy, TAB_W - COL_QTD, h);
+        doc.setTextColor(0,0,0);
+        doc.text(String(l.qtd), TAB_X + COL_QTD/2, yy + 6, {align:'center'});
+        doc.text(texto, TAB_X + COL_QTD + 3, yy + 6);
+        yy += h;
+      });
+      // linhas em branco, como no formulário original
+      for(let k = 0; k < 3; k++){
+        if(k % 2 === 0){
+          doc.setFillColor(217,217,217);
+          doc.rect(TAB_X, yy, COL_QTD, 7, 'F');
+          doc.rect(TAB_X + COL_QTD, yy, TAB_W - COL_QTD, 7, 'F');
+        }
+        verde();
+        doc.rect(TAB_X, yy, COL_QTD, 7);
+        doc.rect(TAB_X + COL_QTD, yy, TAB_W - COL_QTD, 7);
+        yy += 7;
+      }
+      return yy;
+    }
+
+    const servs = servicosDaObra(st, 'modernizacao')
+      .map(v => ({qtd: v.qtd, texto: v.code + '- ' + v.desc}));
+    const mats = materiaisDaObra(st, 'modernizacao')
+      .map(m => ({qtd: m.qtd, texto: m.nome}));
+
+    ty = tabela('SERVIÇO EXECUTADO', servs, ty) + 10;
+    tabela('MATERIAL', mats, ty);
+    preto(); doc.setLineWidth(0.35);
+
+    const sufixo = opts.anexoInterno ? '-com-anexo' : '';
+    const nomePdf = cfgTipo.nomePdf + '-' + String(contrato).replace(/[^\w.-]+/g, '-') + sufixo + '.pdf';
+    if(opts.comoBlob) return {nome: nomePdf, blob: doc.output('blob')};
+    doc.save(nomePdf);
+  }
+
   // ---------- Geração real do PDF (formato Relatório Ativação Convencional) ----------
   function isImageDataUrl(src){
     return typeof src === 'string' && src.indexOf('data:image') === 0;
@@ -5073,6 +5649,11 @@
     const doc = new jsPDF({unit:'mm', format:'a4'});
 
     const PW = 210, PH = 297, M = 15, CW = PW - 2*M;
+    // o tipo vem da obra impressa (a lista manda opts.tipo), não do que está
+    // aberto no assistente — senão reimprimir uma obra da lista sairia com o
+    // formato errado
+    const tipoRelatorio = opts.tipo || (st.tipoObra) || tipoObraAtual || 'convencional';
+    const cfgTipo = TIPOS_OBRA[tipoRelatorio] || TIPOS_OBRA.convencional;
     const c = st.contract || {};
     const contrato = c.numero || 'sem-numero';
     const dataRel = toDateBR(c.data) || new Date().toLocaleDateString('pt-BR');
@@ -5097,11 +5678,11 @@
       const rx = M + leftW + 3, rw = PW - M - rx, titleH = 11.5;
       doc.rect(rx, y, rw, titleH);
       doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(0,0,0);
-      doc.text('Relatório ativação convencional', rx+rw/2, y+4.6, {align:'center'});
+      doc.text(cfgTipo.cabecalho, rx+rw/2, y+4.6, {align:'center'});
       doc.setLineWidth(0.3);
       doc.line(rx, y+6.4, rx+rw, y+6.4);
       doc.setTextColor(230,0,0);
-      doc.text('Contrato:'+contrato, rx+rw/2, y+10, {align:'center'});
+      doc.text(cfgTipo.prefixoNumero + contrato, rx+rw/2, y+10, {align:'center'});
       doc.setTextColor(0,0,0); doc.setLineWidth(0.35);
 
       const by = y + titleH + 0.5, bh = h - titleH - 0.5, dw = 40;
@@ -5111,6 +5692,13 @@
       doc.setFontSize(8.5);
       doc.text(dataRel, rx+dw/2, by+7.6, {align:'center'});
       doc.rect(rx+dw+2, by, rw-dw-2, bh);
+    }
+
+    // A modernização é outro documento — capa, evidências antes/depois e as
+    // duas tabelas. Só o cabeçalho (logos + caixa da direita) é compartilhado.
+    if(tipoRelatorio === 'modernizacao'){
+      return pdfModernizacao({doc, st, c, opts, header, CONTENT_TOP,
+        PW, PH, M, CW, contrato, dataRel, tecnico, cfgTipo});
     }
 
     // ================= PAGINA 1 - CAPA =================
@@ -5451,7 +6039,7 @@
       // pelo helper, não por materials.filter: o que a obra tem gravado não
       // pode sumir do documento que vai pra operadora só porque o item saiu
       // do catálogo (ou porque o catálogo ainda não terminou de carregar)
-      const usados = materiaisDaObra(st);
+      const usados = materiaisDaObra(st, tipoRelatorio);
       doc.addPage(); header();
       y = CONTENT_TOP + 4;
       doc.setFont('helvetica','bold'); doc.setFontSize(13);
@@ -5469,7 +6057,7 @@
         });
       }
 
-      const servicos = servicosDaObra(st);
+      const servicos = servicosDaObra(st, tipoRelatorio);
       doc.addPage(); header();
       y = CONTENT_TOP + 4;
       doc.setFont('helvetica','bold'); doc.setFontSize(13);
@@ -5495,7 +6083,7 @@
     }
 
     const sufixo = anexoInterno ? '-com-anexo' : '';
-    const nomePdf = 'Relatorio-Ativacao-Convencional-' + contrato + sufixo + '.pdf';
+    const nomePdf = cfgTipo.nomePdf + '-' + String(contrato).replace(/[^\w.-]+/g,'-') + sufixo + '.pdf';
     // opts.comoBlob: em vez de baixar, devolve o arquivo pra quem chamou —
     // é assim que o pacote .zip consegue incluir o relatório junto dos anexos
     if(opts.comoBlob) return {nome: nomePdf, blob: doc.output('blob')};
@@ -5820,7 +6408,7 @@
         job.state = await buildStateFromRow(job.row);   // fica em cache no job
       }
 
-      generatePDF({state: job.state, tecnico: job.tecnico});
+      generatePDF({state: job.state, tecnico: job.tecnico, tipo: job.tipo});
       showToast('PDF gerado \u2014 confira os downloads do seu navegador');
     } catch(err){
       showToast('Não deu pra montar o PDF: ' + (err.message || err));
@@ -6088,7 +6676,7 @@
         job.state = await buildStateFromRow(job.row);
       }
       if(job.state){
-        const r = generatePDF({state: job.state, tecnico: job.tecnico, comoBlob: true});
+        const r = generatePDF({state: job.state, tecnico: job.tecnico, tipo: job.tipo, comoBlob: true});
         if(r) arquivos.push({nome: r.nome, dados: new Uint8Array(await r.blob.arrayBuffer()), rot:'relatório'});
         else faltando.push('relatório fotográfico');   // sem isto o aviso prometia o que não entregou
       } else if(!job.row){
@@ -6202,10 +6790,12 @@
       const payload = {
         contrato: contractNumero,
         status: 'enviado',
+        tipo_obra: tipoObraAtual,
         empresa_id: obraEmpresaId || minhaEmpresa(),
         tecnico_id: obraDonoId || (perfilAtual && perfilAtual.id !== 'demo' ? perfilAtual.id : undefined),
         dados: {
           contract: dataState.contract,
+          tipoObra: tipoObraAtual,
           materialsQty: dataState.materialsQty,
           materialsExtra: dataState.materialsExtra,
           valuesQty: dataState.valuesQty,
@@ -6326,6 +6916,7 @@
       const campos = {
         dados: {
           contract: dataState.contract,
+          tipoObra: tipoObraAtual,
           materialsQty: dataState.materialsQty,
           materialsExtra: dataState.materialsExtra,
           valuesQty: dataState.valuesQty,
@@ -6380,10 +6971,12 @@
       const payload = {
         contrato: numero,
         status: 'rascunho',
+        tipo_obra: tipoObraAtual,
         empresa_id: obraEmpresaId || minhaEmpresa(),
         tecnico_id: obraDonoId || (perfilAtual && perfilAtual.id !== 'demo' ? perfilAtual.id : undefined),
         dados: {
           contract: dataState.contract,
+          tipoObra: tipoObraAtual,
           materialsQty: dataState.materialsQty,
           materialsExtra: dataState.materialsExtra,
           valuesQty: dataState.valuesQty,
@@ -6937,6 +7530,11 @@
       obraEmpresaId  = job.row ? (job.row.empresa_id || null) : null;
       statusObraAtual = job.row ? job.row.status : null;
 
+      // o tipo tem que valer ANTES de preencher e desenhar: é ele que decide
+      // os passos, o checklist de fotos e qual catálogo entra na tela
+      aplicarTipoObra((job.row && job.row.tipo_obra) || (job.state && job.state.tipoObra)
+                      || job.tipo || 'convencional', {semRedesenhar:true});
+
       preencherCamposContrato();
       aplicarModoLeitura();
       renderDocsProjeto(); renderFotos(); renderDocsExecutados();
@@ -6952,7 +7550,9 @@
       }
 
       showAppView('wizard');
-      showStep(ehTecnico() ? 2 : 0);   // técnico cai direto nas fotos
+      // "técnico cai direto nas fotos": achar o passo pelo nome, não por 2 —
+      // no assistente da modernização as fotos não estão no mesmo índice
+      showStep(ehTecnico() ? Math.max(0, steps.indexOf('fotos')) : 0);
     } catch(err){
       showToast('Não deu pra abrir: ' + (err.message || err));
     } finally {
@@ -7165,7 +7765,8 @@
     };
   }
 
-  function materiaisDaObra(d){
+  function materiaisDaObra(d, tipo){
+    const materials = catalogoDe(tipo || (d && d.tipoObra) || tipoObraAtual).materiais;
     const qtds = (d || {}).materialsQty || {};
     const extra = (d || {}).materialsExtra || {};
     const linha = (id, nome, q) => ({
@@ -7187,7 +7788,8 @@
     return lista;
   }
 
-  function servicosDaObra(d){
+  function servicosDaObra(d, tipo){
+    const valuesItems = catalogoDe(tipo || (d && d.tipoObra) || tipoObraAtual).servicos;
     const qtds = (d || {}).valuesQty || {};
     const lista = [];
     valuesItems.forEach(v=>{
@@ -7265,7 +7867,7 @@
       }
       // idem: o valor em R$ dos indicadores sai do catálogo de serviços
       const [{data:tecs, error}, {data:obras}, {data:eqs}] =
-        await Promise.all([qTecsQuadro, qObrasQuadro, qEqsQuadro, garantirCatalogo()]);
+        await Promise.all([qTecsQuadro, qObrasQuadro, qEqsQuadro, garantirCatalogoDosDois()]);
       if(error) throw error;
 
       const nomeEq = {};
@@ -7851,6 +8453,41 @@
   }
 
   // lista de tecnicos, com a carga de cada um
+  // ---------- Tipo escolhido no despacho ----------
+  let tipoDespachoAtual = 'convencional';
+  function tipoDespacho(){ return tipoDespachoAtual; }
+
+  (function ligarTipoDespacho(){
+    const cx = document.getElementById('dTipoObra');
+    if(!cx) return;
+    cx.querySelectorAll('.med-modo').forEach(b=>{
+      b.addEventListener('click', ()=>{
+        tipoDespachoAtual = b.dataset.tipo;
+        cx.querySelectorAll('.med-modo').forEach(x=>
+          x.classList.toggle('ativo', x.dataset.tipo === tipoDespachoAtual));
+        pintarSeletorTecnico();
+      });
+    });
+  })();
+
+  // ---------- Habilitação do técnico ----------
+  // Você falou em "cargo", mas cargo não resolve o seu próprio exemplo: existe
+  // técnico que faz os dois tipos, e ele não pode precisar de duas contas. Então
+  // o papel continua 'tecnico' e o que muda é a lista do que ele executa.
+  const HABILITACOES = [
+    {id:'convencional', rot:'Convencional'},
+    {id:'modernizacao', rot:'Modernização'},
+  ];
+
+  function habilitacoesDe(perfil){
+    const h = perfil && perfil.habilitacoes;
+    if(Array.isArray(h) && h.length) return h;
+    return ['convencional'];    // quem ainda não foi marcado faz o que a equipe já fazia
+  }
+  function habilitadoPara(perfil, tipo){
+    return habilitacoesDe(perfil).includes(tipo);
+  }
+
   async function carregarTecnicos(){
     const sel = document.getElementById('dTecnico');
     // dono do produto sem ter escolhido a empresa ainda não pode ver
@@ -7864,7 +8501,9 @@
       // dono do produto dentro da instância de uma empresa só pode despachar
       // pros técnicos DELA — sem esse filtro o RLS do superadmin enxerga
       // técnicos de todas as empresas misturados no mesmo seletor.
-      let qTecnicos = supabaseClient.from('perfis').select('id,nome,email,equipe_id,status_manual').eq('papel','tecnico').eq('aprovado', true);
+      let qTecnicos = supabaseClient.from('perfis')
+        .select('id,nome,email,equipe_id,status_manual,habilitacoes')
+        .eq('papel','tecnico').eq('aprovado', true);
       if(empAlvo) qTecnicos = qTecnicos.eq('empresa_id', empAlvo);
       const [{data:perfis}, {data:obras}] = await Promise.all([
         qTecnicos,
@@ -7884,13 +8523,29 @@
         sel.innerHTML = '<option value="">Nenhum técnico liberado ainda</option>';
         return;
       }
-      const AVISO_MANUAL = {falta:' · faltou hoje', folga:' · de folga', ausencia:' · ausência programada'};
-      sel.innerHTML = '<option value="">Sem técnico por enquanto</option>' + tecnicosCache.map(t=>
-        `<option value="${esc(t.id)}">${esc(t.nome || t.email)} — ${t.carga} em aberto (${esc(t.equipe)})${AVISO_MANUAL[t.status_manual] || ''}</option>`
-      ).join('');
+      pintarSeletorTecnico();
     } catch(e){
       sel.innerHTML = '<option value="">Não deu pra carregar</option>';
     }
+  }
+
+  // Separada da busca porque trocar o TIPO no despacho tem que repintar a lista
+  // sem ir de novo no servidor.
+  const AVISO_MANUAL = {falta:' · faltou hoje', folga:' · de folga', ausencia:' · ausência programada'};
+  function pintarSeletorTecnico(){
+    const sel = document.getElementById('dTecnico');
+    if(!sel || !tecnicosCache.length) return;
+    const escolhido = sel.value;
+    const linha = t => `<option value="${esc(t.id)}">${esc(t.nome || t.email)} — ${t.carga} em aberto (${esc(t.equipe)})${AVISO_MANUAL[t.status_manual] || ''}</option>`;
+    const apto  = tecnicosCache.filter(t => habilitadoPara(t, tipoDespacho()));
+    const resto = tecnicosCache.filter(t => !habilitadoPara(t, tipoDespacho()));
+    // quem não é habilitado não some da lista, só sai do grupo de cima: no dia
+    // em que faltar gente o escritório precisa poder despachar assim mesmo
+    sel.innerHTML = '<option value="">Sem técnico por enquanto</option>'
+      + apto.map(linha).join('')
+      + (resto.length ? '<optgroup label="Sem habilitação em ' + esc(rotuloTipo(tipoDespacho()))
+                        + '">' + resto.map(linha).join('') + '</optgroup>' : '');
+    sel.value = escolhido;
   }
 
   document.getElementById('dTecnico').addEventListener('change', (e)=>{
@@ -8001,6 +8656,7 @@
       const {error} = await supabaseClient.from(SUPABASE_TABLE).insert({
         contrato: numero,
         status: tecnico ? 'despachada' : 'pendente',
+        tipo_obra: tipoDespacho(),
         empresa_id: emp,
         tecnico_id: tecnico || null,
         despachado_por: perfilAtual.id,
@@ -8008,6 +8664,7 @@
         observacao_os: document.getElementById('dObs').value.trim() || null,
         dados: {
           contract: contrato,
+          tipoObra: tipoDespacho(),
           arquivos: {photos:{}, projectDocs: paths, docsAtt:{}},
           meta: {photos:{}, projectDocs:{}, docsAtt:{}},
           materialsQty: {}, valuesQty: {},
@@ -8261,6 +8918,12 @@
           <div class="user-row-nome">${esc(u.nome || '(sem nome)')}${souEu ? ' · você' : ''}</div>
           <div class="user-row-mail">${esc(u.email || '')}</div>
           <div class="user-row-meta">${tempoRelativo(u.ultimo_acesso)} · ${nObras} ${nObras === 1 ? 'obra' : 'obras'}</div>
+          ${u.papel === 'tecnico' && ehOperador() ? `
+          <div class="hab-wrap">
+            <span class="hab-rot">Executa</span>
+            ${HABILITACOES.map(h => `<button type="button" class="hab-chip${habilitadoPara(u, h.id) ? ' on' : ''}"
+               data-hab="${h.id}">${esc(h.rot)}</button>`).join('')}
+          </div>` : ''}
           ${podeVincularEmpresa
             ? `<div class="user-empresa-wrap">
                  <span class="user-row-meta user-empresa-label" style="color:var(--accent);">${esc(nomeEmpresa)}</span>
@@ -8294,6 +8957,36 @@
       const empLabel = row.querySelector('.user-empresa-label');
       const btn = row.querySelector('[data-acao="liberar"]');
       const btnDel = row.querySelector('[data-acao="excluir"]');
+      // Habilitação: um toque liga/desliga o tipo. Não deixo zerar tudo — técnico
+      // sem habilitação nenhuma sumiria de todo despacho e viraria um sumiço
+      // difícil de explicar.
+      row.querySelectorAll('.hab-chip').forEach(chip=>{
+        chip.addEventListener('click', async (e)=>{
+          e.stopPropagation();
+          const atual = habilitacoesDe(u).slice();
+          const alvo = chip.dataset.hab;
+          const i = atual.indexOf(alvo);
+          if(i >= 0){
+            if(atual.length === 1){ showToast('O técnico precisa executar pelo menos um tipo'); return; }
+            atual.splice(i, 1);
+          } else {
+            atual.push(alvo);
+          }
+          chip.disabled = true;
+          try{
+            const {error} = await supabaseClient.from('perfis')
+              .update({habilitacoes: atual}).eq('id', u.id);
+            if(error) throw error;
+            u.habilitacoes = atual;
+            chip.classList.toggle('on', atual.includes(alvo));
+            showToast((u.nome || 'Técnico') + ' agora executa: '
+              + atual.map(rotuloTipo).join(' e '));
+          } catch(err){
+            showToast('Não deu pra salvar: ' + (err.message || err));
+          } finally { chip.disabled = false; }
+        });
+      });
+
       const btnVerObras = row.querySelector('[data-acao="ver-obras"]');
       if(btnVerObras){
         btnVerObras.addEventListener('click', (e)=>{ e.stopPropagation(); abrirObrasTecnico(u); });
@@ -9146,30 +9839,38 @@
     const db = {
       empresas: [{id:1, nome:'Enlace Demo Telecom', ativa:true}],
       materiais_catalogo: [], servicos_catalogo: [],
+      // um comunicado já no ar, ainda sem ninguém ter confirmado: sem isto o
+      // painel da demonstração abria vazio e o recurso não aparecia pra quem
+      // está conhecendo o produto
+      comunicados: [{id:1, empresa_id:1, ativo:true, prioridade:'urgente',
+        titulo:'Retirada de material mudou de lugar',
+        corpo:'A partir de segunda o material sai do depósito da Rua Ipiranga, não mais da sede. Levem a OS impressa.',
+        criado_em: hoje + 'T07:30:00.000Z', expira_em:null, criado_por:'d-ana'}],
+      comunicado_leituras: [],
       equipes:  [{id:1, nome:'Equipe Norte', empresa_id:1}, {id:2, nome:'Equipe Sul', empresa_id:1}],
       perfis: [
         {id:'d-adm', nome:'Você (demonstração)', email:'demo@enlace.app', papel:'admin',    aprovado:true, empresa_id:1},
         {id:'d-ana', nome:'Ana Despacho',        email:'ana@demo.app',    papel:'analista', aprovado:true, empresa_id:1},
-        {id:'d-t1',  nome:'Carlos Andrade',      email:'carlos@demo.app', papel:'tecnico',  aprovado:true, empresa_id:1, equipe_id:1},
-        {id:'d-t2',  nome:'Marcos Vieira',       email:'marcos@demo.app', papel:'tecnico',  aprovado:true, empresa_id:1, equipe_id:1},
-        {id:'d-t3',  nome:'Rafael Nunes',        email:'rafael@demo.app', papel:'tecnico',  aprovado:true, empresa_id:1, equipe_id:2},
+        {id:'d-t1',  nome:'Carlos Andrade',      email:'carlos@demo.app', papel:'tecnico', habilitacoes:['convencional','modernizacao'],  aprovado:true, empresa_id:1, equipe_id:1},
+        {id:'d-t2',  nome:'Marcos Vieira',       email:'marcos@demo.app', papel:'tecnico', habilitacoes:['convencional','modernizacao'],  aprovado:true, empresa_id:1, equipe_id:1},
+        {id:'d-t3',  nome:'Rafael Nunes',        email:'rafael@demo.app', papel:'tecnico', habilitacoes:['convencional','modernizacao'],  aprovado:true, empresa_id:1, equipe_id:2},
       ],
       convites: [], contratos: [],
       relatorios: [
-        {id:1, contrato:'9000001', status:'enviado',     empresa_id:1, tecnico_id:'d-t1',
+        {id:1, contrato:'9000001', status:'enviado',     empresa_id:1, tipo_obra:'convencional', tecnico_id:'d-t1',
          dados:{contract:contrato('9000001','Padaria Modelo Ltda','R DEMONSTRACAO, 100'), tecnico:'Carlos Andrade',
                 arquivos:{photos:{},projectDocs:{},docsAtt:{}}, meta:{photos:{},projectDocs:{},docsAtt:{}},
                 materialsQty:{}, valuesQty:{}}, __completa:true},
-        {id:2, contrato:'9000002', status:'em_execucao', empresa_id:1, tecnico_id:'d-t1',
+        {id:2, contrato:'9000002', status:'em_execucao', empresa_id:1, tipo_obra:'convencional', tecnico_id:'d-t1',
          dados:{contract:contrato('9000002','Mercado Central','AV EXEMPLO, 2395'), tecnico:'Carlos Andrade',
                 arquivos:{photos:{},projectDocs:{},docsAtt:{}}, meta:{photos:{},projectDocs:{},docsAtt:{}},
                 materialsQty:{}, valuesQty:{}}},
-        {id:3, contrato:'9000003', status:'despachada',  empresa_id:1, tecnico_id:'d-t2',
+        {id:3, contrato:'9000003', status:'despachada',  empresa_id:1, tipo_obra:'convencional', tecnico_id:'d-t2',
          observacao_os:'Cliente atende após as 9h',
          dados:{contract:contrato('9000003','Escola Municipal','R TESTE, 88'), tecnico:'Marcos Vieira',
                 arquivos:{photos:{},projectDocs:{},docsAtt:{}}, meta:{photos:{},projectDocs:{},docsAtt:{}},
                 materialsQty:{}, valuesQty:{}}},
-        {id:4, contrato:'9000004', status:'reprovado',   empresa_id:1, tecnico_id:'d-t2',
+        {id:4, contrato:'9000004', status:'reprovado',   empresa_id:1, tipo_obra:'convencional', tecnico_id:'d-t2',
          revisao:{nome:'Ana Despacho', observacao:'Falta a foto da caixa fechada no poste 3.'},
          dados:{contract:contrato('9000004','Clínica Exemplo','R MODELO, 555'), tecnico:'Marcos Vieira',
                 arquivos:{photos:{},projectDocs:{},docsAtt:{}}, meta:{photos:{},projectDocs:{},docsAtt:{}},
@@ -9177,19 +9878,32 @@
         // esta é a única com serviço e material lançados de propósito: sem
         // isso a Medição e o consumo de material abriam sempre zerados na
         // demonstração, e não dava pra mostrar (nem testar) a conta
-        {id:5, contrato:'9000005', status:'aprovado',    empresa_id:1, tecnico_id:'d-t3',
+        {id:5, contrato:'9000005', status:'aprovado',    empresa_id:1, tipo_obra:'convencional', tecnico_id:'d-t3',
          dados:{contract:contrato('9000005','Condomínio Jardim','AV AMOSTRA, 70'), tecnico:'Rafael Nunes',
                 arquivos:{photos:{},projectDocs:{},docsAtt:{}}, meta:{photos:{},projectDocs:{},docsAtt:{}},
                 materialsQty:{1:180, 8:1}, materialsExtra:{8:{serie:'ZTEGD4A1B2C3'}},
                 valuesQty:{'02.18':12, '03.06':2, '04.01':1}}},
-        {id:6, contrato:'9000006', status:'pendente',    empresa_id:1, tecnico_id:null,
+        {id:6, contrato:'9000006', status:'pendente',    empresa_id:1, tipo_obra:'convencional', tecnico_id:null,
          dados:{contract:contrato('9000006','Auto Peças Exemplo','R AMOSTRA, 1200'),
                 arquivos:{photos:{},projectDocs:{},docsAtt:{}}, meta:{photos:{},projectDocs:{},docsAtt:{}},
                 materialsQty:{}, valuesQty:{}}},
-        {id:7, contrato:'9000007', status:'pendente',    empresa_id:1, tecnico_id:null,
+        {id:7, contrato:'9000007', status:'pendente',    empresa_id:1, tipo_obra:'convencional', tecnico_id:null,
          dados:{contract:contrato('9000007','Restaurante Demo','AV TESTE, 4501'),
                 arquivos:{photos:{},projectDocs:{},docsAtt:{}}, meta:{photos:{},projectDocs:{},docsAtt:{}},
                 materialsQty:{}, valuesQty:{}}},
+        // uma obra de MODERNIZAÇÃO na demonstração: sem ela o tipo novo não
+        // aparece pra quem está conhecendo o produto, e nem dá pra testar
+        {id:8, contrato:'PNG - 201', status:'despachada', empresa_id:1, tecnico_id:'d-t1',
+         tipo_obra:'modernizacao',
+         dados:{contract:Object.assign(contrato('PNG - 201','Cip Telecom','R EUGENIO J DE SOUZA, 66'), {
+                  atividade:'MELHORIA DE REDE – PNG - 201',
+                  tipoFalha:'Atenuação', causaFalha:'Melhoria de Rede',
+                  solucao:'Troca da Fosc / Para Nap Conectorizada',
+                  aprovadorLigga:'Dionatan Pedro da Silva'}),
+                tipoObra:'modernizacao', tecnico:'Carlos Andrade',
+                arquivos:{photos:{},projectDocs:{},docsAtt:{}}, meta:{photos:{},projectDocs:{},docsAtt:{}},
+                materialsQty:{1:6, 2:12, 3:1},
+                valuesQty:{'03.08':1, '03.06':18, '03.04':1, '03.24':1, '03.19':1}}},
       ],
     };
     let atual = null, seq = 100;
@@ -9889,6 +10603,7 @@
   }
 
   function resetDataState(){
+    dataState.tipoObra = tipoObraAtual;
     dataState.contract = {};
     dataState.projectDocs = {};
     dataState.photos = {};
@@ -9917,10 +10632,18 @@
   function preencherCamposContrato(){
     const c = dataState.contract || {};
     const map = {fNumero:'numero', fData:'data', fEndereco:'endereco', fCodtcomp:'codtcomp',
-                 fCidade:'cidade', fCep:'cep', fCoord:'coordenadas', fEmpresa:'empresa'};
+                 fCidade:'cidade', fCep:'cep', fCoord:'coordenadas', fEmpresa:'empresa',
+                 // os do relatório de manutenção de rede
+                 fAtividade:'atividade', fTipoFalha:'tipoFalha', fCausaFalha:'causaFalha',
+                 fSolucao:'solucao', fElaborador:'elaborador', fAprovadorLigga:'aprovadorLigga'};
     Object.keys(map).forEach(id=>{
       const el = document.getElementById(id);
-      if(el) el.value = c[map[id]] || '';
+      if(!el) return;
+      const v = c[map[id]];
+      // a aprovação da Ligga tem um valor padrão no HTML: não apagar quando a
+      // obra ainda não guardou nada nesse campo
+      if(id === 'fAprovadorLigga' && !v) return;
+      el.value = v || '';
     });
   }
 
@@ -10068,13 +10791,13 @@
         + (filtroPainel ? ' - ' + filtroPainel.rot : '');
 
       // --- aba 1: uma linha por obra
-      const abaObras = [[CAB('Contrato'), CAB('Cliente'), CAB('Data'), CAB('Técnico'), CAB('Status'),
+      const abaObras = [[CAB('Contrato'), CAB('Tipo'), CAB('Cliente'), CAB('Data'), CAB('Técnico'), CAB('Status'),
                          CAB('Serviços'), CAB('Materiais'), CAB('Total R$')]];
       // --- aba 2: uma linha por serviço lançado
-      const abaServ = [[CAB('Contrato'), CAB('Cliente'), CAB('Data'), CAB('Técnico'),
+      const abaServ = [[CAB('Contrato'), CAB('Tipo'), CAB('Cliente'), CAB('Data'), CAB('Técnico'),
                         CAB('Código'), CAB('Serviço'), CAB('Qtd'), CAB('Unitário'), CAB('Total R$')]];
       // --- aba 3: uma linha por material lançado
-      const abaMat = [[CAB('Contrato'), CAB('Cliente'), CAB('Data'), CAB('Técnico'),
+      const abaMat = [[CAB('Contrato'), CAB('Tipo'), CAB('Cliente'), CAB('Data'), CAB('Técnico'),
                        CAB('Material'), CAB('Qtd'), CAB('Série'), CAB('Retirado')]];
 
       const porServico = {}, porMaterial = {};
@@ -10082,7 +10805,7 @@
 
       lista.forEach(job=>{
         const iso = dataIsoObra(job);
-        const base = [job.contrato, job.cliente, DAT(iso), job.tecnico || ''];
+        const base = [job.contrato, rotuloTipo(job.tipo), job.cliente, DAT(iso), job.tecnico || ''];
         const tot = jobTotal(job);
         totalGeral += tot;
         abaObras.push(base.concat([
@@ -10113,7 +10836,7 @@
       });
 
       const linhaTotal = abaObras.length + 1;
-      abaObras.push([NEG('TOTAL'), null, null, null, null, null, null, {v: totalGeral, t:'n', s:5}]);
+      abaObras.push([NEG('TOTAL'), null, null, null, null, null, null, null, {v: totalGeral, t:'n', s:5}]);
 
       const resServ = [[CAB('Código'), CAB('Serviço'), CAB('Qtd total'), CAB('Unitário'), CAB('Total R$'), CAB('Obras')]];
       Object.values(porServico)
@@ -10129,9 +10852,9 @@
 
       const hoje = new Date().toISOString().slice(0, 10);
       baixarXlsx('Obras-' + recorte.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'') + '-' + hoje + '.xlsx', [
-        {nome:'Obras',            larguras:[13,38,12,26,14,10,11,14], linhas: abaObras, filtroAte: linhaTotal - 1},
-        {nome:'Serviços',         larguras:[13,38,12,26,10,52,8,13,14], linhas: abaServ},
-        {nome:'Materiais',        larguras:[13,38,12,26,52,8,20,10],   linhas: abaMat},
+        {nome:'Obras',            larguras:[15,15,36,12,24,14,10,11,14], linhas: abaObras, filtroAte: linhaTotal - 1},
+        {nome:'Serviços',         larguras:[15,15,34,12,24,10,52,8,13,14], linhas: abaServ},
+        {nome:'Materiais',        larguras:[15,15,34,12,24,52,8,20,10],   linhas: abaMat},
         {nome:'Resumo serviços',  larguras:[10,52,11,13,14,8],         linhas: resServ, filtroAte: totServ - 1},
         {nome:'Resumo materiais', larguras:[52,12,11,11,8],            linhas: resMat},
       ]);
@@ -10181,7 +10904,10 @@
       header.className = 'job-item';
       header.innerHTML = `
         <div class="job-item-body">
-          <div class="job-item-title">Contrato ${esc(job.contrato)}</div>
+          <div class="job-item-title" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <span>${job.tipo === 'modernizacao' ? '' : 'Contrato '}${esc(job.contrato)}</span>
+            <span class="selo-tipo ${esc(job.tipo || 'convencional')}">${esc(rotuloTipo(job.tipo))}</span>
+          </div>
           <div class="job-item-sub">${esc(job.cliente)} &middot; ${esc(job.data)}${job.tecnico && ehRevisor() ? ' &middot; ' + esc(job.tecnico) : ''}</div>
           ${job.status === 'reprovado' && (job.row && job.row.revisao && job.row.revisao.observacao) ? `<div class="job-item-sub" style="color:var(--accent);margin-top:3px;">↩ ${esc(job.row.revisao.observacao)}</div>` : ''}
           ${job.reaberta && job.status === 'enviado' ? `<div class="selo-reaberta">obra já aprovada &mdash; alterada pelo técnico${job.reaberta.por ? ' ' + esc(job.reaberta.por) : ''}, revalidar</div>` : ''}
@@ -10524,7 +11250,7 @@
   function ymd(d){ return d.toISOString().slice(0,10); }
 
   function prepararMedicao(){
-    garantirCatalogo();
+    garantirCatalogoDosDois();
     carregarPeriodosFechados();
     if(!medDe.value || !medAte.value) periodoMes(0);
     montarAtalhosPeriodo();
@@ -10579,7 +11305,7 @@
     if(de > ate){ showToast('A data inicial está depois da final'); return; }
     const btn = document.getElementById('medGerar');
     const ehMaterial = modoMedicao === 'materiais';
-    await garantirCatalogo();   // somar com o catálogo pela metade dá boletim errado
+    await garantirCatalogoDosDois();   // somar com o catálogo pela metade dá boletim errado
     btn.disabled = true; btn.textContent = 'Somando...';
     medResultado.innerHTML = '<div class="med-vazio">Buscando obras'
       + (ehMaterial ? '...' : ' aprovadas...') + '</div>';
@@ -10594,6 +11320,10 @@
         : q.eq('status', 'aprovado');
       if(emp) q = q.eq('empresa_id', emp);
       if(medTecnico.value) q = q.eq('tecnico_id', medTecnico.value);
+      // convencional e modernização são contratos diferentes com a operadora —
+      // fechar um boletim com os dois misturados seria erro de faturamento
+      const filtroTipo = (document.getElementById('medTipo') || {}).value || '';
+      if(filtroTipo) q = q.eq('tipo_obra', filtroTipo);
       const {data, error} = await q;
       if(error) throw error;
 
@@ -11292,6 +12022,11 @@
     return medTecnico.value ? medTecnico.options[medTecnico.selectedIndex].textContent : 'Todos';
   }
 
+  function tipoRotuloMedicao(){
+    const el = document.getElementById('medTipo');
+    return (el && el.value) ? rotuloTipo(el.value) : 'Todos';
+  }
+
   function exportarConsumo(){
     if(!consumoAtual) return;
     const c = consumoAtual;
@@ -11303,6 +12038,7 @@
     const cab = [[CAB('Consumo de material'), null],
                  ['Período', periodoRotulo()],
                  ['Técnico', tecnicoRotulo()],
+                 ['Tipo de obra', tipoRotuloMedicao()],
                  ['Obras contadas', consumoSoAprovadas ? 'só aprovadas' : 'executadas (inclui não aprovadas)'],
                  ['Gerado em', DAT(new Date().toISOString().slice(0,10))]];
 
@@ -11424,6 +12160,7 @@
     const filtros = [[CAB('Boletim de medição'), null],
                      ['Período', periodoRotulo()],
                      ['Técnico', tecnicoRotulo()],
+                     ['Tipo de obra', tipoRotuloMedicao()],
                      ['Obras no período', m.obras.length],
                      ['Total', DIN(m.total)],
                      ['Gerado em', DAT(new Date().toISOString().slice(0,10))]];
@@ -11437,6 +12174,10 @@
   }
 
   document.getElementById('medGerar').addEventListener('click', gerarMedicao);
+  (function(){
+    const el = document.getElementById('medTipo');
+    if(el) el.addEventListener('change', ()=>{ if(medDe.value && medAte.value) gerarMedicao(); });
+  })();
 
   // Muda o status de uma obra na mão, do lado do escritório. Guarda um
   // histórico dentro de `dados` — num documento que vira faturamento, saber
@@ -11523,18 +12264,32 @@
   // cartão da tela inicial antiga — que a barra lateral aposentou, e por
   // isso o técnico não tinha caminho nenhum até aqui. Agora é uma função
   // com nome, chamada pelo menu, pelo botão da lista e pelo cartão.
-  function abrirObraNova(){
+  function abrirObraNova(tipo){
+    // Obra criada pelo próprio técnico: ele escolhe entre os tipos em que está
+    // habilitado. Quem faz só um tipo nem vê a pergunta.
+    let alvo = tipo;
+    if(!alvo){
+      const podem = habilitacoesDe(perfilAtual);
+      if(podem.length > 1){
+        alvo = confirm('Que tipo de obra?\n\nOK = Modernização (melhoria de rede)\nCancelar = Ativação convencional')
+             ? 'modernizacao' : 'convencional';
+      } else {
+        alvo = podem[0] || 'convencional';
+      }
+    }
+    aplicarTipoObra(alvo, {semRedesenhar:true});
     resetDataState();
     obraEditandoId = null;
     obraDonoId = null;
     obraEmpresaId = null;
     idbApagar('atual');
     aplicarModoLeitura();   // limpa o modo-leitura/aviso de uma obra aberta antes
+    renderFotos(); renderMateriais(); renderValores();
     showAppView('wizard');
     showStep(0);
   }
 
-  newJobCard.addEventListener('click', abrirObraNova);
+  newJobCard.addEventListener('click', ()=> abrirObraNova());
 
   // O escritório cria obra pelo Despacho (que já anexa OS/projeto e escolhe
   // o técnico). O técnico cria pra ele mesmo, direto no assistente.
@@ -11645,16 +12400,18 @@
       // mesma obra aparecia com 1 material pro analista e 4 pro superadmin —
       // só porque um deles já tinha passado por uma tela que carrega catálogo.
       const [{data, error}, {data: tecsJobs}] = await Promise.all([
-        qObrasJobs, qTecJobs, garantirCatalogo()]);
+        qObrasJobs, qTecJobs, garantirCatalogoDosDois()]);
       tecnicosJobsCache = tecsJobs || [];
       if(error || !data) return;
 
       const doServidor = data.map(row=>{
         const d = row.dados || {};
-        const servicos = servicosDaObra(d);
-        const materiais = materiaisDaObra(d);
+        const tipo = row.tipo_obra || d.tipoObra || 'convencional';
+        const servicos = servicosDaObra(d, tipo);
+        const materiais = materiaisDaObra(d, tipo);
         return {
           contrato: row.contrato,
+          tipo: tipo,
           cliente: (d.contract || {}).empresa || 'Empresa não informada',
           status: row.status || 'enviado',
           materiais: materiais,
