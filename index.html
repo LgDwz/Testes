@@ -504,6 +504,13 @@
     min-width:44px;min-height:44px;flex-shrink:0;border-radius:7px;align-self:center;}
   .item-remove:hover{color:var(--warning);background:var(--warning-dim);}
   .item-remove:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+  /* Baixar o anexo. Sem isto, um documento anexado só dava pra trocar ou
+     apagar — quem precisava do arquivo de volta tinha que ir no Supabase. */
+  .item-baixar{background:none;border:none;color:var(--text-faint);cursor:pointer;
+    min-width:44px;min-height:44px;flex-shrink:0;border-radius:7px;align-self:center;
+    display:flex;align-items:center;justify-content:center;}
+  .item-baixar:hover{color:var(--accent);background:var(--accent-dim,rgba(43,140,255,.10));}
+  .item-baixar:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
   .multi-entry-remove{background:none;border:none;color:var(--text-faint);cursor:pointer;font-size:16px;
     min-width:44px;min-height:44px;flex-shrink:0;border-radius:7px;}
   .multi-entry-remove:hover{color:var(--warning);background:var(--warning-dim);}
@@ -3060,7 +3067,7 @@
 (function(){
   // Marque aqui a cada build enviado ao campo. O testador informa esta
   // string ao relatar um problema, senao nao da pra saber o que ele rodou.
-  const APP_VERSION = 'Enlace Ops · alpha-10.68 · 31/08/2026';
+  const APP_VERSION = 'Enlace Ops · alpha-10.70 · 31/08/2026';
 
   // ---------- Supabase config ----------
   // Troque pelos valores reais do seu projeto (Project Settings -> API no Supabase).
@@ -3592,9 +3599,31 @@
         ${refHtml}
         ${obsHtml}
       </div>
+      ${s ? `<button class="item-baixar" type="button" title="Baixar arquivo" aria-label="Baixar ${esc(item.title)}">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 21h16"/></svg>
+      </button>` : ''}
       ${s ? `<button class="item-remove" type="button" title="Remover anexo" aria-label="Remover ${esc(item.title)}">&#10005;</button>` : ''}
       <div class="item-chevron">&#8250;</div>
     `;
+
+    // Baixar e ver o que já está anexado. Antes o cartão só sabia TROCAR o
+    // arquivo: quem precisava do documento de volta tinha que abrir o Supabase.
+    const btnBaixarDoc = card.querySelector('.item-baixar');
+    if(btnBaixarDoc){
+      btnBaixarDoc.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        baixarAnexoLocal(item, dataState[item.storeKey][item.id]);
+      });
+    }
+    const miniatura = card.querySelector('.item-thumb');
+    if(s && miniatura){
+      miniatura.style.cursor = 'zoom-in';
+      miniatura.title = 'Ver documento';
+      miniatura.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        abrirAnexoLocal(item, dataState[item.storeKey][item.id]);
+      });
+    }
     // mesma lógica das fotos: anexou o arquivo errado, tem que dar pra tirar
     const btnRemoverDoc = card.querySelector('.item-remove');
     if(btnRemoverDoc){
@@ -3610,7 +3639,11 @@
       });
     }
     card.addEventListener('click', (e)=>{
-      if(e.target.closest('.item-remove')) return;   // o X tem tratamento próprio
+      // o X, o botão de baixar e a miniatura têm tratamento próprio — sem esta
+      // guarda, clicar em qualquer um deles abriria a tela de trocar o arquivo
+      if(e.target.closest('.item-remove')) return;
+      if(e.target.closest('.item-baixar')) return;
+      if(s && e.target.closest('.item-thumb')) return;
       if(e.target.classList.contains('ref-link') && e.target.dataset.ref){
         e.stopPropagation();
         const refDoc = dataState.projectDocs[e.target.dataset.ref];
@@ -5057,6 +5090,54 @@
   function ehPdf(rec){
     return !!rec && (rec.mime === 'application/pdf'
       || (typeof rec.imgSrc === 'string' && rec.imgSrc.indexOf('data:application/pdf') === 0));
+  }
+
+  // ---------- Baixar um anexo que já está aberto no assistente ----------
+  //
+  // O nome do arquivo leva a obra e o tipo do documento. "os_doc.pdf" não diz
+  // nada numa pasta de Downloads com dez obras dentro; "2438851-Ordem-de-
+  // Servico.pdf" resolve sozinho.
+  function nomeArquivoAnexo(item, rec, contrato){
+    // A extensão sai do mime do próprio arquivo, não do nome guardado: o nome
+    // é só um rótulo e pode discordar do conteúdo. Extensão errada é arquivo
+    // que o Windows se recusa a abrir, e aí parece que o download veio corrompido.
+    const doNome = (String(rec.fileMeta || '').split('.').pop() || '').toLowerCase();
+    const m = /^data:([^;,]+)[;,]/.exec(String(rec.imgSrc || ''));
+    const ext = m ? extFromMime(m[1])
+              : (/^[a-z0-9]{1,5}$/.test(doNome) ? doNome : 'pdf');
+    const semAcento = t => String(t).normalize('NFD').replace(/[̀-ͯ]/g, '');
+    const base = semAcento(item.title).replace(/[^A-Za-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    const obra = semAcento(contrato || '').replace(/[^A-Za-z0-9.]+/g, '-').replace(/^-+|-+$/g, '');
+    return (obra ? obra + '-' : '') + base + '.' + ext;
+  }
+
+  function baixarAnexoLocal(item, rec){
+    try{
+      const nome = nomeArquivoAnexo(item, rec, (dataState.contract || {}).numero);
+      const url = URL.createObjectURL(dataUrlToBlob(rec.imgSrc));
+      const a = document.createElement('a');
+      a.href = url; a.download = nome;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(()=> URL.revokeObjectURL(url), 4000);
+      showToast('Baixando ' + nome);
+    } catch(e){
+      showToast('Não deu pra baixar o anexo: ' + (e.message || e));
+    }
+  }
+
+  // Ver sem baixar: PDF abre em aba nova, imagem abre no visualizador.
+  function abrirAnexoLocal(item, rec){
+    if(ehPdf(rec)){
+      const win = window.open('');
+      if(win) win.document.write('<iframe src="' + rec.imgSrc
+        + '" style="border:0;width:100%;height:100vh"></iframe>');
+      else showToast('O navegador bloqueou a aba — libere pop-ups pra ver o PDF');
+      return;
+    }
+    docViewerTitle.textContent = item.title;
+    docViewerImg.src = rec.imgSrc;
+    docViewerOverlay.classList.add('show');
+    if(typeof empilhar === 'function') empilhar({overlay:'documento'});
   }
 
   // Reduz uma imagem escolhida na galeria antes de guardar.
@@ -6782,13 +6863,21 @@
         faltando.push('relatório fotográfico (sem fotos no servidor)');
       }
 
-      // 2) e 3) os documentos executados do passo 4
-      const caminhos = (job.row && job.row.dados && job.row.dados.arquivos
-                        && job.row.dados.arquivos.docsAtt) || {};
+      // 2) os documentos da obra: os três do projeto (OS, rota, unifilar) e os
+      // dois executados. Os do projeto ficavam de fora — quem precisava da OS
+      // de volta não tinha caminho nenhum no app pra chegar nela.
+      const arq = (job.row && job.row.dados && job.row.dados.arquivos) || {};
+      const caminhos = Object.assign({}, arq.projectDocs || {}, arq.docsAtt || {});
+      // obra de modernização não tem asbuilt nem unifilar atualizados: listar
+      // os dois como "faltou" em toda obra de melhoria seria mentira
+      const tipoDaObra = (job.row && job.row.tipo_obra) || job.tipo || 'convencional';
       const anexos = [
-        {id:'asbuilt',      rot:'Asbuilt-atualizado'},
-        {id:'diagrama_att', rot:'Diagrama-unifilar-atualizado'},
-      ];
+        {id:'os_doc',       rot:'Ordem-de-Servico'},
+        {id:'projeto_doc',  rot:'Documento-de-rota'},
+        {id:'diagrama_doc', rot:'Diagrama-unifilar'},
+        {id:'asbuilt',      rot:'Asbuilt-atualizado',            soConvencional:true},
+        {id:'diagrama_att', rot:'Diagrama-unifilar-atualizado',  soConvencional:true},
+      ].filter(a => !a.soConvencional || tipoDaObra !== 'modernizacao');
       for(const a of anexos){
         const caminho = caminhos[a.id];
         if(!caminho){ faltando.push(a.rot.replace(/-/g,' ').toLowerCase()); continue; }
@@ -10811,6 +10900,13 @@
   // pra saber o que existe sem trazer um byte de imagem do servidor.
   function pendenciasDaObra(job){
     if(!job || !job.row) return null;
+
+    // Só quem despacha e revisa vê o aviso. O técnico não tem mais o passo do
+    // asbuilt, então cobrar dele um documento que ele não pode anexar seria
+    // culpa sem conserto. O que ele PODE resolver — foto faltando — o próprio
+    // assistente já mostra: o passo fica sem o ✓ e a conferência diz "Sem foto".
+    if(!ehRevisor()) return null;
+
     if(STATUS_COBRAVEL.indexOf(job.status) === -1) return null;
 
     const arq = (job.row.dados && job.row.dados.arquivos) || {};
@@ -11112,7 +11208,7 @@
         <div class="job-chevron">&#8250;</div>
       `;
       const btnPacote = header.querySelector('.job-pdf-quick');
-      btnPacote.title = 'Baixar tudo: relatório, asbuilt e diagrama';
+      btnPacote.title = 'Baixar tudo: relatório e documentos da obra';
       btnPacote.setAttribute('aria-label', 'Baixar todos os documentos do contrato ' + job.contrato);
       btnPacote.addEventListener('click', (e)=>{
         e.stopPropagation();
