@@ -3014,7 +3014,7 @@
 (function(){
   // Marque aqui a cada build enviado ao campo. O testador informa esta
   // string ao relatar um problema, senao nao da pra saber o que ele rodou.
-  const APP_VERSION = 'Enlace Ops · alpha-10.66 · 28/08/2026';
+  const APP_VERSION = 'Enlace Ops · alpha-10.67 · 31/08/2026';
 
   // ---------- Supabase config ----------
   // Troque pelos valores reais do seu projeto (Project Settings -> API no Supabase).
@@ -5784,27 +5784,33 @@
     const outrosItems = photoItems.filter(i => ![1,2,3,4,5,6,7,8,9].includes(i.id));
     const itemAssinatura = photoItems.find(i => i.assinatura);
 
-    // seção em grade: 1 foto = página inteira, 2 fotos = lado a lado
-    // (usada pra identificação do cliente, sinal e PTO)
+    // Seção em grade: 1 foto = página inteira, 2 fotos = lado a lado
+    // (usada pra identificação do cliente, sinal e PTO).
+    //
+    // Sem nenhuma foto a seção nasce marcada como vazia e é descartada logo
+    // abaixo, antes do índice. Se o técnico não fez lançamento de cabo, não
+    // existe motivo pro relatório carregar uma página em branco só pra cumprir
+    // o esqueleto — ela some do documento e do índice junto.
     function secaoGrade(item){
+      if(!item) return null;
       const fotos = entriesOf(item, st);
-      const lista = fotos.length ? fotos : [null];
       const porPagina = 2;
       const paginas = [];
-      for(let i=0; i<lista.length; i+=porPagina) paginas.push(lista.slice(i, i+porPagina));
-      return {tipo:'grade', item, indiceLabel: pdfPhotoMeta[item.id].indice, paginas};
+      for(let i=0; i<fotos.length; i+=porPagina) paginas.push(fotos.slice(i, i+porPagina));
+      return {tipo:'grade', item, indiceLabel: pdfPhotoMeta[item.id].indice,
+              paginas, vazia: !fotos.length};
     }
 
     const secoes = [];
 
-    // 1. cabo
+    // 1. cabo — só entra se pelo menos uma das duas pontas tiver foto
+    const fotoIni = entriesOf(itemIni, st)[0] || null;
+    const fotoFim = entriesOf(itemFim, st)[0] || null;
     secoes.push({
       tipo: 'cabo',
       indiceLabel: pdfPhotoMeta[1].indice,
-      paginas: [{
-        ini: entriesOf(itemIni, st)[0] || null,
-        fim: entriesOf(itemFim, st)[0] || null,
-      }],
+      paginas: [{ini: fotoIni, fim: fotoFim}],
+      vazia: !fotoIni && !fotoFim,
     });
 
     // 2. chegada no poste do cliente — o técnico às vezes sai do cabo, passa
@@ -5828,6 +5834,7 @@
       tipo: 'caixa',
       indiceLabel: 'FOTO DA CAIXA ABERTA E FECHADA',
       paginas: paginasCaixa,
+      vazia: !fotosAberta.length && !fotosFechada.length,
     });
 
     // 4. sinal do cliente, depois 5. PTO — nessa ordem
@@ -5844,8 +5851,14 @@
       secoes.push(secaoGrade(itemAssinatura));
     }
 
+    // Corta as seções sem foto nenhuma. O corte é feito AQUI, antes do índice,
+    // de propósito: o mesmo array numera as seções, calcula o número de página
+    // de cada uma e desenha as páginas lá embaixo. Fazendo em um lugar só, não
+    // tem como o índice apontar pra uma página que não existe.
+    const secoesCheias = secoes.filter(s => s && !s.vazia);
+
     let cursor = 3;
-    const indice = secoes.map((sec, i)=>{
+    const indice = secoesCheias.map((sec, i)=>{
       const inicio = cursor;
       cursor += sec.paginas.length;
       return {n: i+1, label: sec.indiceLabel, page: inicio};
@@ -5878,6 +5891,15 @@
         iy += 14;
       });
     });
+
+    // Índice vazio é obra sem foto nenhuma. Melhor dizer isso em letras do que
+    // entregar uma folha em branco que parece defeito de impressão.
+    if(!indice.length){
+      doc.setFont('helvetica','italic'); doc.setFontSize(11);
+      doc.setTextColor(90,90,90);
+      doc.text('Nenhuma foto anexada a esta obra.', M+2, iy);
+      doc.setTextColor(0,0,0); doc.setFont('helvetica','normal');
+    }
 
     // ---- desenha uma foto (ou o aviso/anexo no lugar dela) numa coluna ----
     function desenharFotoNaColuna(s, colX, colW, topoY, maxH){
@@ -5920,7 +5942,7 @@
     }
 
     // ================= PAGINAS DE FOTOS =================
-    secoes.forEach((sec, secIdx)=>{
+    secoesCheias.forEach((sec, secIdx)=>{
       const numSecao = secIdx + 1;
 
       if(sec.tipo === 'cabo'){
@@ -6394,6 +6416,12 @@
       if(iconBtn){ iconBtn.disabled = true; iconBtn.classList.add('loading'); }
 
       if(!job.state && job.snapshot) job.state = job.snapshot;
+
+      // obra de exemplo da demonstração: as fotos são desenhadas na hora, e
+      // sem isto o PDF pedido direto da lista saía só com capa e índice
+      if(!job.state && job.row && job.row.__completa){
+        job.state = Object.assign(obraDemoCompleta(), {contract: job.row.dados.contract});
+      }
 
       if(!job.state){
         if(!job.row){
