@@ -927,6 +927,50 @@
   .job-status.enviado{background:var(--success-dim);color:var(--success);}
   .job-status.rascunho{background:var(--bg-elev-2);color:var(--text-dim);}
   .job-status.pendente{background:rgba(217,164,65,.10);color:var(--st-ambar);}
+
+  /* Documentação faltando. Precisa aparecer na LISTA, fechado: o problema do
+     asbuilt que nunca chegou só era descoberto abrindo obra por obra. */
+  .selo-falta{
+    display:inline-flex;align-items:center;gap:4px;
+    font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;
+    letter-spacing:.04em;text-transform:uppercase;
+    padding:2px 7px;border-radius:999px;
+    background:rgba(217,164,65,.12);color:var(--st-ambar);
+    border:1px solid rgba(217,164,65,.34);
+  }
+  .pend-box{
+    border:1px solid rgba(217,164,65,.34);border-radius:8px;
+    background:rgba(217,164,65,.06);
+    padding:10px 12px;margin-bottom:10px;
+  }
+  .pend-box h5{
+    margin:0 0 8px;font-size:11px;font-weight:700;letter-spacing:.06em;
+    text-transform:uppercase;color:var(--st-ambar);
+    font-family:'IBM Plex Mono',monospace;
+  }
+  .pend-grupo{margin-bottom:8px;}
+  .pend-grupo:last-child{margin-bottom:0;}
+  .pend-grupo b{
+    display:block;font-size:10.5px;color:var(--text-dim);font-weight:600;
+    letter-spacing:.04em;text-transform:uppercase;margin-bottom:3px;
+    font-family:'IBM Plex Mono',monospace;
+  }
+  .pend-grupo ul{margin:0;padding-left:17px;}
+  .pend-grupo li{font-size:12.5px;color:var(--text);line-height:1.55;}
+  .jobs-resumo-falta{
+    font-family:'IBM Plex Mono',monospace;font-size:11px;
+    color:var(--st-ambar);margin:-10px 0 14px;
+  }
+  /* No tema claro o âmbar a 6% sobre branco vira cinza e o aviso deixa de
+     parecer aviso. Aqui ele precisa de mais tinta, não da mesma receita. */
+  html[data-tema="claro"] .pend-box{
+    background:rgba(217,164,65,.16);
+    border-color:rgba(138,90,8,.34);
+  }
+  html[data-tema="claro"] .selo-falta{
+    background:rgba(217,164,65,.24);
+    border-color:rgba(138,90,8,.40);
+  }
   .papel-badge{
     font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.08em;
     text-transform:uppercase;padding:2px 6px;border-radius:4px;margin-left:6px;
@@ -2816,8 +2860,10 @@
       <div class="review-section-title">Fotos</div>
       <div class="review-photo-grid" id="reviewPhotos"></div>
 
-      <div class="review-section-title">Documentos executados</div>
-      <div class="review-card" id="reviewDocsExecutados"></div>
+      <div id="reviewBlocoDocsExec">
+        <div class="review-section-title">Documentos executados</div>
+        <div class="review-card" id="reviewDocsExecutados"></div>
+      </div>
 
       <div class="review-section-title secao-mat">Materiais utilizados</div>
       <div class="review-card secao-mat" id="reviewMaterials"></div>
@@ -3014,7 +3060,7 @@
 (function(){
   // Marque aqui a cada build enviado ao campo. O testador informa esta
   // string ao relatar um problema, senao nao da pra saber o que ele rodou.
-  const APP_VERSION = 'Enlace Ops · alpha-10.67 · 31/08/2026';
+  const APP_VERSION = 'Enlace Ops · alpha-10.68 · 31/08/2026';
 
   // ---------- Supabase config ----------
   // Troque pelos valores reais do seu projeto (Project Settings -> API no Supabase).
@@ -3041,10 +3087,26 @@
   // documentos executados (asbuilt, unifilar) porque eles fazem parte do
   // relatório dela; a modernização não tem esse passo — o relatório de
   // manutenção de rede da Ligga não pede nenhum dos dois.
+  //
+  // Asbuilt e unifilar atualizados são o ÚLTIMO passo, não o quarto: quem
+  // fecha esses dois é o analista, depois que a obra volta do campo. Ficavam
+  // no meio do caminho do técnico, que passava batido por eles todo dia.
   const PASSOS_POR_TIPO = {
-    convencional: ['contrato','docsProjeto','fotos','docsExecutados','materiais','valores','review'],
+    convencional: ['contrato','docsProjeto','fotos','materiais','valores','docsExecutados','review'],
     modernizacao: ['contrato','docsProjeto','fotos','materiais','valores','review'],
   };
+
+  // E na tela do técnico esse passo não existe. Passo que uma pessoa nunca
+  // preenche não é lembrete, é ruído — e ainda fazia o assistente dela parecer
+  // eternamente incompleto. A cobrança do asbuilt saiu do técnico e virou o
+  // aviso de pendência na lista de Obras, que é onde o analista trabalha.
+  function passosDoTipo(t){
+    const base = PASSOS_POR_TIPO[t] || PASSOS_POR_TIPO.convencional;
+    return (typeof ehTecnico === 'function' && ehTecnico())
+      ? base.filter(p => p !== 'docsExecutados')
+      : base;
+  }
+
   let steps = PASSOS_POR_TIPO.convencional;
   const stepLabels = {contrato:'Contrato', docsProjeto:'Docs', fotos:'Fotos', docsExecutados:'Execut.', materiais:'Materiais', valores:'Valores'};
 
@@ -3311,7 +3373,7 @@
   function aplicarTipoObra(tipo, opts){
     const t = TIPOS_OBRA[tipo] ? tipo : 'convencional';
     tipoObraAtual = t;
-    steps = PASSOS_POR_TIPO[t];
+    steps = passosDoTipo(t);
     photoItems = itensDoTipo(t);
     materials   = catalogoDe(t).materiais;
     valuesItems = catalogoDe(t).servicos;
@@ -5253,6 +5315,12 @@
         photoGrid.appendChild(cell);
       }
     });
+
+    // some da conferência de quem não tem o passo (técnico, e modernização,
+    // que não pede asbuilt nem unifilar)
+    const blocoDocsExec = document.getElementById('reviewBlocoDocsExec');
+    if(blocoDocsExec) blocoDocsExec.style.display =
+      steps.indexOf('docsExecutados') === -1 ? 'none' : '';
 
     const reviewDocsExecutados = document.getElementById('reviewDocsExecutados');
     reviewDocsExecutados.innerHTML = '';
@@ -9864,6 +9932,23 @@
     const contrato = (n, emp, end)=> ({numero:n, data:hoje, codtcomp:'COTPS-DEMO/2026',
       empresa:emp, endereco:end, cidade:'CIDADE DEMO', cep:'80000000', coordenadas:'-25.4284, -49.2733'});
 
+    // Só os CAMINHOS dos anexos — é exatamente o que a obra guarda no banco, e
+    // é o que o aviso de documentação faltando lê. `faltando` deixa montar
+    // obra incompleta de propósito, pra o aviso ter o que mostrar na
+    // demonstração (senão ele nunca aparecia e o recurso ficava invisível).
+    const anexos = (n, faltando)=>{
+      const fora = faltando || [];
+      const tem = k => fora.indexOf(k) === -1;
+      const photos = {}, projectDocs = {}, docsAtt = {};
+      [1,2,6,7,8].forEach(id=>{ if(tem('f'+id)) photos[id] = n+'/fotos/'+id+'.jpg'; });
+      [3,4,5].forEach(id=>{ if(tem('f'+id)) photos[id] = [n+'/fotos/'+id+'-caixa1.jpg']; });
+      ['os_doc','projeto_doc','diagrama_doc'].forEach(k=>{
+        if(tem(k)) projectDocs[k] = n+'/documentos-projeto/'+k+'.pdf'; });
+      ['asbuilt','diagrama_att'].forEach(k=>{
+        if(tem(k)) docsAtt[k] = n+'/documentos-executados/'+k+'.pdf'; });
+      return {photos, projectDocs, docsAtt};
+    };
+
     const db = {
       empresas: [{id:1, nome:'Enlace Demo Telecom', ativa:true}],
       materiais_catalogo: [], servicos_catalogo: [],
@@ -9887,7 +9972,7 @@
       relatorios: [
         {id:1, contrato:'9000001', status:'enviado',     empresa_id:1, tipo_obra:'convencional', tecnico_id:'d-t1',
          dados:{contract:contrato('9000001','Padaria Modelo Ltda','R DEMONSTRACAO, 100'), tecnico:'Carlos Andrade',
-                arquivos:{photos:{},projectDocs:{},docsAtt:{}}, meta:{photos:{},projectDocs:{},docsAtt:{}},
+                arquivos:anexos('9000001', ['asbuilt']), meta:{photos:{},projectDocs:{},docsAtt:{}},
                 materialsQty:{}, valuesQty:{}}, __completa:true},
         {id:2, contrato:'9000002', status:'em_execucao', empresa_id:1, tipo_obra:'convencional', tecnico_id:'d-t1',
          dados:{contract:contrato('9000002','Mercado Central','AV EXEMPLO, 2395'), tecnico:'Carlos Andrade',
@@ -9901,14 +9986,14 @@
         {id:4, contrato:'9000004', status:'reprovado',   empresa_id:1, tipo_obra:'convencional', tecnico_id:'d-t2',
          revisao:{nome:'Ana Despacho', observacao:'Falta a foto da caixa fechada no poste 3.'},
          dados:{contract:contrato('9000004','Clínica Exemplo','R MODELO, 555'), tecnico:'Marcos Vieira',
-                arquivos:{photos:{},projectDocs:{},docsAtt:{}}, meta:{photos:{},projectDocs:{},docsAtt:{}},
+                arquivos:anexos('9000004', ['f5','asbuilt','diagrama_att']), meta:{photos:{},projectDocs:{},docsAtt:{}},
                 materialsQty:{}, valuesQty:{}}},
         // esta é a única com serviço e material lançados de propósito: sem
         // isso a Medição e o consumo de material abriam sempre zerados na
         // demonstração, e não dava pra mostrar (nem testar) a conta
         {id:5, contrato:'9000005', status:'aprovado',    empresa_id:1, tipo_obra:'convencional', tecnico_id:'d-t3',
          dados:{contract:contrato('9000005','Condomínio Jardim','AV AMOSTRA, 70'), tecnico:'Rafael Nunes',
-                arquivos:{photos:{},projectDocs:{},docsAtt:{}}, meta:{photos:{},projectDocs:{},docsAtt:{}},
+                arquivos:anexos('9000005'), meta:{photos:{},projectDocs:{},docsAtt:{}},
                 materialsQty:{1:180, 8:1}, materialsExtra:{8:{serie:'ZTEGD4A1B2C3'}},
                 valuesQty:{'02.18':12, '03.06':2, '04.01':1}}},
         {id:6, contrato:'9000006', status:'pendente',    empresa_id:1, tipo_obra:'convencional', tecnico_id:null,
@@ -9996,7 +10081,12 @@
       },
       storage: { from: ()=> ({
         upload: async (p)=> ({data:{path:p}, error:null}),
-        download: async ()=> ({data:null, error:{message:'demo'}}),
+        // devolve uma imagem sintética no lugar do arquivo: sem isto,
+        // reabrir uma obra que tem anexo gravado quebrava na demonstração
+        download: async (p)=>{
+          try{ return {data: dataUrlToBlob(fotoDemo(/caixa|4-|3-/.test(String(p)) ? 'caixa' : 'poste')), error:null}; }
+          catch(e){ return {data:null, error:{message:'demo'}}; }
+        },
         list: async ()=> ({data:[], error:null}),
         remove: async ()=> ({data:null, error:null}),
       })},
@@ -10709,6 +10799,63 @@
     return (job.servicos || []).reduce((sum, s) => sum + s.qtd * s.preco, 0);
   }
 
+  // ---------- Checklist de documentação ----------
+  //
+  // Só faz sentido cobrar de obra que o técnico já entregou. Numa obra
+  // despachada hoje de manhã falta tudo, e isso não é pendência — é obra
+  // começando. Alarme que toca sempre é alarme que ninguém olha.
+  const STATUS_COBRAVEL = ['enviado','aprovado','reprovado'];
+
+  // O que falta numa obra, lendo só a linha que já está na memória. Não baixa
+  // arquivo nenhum: `dados.arquivos` guarda o CAMINHO de cada anexo, então dá
+  // pra saber o que existe sem trazer um byte de imagem do servidor.
+  function pendenciasDaObra(job){
+    if(!job || !job.row) return null;
+    if(STATUS_COBRAVEL.indexOf(job.status) === -1) return null;
+
+    const arq = (job.row.dados && job.row.dados.arquivos) || {};
+    const tipo = job.row.tipo_obra || job.tipo || 'convencional';
+    const grupos = [];
+
+    const temFoto = (id)=>{
+      const v = (arq.photos || {})[id];
+      return Array.isArray(v) ? v.length > 0 : !!v;
+    };
+    const fotos = itensDoTipo(tipo)
+      .filter(it => !it.opcional && !temFoto(it.id))
+      .map(it => it.title);
+    if(fotos.length) grupos.push({rot:'Fotos', itens:fotos});
+
+    const proj = projectDocItems
+      .filter(it => !(arq.projectDocs || {})[it.id])
+      .map(it => it.title);
+    if(proj.length) grupos.push({rot:'Documentos do projeto', itens:proj});
+
+    // Modernização não pede asbuilt nem unifilar — o relatório de manutenção
+    // de rede da Ligga não tem esses dois. Cobrar ali seria pendência falsa em
+    // toda obra de melhoria.
+    if(tipo !== 'modernizacao'){
+      const exec = docExecItems
+        .filter(it => !(arq.docsAtt || {})[it.id])
+        .map(it => it.title);
+      if(exec.length) grupos.push({rot:'Documentos executados', itens:exec});
+    }
+
+    const total = grupos.reduce((n, g) => n + g.itens.length, 0);
+    return total ? {grupos, total} : null;
+  }
+
+  function caixaPendencias(pend){
+    if(!pend) return '';
+    return '<div class="pend-box"><h5>Falta anexar &mdash; ' + pend.total
+      + (pend.total === 1 ? ' item' : ' itens') + '</h5>'
+      + pend.grupos.map(g =>
+          '<div class="pend-grupo"><b>' + esc(g.rot) + '</b><ul>'
+          + g.itens.map(i => '<li>' + esc(i) + '</li>').join('')
+          + '</ul></div>').join('')
+      + '</div>';
+  }
+
   // "pendente" entra aqui pra admin/analista/revisor conseguirem abrir a
   // obra e já anexar foto/material antes mesmo de ter técnico — técnico não
   // vê essas porque a lista dele já é filtrada pelas obras com o tecnico_id
@@ -10922,8 +11069,21 @@
     summary.innerHTML = `<span>${filtroObras === 'historico' ? 'Aprovadas' : 'Em aberto'} (${lista.length})</span><span>${formatBRL(totalGeral)}</span>`;
     jobsList.appendChild(summary);
 
+    // quantas da lista estão incompletas, dito uma vez no topo: sem isto o
+    // analista teria que abrir cartão por cartão pra descobrir
+    const comFalta = lista.filter(j => !!pendenciasDaObra(j)).length;
+    if(comFalta){
+      const aviso = document.createElement('div');
+      aviso.className = 'jobs-resumo-falta';
+      aviso.textContent = comFalta === 1
+        ? '1 obra com documentação faltando'
+        : comFalta + ' obras com documentação faltando';
+      jobsList.appendChild(aviso);
+    }
+
     lista.forEach(job=>{
       const total = jobTotal(job);
+      const pend = pendenciasDaObra(job);
       const card = document.createElement('div');
       card.className = 'job-card';
       card.dataset.contrato = job.contrato;   // alvo do "abrir a próxima pendente"
@@ -10935,6 +11095,7 @@
           <div class="job-item-title" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
             <span>${job.tipo === 'modernizacao' ? '' : 'Contrato '}${esc(job.contrato)}</span>
             <span class="selo-tipo ${esc(job.tipo || 'convencional')}">${esc(rotuloTipo(job.tipo))}</span>
+            ${pend ? `<span class="selo-falta" title="${esc(pend.grupos.map(g => g.rot + ': ' + g.itens.join(', ')).join(' | '))}">falta ${pend.total}</span>` : ''}
           </div>
           <div class="job-item-sub">${esc(job.cliente)} &middot; ${esc(job.data)}${job.tecnico && ehRevisor() ? ' &middot; ' + esc(job.tecnico) : ''}</div>
           ${job.status === 'reprovado' && (job.row && job.row.revisao && job.row.revisao.observacao) ? `<div class="job-item-sub" style="color:var(--accent);margin-top:3px;">↩ ${esc(job.row.revisao.observacao)}</div>` : ''}
@@ -11045,7 +11206,7 @@
           </button>` : ''}
         </div>` : '';
 
-      details.innerHTML = materiaisHtml + servicosHtml + (podeRemanejar ? `
+      details.innerHTML = caixaPendencias(pend) + materiaisHtml + servicosHtml + (podeRemanejar ? `
         <div class="user-empresa-wrap" style="margin-bottom:10px;">
           <span class="user-empresa-label">${esc(job.tecnico || 'sem técnico')}</span>
           <button type="button" class="user-empresa-edit" data-acao="remanejar-job" title="Atribuir/remanejar técnico" aria-label="Atribuir/remanejar técnico">
