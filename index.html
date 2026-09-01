@@ -431,6 +431,30 @@
   .status-op[data-status="aprovado"]:hover{border-color:var(--success);color:var(--success);}
   .status-op[data-status="reprovado"]:hover{border-color:var(--danger);color:var(--danger);}
   .status-nota{margin-top:9px;font-size:10.5px;color:var(--text-faint);}
+  /* Histórico: o que mudou na obra depois que ela foi enviada. O selo laranja
+     dizia QUE mudou; sem isto o analista reconferia a obra inteira no escuro. */
+  .hist-box{margin-top:8px;}
+  .hist-abrir{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;
+    min-height:44px;cursor:pointer;background:none;border:1px solid var(--border);
+    border-radius:7px;color:var(--text-dim);font-family:'Inter',sans-serif;font-size:12.5px;}
+  .hist-abrir:hover,.hist-abrir.on{border-color:var(--accent);color:var(--accent);}
+  .hist-lista{margin-top:8px;padding:12px;background:var(--bg-elev-2);
+    border:1px solid var(--border);border-radius:8px;}
+  .hist-vazio{font-size:12px;color:var(--text-faint);}
+  .hist-ent{padding-bottom:11px;margin-bottom:11px;border-bottom:1px solid var(--border);}
+  .hist-ent:last-child{padding-bottom:0;margin-bottom:0;border-bottom:none;}
+  .hist-quando{font-family:'IBM Plex Mono',monospace;font-size:10.5px;
+    letter-spacing:.03em;color:var(--text-dim);margin-bottom:2px;}
+  .hist-quem{font-size:12.5px;color:var(--text);font-weight:600;margin-bottom:6px;}
+  .hist-quem .papel{font-weight:400;color:var(--text-dim);}
+  .hist-reabriu{display:inline-block;margin-left:6px;font-family:'IBM Plex Mono',monospace;
+    font-size:9.5px;text-transform:uppercase;letter-spacing:.05em;padding:1px 6px;
+    border-radius:999px;color:var(--st-ambar);border:1px solid rgba(217,164,65,.34);
+    background:rgba(217,164,65,.12);}
+  .hist-grupo{font-family:'IBM Plex Mono',monospace;font-size:10px;text-transform:uppercase;
+    letter-spacing:.05em;color:var(--text-dim);margin:7px 0 2px;}
+  .hist-lista ul{margin:0;padding-left:16px;}
+  .hist-lista li{font-size:12.5px;color:var(--text);line-height:1.55;}
   /* Obra que ja tinha sido aprovada e o tecnico mexeu. Sem isso o analista
      reaprova no automatico sem perceber que o numero mudou depois do "de acordo". */
   .selo-reaberta{margin-top:4px;font-family:'IBM Plex Mono',monospace;font-size:10px;
@@ -3067,7 +3091,7 @@
 (function(){
   // Marque aqui a cada build enviado ao campo. O testador informa esta
   // string ao relatar um problema, senao nao da pra saber o que ele rodou.
-  const APP_VERSION = 'Enlace Ops · alpha-10.70 · 31/08/2026';
+  const APP_VERSION = 'Enlace Ops · alpha-10.71 · 01/09/2026';
 
   // ---------- Supabase config ----------
   // Troque pelos valores reais do seu projeto (Project Settings -> API no Supabase).
@@ -6402,24 +6426,219 @@
   // O upload guarda so os caminhos dos arquivos. Metragem, legenda e
   // observacao vivem no dataState e se perderiam. Este snapshot salva
   // esses campos junto, para o PDF poder ser refeito depois.
+  // Impressão digital do arquivo, só pra saber se ele TROCOU. Não é segurança,
+  // é comparação: o caminho no Storage é o mesmo quando o técnico substitui a
+  // foto (é sempre `7.jpg`), então sem isto uma troca passaria invisível. Hash
+  // forte custaria segundos numa foto grande, e isso roda em celular no poste.
+  function marcaArquivo(dataUrl){
+    const s = String(dataUrl || '');
+    if(!s) return '';
+    let h = 5381;
+    const passo = Math.max(1, Math.floor(s.length / 4096));
+    for(let i = 0; i < s.length; i += passo) h = ((h * 33) ^ s.charCodeAt(i)) >>> 0;
+    return s.length.toString(36) + '-' + h.toString(36);
+  }
+
   function buildMetaSnapshot(){
     const meta = {photos:{}, projectDocs:{}, docsAtt:{}};
+    const daFoto = e => ({meter:e.meter||null, legend:e.legend||'', time:e.time||'',
+                          dbm:(e.dbm != null && e.dbm !== '' ? e.dbm : null),
+                          fp: marcaArquivo(e.imgSrc)});
     photoItems.forEach(item=>{
       const s = dataState.photos[item.id];
       if(!s) return;
-      meta.photos[item.id] = item.multiple
-        ? s.map(e => ({meter:e.meter||null, legend:e.legend||'', time:e.time||''}))
-        : {meter:s.meter||null, legend:s.legend||'', time:s.time||''};
+      meta.photos[item.id] = item.multiple ? s.map(daFoto) : daFoto(s);
     });
     projectDocItems.forEach(item=>{
       const s = dataState.projectDocs[item.id];
-      if(s) meta.projectDocs[item.id] = {obs:s.obs||''};
+      if(s) meta.projectDocs[item.id] = {obs:s.obs||'', fp: marcaArquivo(s.imgSrc)};
     });
     docExecItems.forEach(item=>{
       const s = dataState.docsAtt[item.id];
-      if(s) meta.docsAtt[item.id] = {obs:s.obs||''};
+      if(s) meta.docsAtt[item.id] = {obs:s.obs||'', fp: marcaArquivo(s.imgSrc)};
     });
     return meta;
+  }
+
+  // ---------- O que mudou de uma versão da obra pra outra ----------
+  //
+  // Compara os `dados` gravados com os que estão indo pro servidor e devolve
+  // uma lista pronta pra ler. O selo "obra alterada pelo técnico" dizia QUE
+  // mudou; sem isto, o analista tinha que reconferir a obra inteira no escuro.
+
+  const ROTULO_CONTRATO = {
+    numero:'Número do contrato', data:'Data da obra', codtcomp:'COTCOMP',
+    empresa:'Cliente', endereco:'Endereço', cidade:'Cidade', cep:'CEP',
+    coordenadas:'Coordenadas', atividade:'Descrição da atividade',
+    tipoFalha:'Tipo da falha', causaFalha:'Causa da falha', solucao:'Solução',
+    elaborador:'Elaborador', aprovadorLigga:'Aprovador Ligga',
+  };
+
+  function diffObra(antes, depois, tipo){
+    antes = antes || {}; depois = depois || {};
+    const t = tipo || depois.tipoObra || antes.tipoObra || 'convencional';
+    const cat = catalogoDe(t);
+    const itens = itensDoTipo(t);
+    const mud = [];
+    const add = (grupo, texto) => mud.push({grupo, texto});
+    const chaves = (a, b) => [...new Set([...Object.keys(a || {}), ...Object.keys(b || {})])];
+    const vazio = v => v == null || String(v).trim() === '';
+
+    // ---- contrato
+    const ca = antes.contract || {}, cd = depois.contract || {};
+    chaves(ca, cd).forEach(k=>{
+      const de = ca[k], para = cd[k];
+      if(String(de == null ? '' : de) === String(para == null ? '' : para)) return;
+      const rot = ROTULO_CONTRATO[k] || k;
+      if(vazio(de))        add('Contrato', rot + ': preenchido com "' + para + '"');
+      else if(vazio(para)) add('Contrato', rot + ': apagado (era "' + de + '")');
+      else                 add('Contrato', rot + ': "' + de + '" → "' + para + '"');
+    });
+
+    // ---- materiais
+    const ma = antes.materialsQty || {}, md = depois.materialsQty || {};
+    chaves(ma, md).forEach(id=>{
+      const de = Number(ma[id]) || 0, para = Number(md[id]) || 0;
+      if(de === para) return;
+      const m = cat.materiais.find(x => String(x.id) === String(id));
+      const nome = m ? m.name : ('Item ' + id + ' (fora do catálogo)');
+      if(!de)        add('Materiais', nome + ': lançado (' + para + ')');
+      else if(!para) add('Materiais', nome + ': removido (era ' + de + ')');
+      else           add('Materiais', nome + ': ' + de + ' → ' + para);
+    });
+
+    // número de série e material retirado do campo entram no relatório e no
+    // faturamento — mudança neles não pode passar despercebida
+    const xa = antes.materialsExtra || {}, xd = depois.materialsExtra || {};
+    chaves(xa, xd).forEach(id=>{
+      const a = xa[id] || {}, d = xd[id] || {};
+      const m = cat.materiais.find(x => String(x.id) === String(id));
+      const nome = m ? m.name : ('Item ' + id);
+      if(String(a.serie || '') !== String(d.serie || ''))
+        add('Materiais', nome + ' — série: ' + (a.serie || '(vazia)') + ' → ' + (d.serie || '(vazia)'));
+      if(!!a.retirado !== !!d.retirado)
+        add('Materiais', nome + ': ' + (d.retirado ? 'marcado como retirado do campo' : 'deixou de ser retirado'));
+    });
+
+    // ---- serviços (e o efeito no valor, que é o que vira fatura)
+    const va = antes.valuesQty || {}, vd = depois.valuesQty || {};
+    let totalAntes = 0, totalDepois = 0;
+    chaves(va, vd).forEach(code=>{
+      const s = cat.servicos.find(x => x.code === code);
+      const preco = s ? s.price : 0;
+      const de = Number(va[code]) || 0, para = Number(vd[code]) || 0;
+      totalAntes += de * preco; totalDepois += para * preco;
+      if(de === para) return;
+      const nome = code + ' — ' + (s ? s.desc : 'serviço fora do catálogo');
+      if(!de)        add('Serviços', nome + ': lançado (' + para + ')');
+      else if(!para) add('Serviços', nome + ': removido (era ' + de + ')');
+      else           add('Serviços', nome + ': ' + de + ' → ' + para);
+    });
+    if(Math.round(totalAntes * 100) !== Math.round(totalDepois * 100)){
+      add('Serviços', 'Valor da obra: ' + formatBRL(totalAntes) + ' → ' + formatBRL(totalDepois));
+    }
+
+    // ---- fotos: quantidade, troca de arquivo, metragem, legenda e sinal
+    const fa = (antes.arquivos || {}).photos || {}, fd = (depois.arquivos || {}).photos || {};
+    const qa = (antes.meta || {}).photos || {},     qd = (depois.meta || {}).photos || {};
+    const lista = v => (v == null ? [] : (Array.isArray(v) ? v : [v]));
+    chaves(fa, fd).forEach(id=>{
+      const it = itens.find(x => String(x.id) === String(id));
+      const nome = it ? it.title : ('Foto ' + id);
+      const de = lista(fa[id]).length, para = lista(fd[id]).length;
+      if(de !== para){
+        if(!de)        add('Fotos', nome + ': anexada' + (para > 1 ? ' (' + para + ' fotos)' : ''));
+        else if(!para) add('Fotos', nome + ': removida');
+        else           add('Fotos', nome + ': ' + de + ' → ' + para + ' fotos');
+      }
+      const ea = lista(qa[id]), ed = lista(qd[id]);
+      const n = Math.min(ea.length, ed.length);
+      for(let i = 0; i < n; i++){
+        const a = ea[i] || {}, d = ed[i] || {};
+        const qual = nome + (ed.length > 1 ? ' (foto ' + (i+1) + ')' : '');
+        // fp só existe a partir da versão que passou a gravá-lo: em obra
+        // antiga os dois lados vêm vazios e a comparação se cala sozinha
+        if(a.fp && d.fp && a.fp !== d.fp && de === para)
+          add('Fotos', qual + ': arquivo substituído');
+        if(String(a.meter || '') !== String(d.meter || ''))
+          add('Fotos', qual + ' — metragem: ' + (a.meter || '(vazia)') + ' → ' + (d.meter || '(vazia)'));
+        if(String(a.dbm == null ? '' : a.dbm) !== String(d.dbm == null ? '' : d.dbm))
+          add('Fotos', qual + ' — sinal: ' + (a.dbm == null ? '(vazio)' : a.dbm + ' dBm')
+                     + ' → ' + (d.dbm == null ? '(vazio)' : d.dbm + ' dBm'));
+        if(String(a.legend || '') !== String(d.legend || ''))
+          add('Fotos', qual + ' — legenda: "' + (a.legend || '') + '" → "' + (d.legend || '') + '"');
+      }
+    });
+
+    // ---- documentos
+    [['projectDocs', projectDocItems, 'Documentos do projeto'],
+     ['docsAtt',     docExecItems,    'Documentos executados']].forEach(([chave, defs, grupo])=>{
+      const da = (antes.arquivos || {})[chave] || {}, dd = (depois.arquivos || {})[chave] || {};
+      const na = (antes.meta || {})[chave] || {},     nd = (depois.meta || {})[chave] || {};
+      chaves(da, dd).forEach(id=>{
+        const def = defs.find(x => x.id === id);
+        const nome = def ? def.title : id;
+        if(!da[id] && dd[id])      add(grupo, nome + ': anexado');
+        else if(da[id] && !dd[id]) add(grupo, nome + ': removido');
+        else {
+          const a = na[id] || {}, d = nd[id] || {};
+          if(a.fp && d.fp && a.fp !== d.fp) add(grupo, nome + ': arquivo substituído');
+          if(String(a.obs || '') !== String(d.obs || ''))
+            add(grupo, nome + ' — observação: "' + (a.obs || '') + '" → "' + (d.obs || '') + '"');
+        }
+      });
+    });
+
+    return mud;
+  }
+
+  // Sua decisão: o histórico começa no primeiro envio. Enquanto a obra é
+  // rascunho em campo, cada foto anexada viraria uma linha e o que importa se
+  // perderia no meio.
+  const STATUS_JA_ENVIADA = ['enviado','aprovado','reprovado'];
+
+  // Retrato do que está gravado AGORA. Vem do servidor, não do cache da lista:
+  // outra pessoa pode ter mexido enquanto esta obra estava aberta, e o
+  // histórico precisa comparar com a versão real que está sendo substituída.
+  async function retratoAtual(id){
+    try{
+      const {data} = await supabaseClient.from(SUPABASE_TABLE)
+        .select('dados,status').eq('id', id).maybeSingle();
+      // cópia, não referência: se o cliente devolver o próprio objeto da linha
+      // (é o que o banco da demonstração faz), o update seguinte alteraria o
+      // "antes" junto e o histórico sairia dizendo que nada mudou
+      return data ? JSON.parse(JSON.stringify(data)) : null;
+    } catch(e){ return null; }
+  }
+
+  // Grava a linha do histórico. Nunca derruba o salvamento: se o log falhar, a
+  // obra já está gravada e perder o registro é menos grave que perder a obra.
+  async function registrarAlteracao(relatorioId, antes, depois, opts){
+    opts = opts || {};
+    try{
+      if(!relatorioId || !supabaseConfigured) return;
+      const mudancas = diffObra(antes, depois, opts.tipo);
+      if(!mudancas.length) return;   // salvou sem mexer em nada: não polui o log
+      const {error} = await supabaseClient.from('obra_alteracoes').insert({
+        relatorio_id: relatorioId,
+        empresa_id: obraEmpresaId || minhaEmpresa(),
+        perfil_id: (perfilAtual && perfilAtual.id !== 'demo') ? perfilAtual.id : null,
+        autor: (perfilAtual && perfilAtual.nome) || nomeTecnicoObra() || '',
+        papel: papelAtual(),
+        status_antes: opts.statusAntes || null,
+        status_depois: opts.statusDepois || null,
+        reabriu: !!opts.reabriu,
+        mudancas,
+        // o horário quem carimba é o servidor (`default now()`): relógio de
+        // celular errado num registro de auditoria é pior que não ter registro.
+        // Só na demonstração o banco é de mentira e não tem default nenhum.
+        ...(modoDemo ? {em: new Date().toISOString()} : {}),
+      });
+      if(error) throw error;
+    } catch(e){
+      console.warn('histórico da obra não registrado:', e.message || e);
+      if(ehRevisor()) showToast('Obra salva, mas o histórico não foi registrado');
+    }
   }
 
   // Baixa um arquivo do Storage e devolve como dataURL (o jsPDF precisa assim).
@@ -6991,6 +7210,7 @@
         }
       };
       // corrigindo uma obra que ja existe: atualiza a linha em vez de duplicar
+      const antesEnvio = obraEditandoId ? await retratoAtual(obraEditandoId) : null;
       const {tecnico_id, empresa_id, ...semDono} = payload;   // correção não troca dono nem empresa
       const resp = obraEditandoId
         ? await supabaseClient.from(SUPABASE_TABLE)
@@ -6998,6 +7218,14 @@
             .eq('id', obraEditandoId)
         : await supabaseClient.from(SUPABASE_TABLE).insert(payload);
       if(resp.error) throw resp.error;
+      if(antesEnvio && STATUS_JA_ENVIADA.indexOf(antesEnvio.status) !== -1){
+        await registrarAlteracao(obraEditandoId, antesEnvio.dados, payload.dados, {
+          tipo: tipoObraAtual,
+          statusAntes: antesEnvio.status,
+          statusDepois: 'enviado',
+          reabriu: antesEnvio.status === 'aprovado',
+        });
+      }
       sendStatus.textContent = 'Relatório enviado com sucesso.';
       dataState.reabertaMarca = null;
       registrarUso();   // alimenta os atalhos de "você costuma usar"
@@ -7121,8 +7349,17 @@
           statusAnterior: 'aprovado',
         };
       }
+      const antesSalvar = await retratoAtual(obraEditandoId);
       const {error} = await supabaseClient.from(SUPABASE_TABLE).update(campos).eq('id', obraEditandoId);
       if(error) throw error;
+      if(antesSalvar && STATUS_JA_ENVIADA.indexOf(antesSalvar.status) !== -1){
+        await registrarAlteracao(obraEditandoId, antesSalvar.dados, campos.dados, {
+          tipo: tipoObraAtual,
+          statusAntes: antesSalvar.status,
+          statusDepois: campos.status || antesSalvar.status,
+          reabriu: !!reabrir,
+        });
+      }
       if(reabrir){
         statusObraAtual = 'enviado';
         showToast('Salvo — a obra voltou pra revisão do escritório');
@@ -10049,6 +10286,18 @@
         corpo:'A partir de segunda o material sai do depósito da Rua Ipiranga, não mais da sede. Levem a OS impressa.',
         criado_em: hoje + 'T07:30:00.000Z', expira_em:null, criado_por:'d-ana'}],
       comunicado_leituras: [],
+      // uma alteração já registrada: sem ela o histórico abriria vazio na
+      // demonstração e ninguém veria pra que serve
+      obra_alteracoes: [{id:1, relatorio_id:1, empresa_id:1, perfil_id:'d-t1',
+        autor:'Carlos Andrade', papel:'tecnico', reabriu:true,
+        status_antes:'aprovado', status_depois:'enviado',
+        em: hoje + 'T09:14:00.000Z',
+        mudancas:[
+          {grupo:'Serviços', texto:'03.06 — Conexão/terminação de fibras ópticas: 2 → 4'},
+          {grupo:'Serviços', texto:'Valor da obra: R$ 654,98 → R$ 687,62'},
+          {grupo:'Fotos',    texto:'Foto do sinal do cliente: arquivo substituído'},
+          {grupo:'Fotos',    texto:'Foto do sinal do cliente — sinal: -26,1 dBm → -19,4 dBm'},
+        ]}],
       equipes:  [{id:1, nome:'Equipe Norte', empresa_id:1}, {id:2, nome:'Equipe Sul', empresa_id:1}],
       perfis: [
         {id:'d-adm', nome:'Você (demonstração)', email:'demo@enlace.app', papel:'admin',    aprovado:true, empresa_id:1},
@@ -10062,7 +10311,9 @@
         {id:1, contrato:'9000001', status:'enviado',     empresa_id:1, tipo_obra:'convencional', tecnico_id:'d-t1',
          dados:{contract:contrato('9000001','Padaria Modelo Ltda','R DEMONSTRACAO, 100'), tecnico:'Carlos Andrade',
                 arquivos:anexos('9000001', ['asbuilt']), meta:{photos:{},projectDocs:{},docsAtt:{}},
-                materialsQty:{}, valuesQty:{}}, __completa:true},
+                materialsQty:{}, valuesQty:{},
+                reaberta:{em: hoje + 'T09:14:00.000Z', por:'Carlos Andrade', statusAnterior:'aprovado'}},
+         __completa:true},
         {id:2, contrato:'9000002', status:'em_execucao', empresa_id:1, tipo_obra:'convencional', tecnico_id:'d-t1',
          dados:{contract:contrato('9000002','Mercado Central','AV EXEMPLO, 2395'), tecnico:'Carlos Andrade',
                 arquivos:{photos:{},projectDocs:{},docsAtt:{}}, meta:{photos:{},projectDocs:{},docsAtt:{}},
@@ -10193,7 +10444,10 @@
 
     const fake = bancoDemo();
     // troca o cliente real pelo falso: nenhuma chamada sai do navegador
-    try{ supabaseClient = fake; } catch(e){ window.__demoBanco = fake; }
+    // expor o banco falso não é só plano B: com ele dá pra inspecionar o que
+    // a demonstração gravou, pelo console, sem servidor nenhum
+    window.__demoBanco = fake;
+    try{ supabaseClient = fake; } catch(e){}
 
     const papeis = [
       {id:'d-adm', t:'Administrador', s:'vê tudo, despacha, aprova e exclui'},
@@ -10941,6 +11195,45 @@
     return total ? {grupos, total} : null;
   }
 
+  // ---------- Histórico da obra na tela ----------
+  const ROTULO_PAPEL = {tecnico:'técnico', analista:'analista', admin:'administrador',
+                        superadmin:'superadmin', monitor:'monitor'};
+
+  function dataHoraBR(iso){
+    const d = new Date(iso);
+    if(isNaN(d.getTime())) return String(iso || '');
+    const p = n => String(n).padStart(2, '0');
+    return p(d.getDate()) + '/' + p(d.getMonth()+1) + '/' + d.getFullYear()
+         + ' às ' + p(d.getHours()) + ':' + p(d.getMinutes());
+  }
+
+  function htmlHistorico(entradas){
+    if(!entradas.length){
+      return '<div class="hist-vazio">Nenhuma alteração registrada depois do envio.</div>';
+    }
+    return entradas.map(e=>{
+      // agrupa por Contrato / Materiais / Serviços / Fotos / Documentos: lista
+      // corrida de vinte linhas ninguém lê, e é justamente quando o técnico
+      // mexeu em muita coisa que o analista mais precisa entender
+      const grupos = {};
+      (e.mudancas || []).forEach(m=>{
+        const g = (m && m.grupo) || 'Alteração';
+        (grupos[g] = grupos[g] || []).push((m && m.texto) || '');
+      });
+      return '<div class="hist-ent">'
+        + '<div class="hist-quando">' + esc(dataHoraBR(e.em)) + '</div>'
+        + '<div class="hist-quem">' + esc(e.autor || 'sem nome')
+        + ' <span class="papel">' + esc(ROTULO_PAPEL[e.papel] || e.papel || '') + '</span>'
+        + (e.reabriu ? '<span class="hist-reabriu">reabriu obra aprovada</span>' : '')
+        + '</div>'
+        + Object.keys(grupos).map(g =>
+            '<div class="hist-grupo">' + esc(g) + '</div><ul>'
+            + grupos[g].map(t => '<li>' + esc(t) + '</li>').join('')
+            + '</ul>').join('')
+        + '</div>';
+    }).join('');
+  }
+
   function caixaPendencias(pend){
     if(!pend) return '';
     return '<div class="pend-box"><h5>Falta anexar &mdash; ' + pend.total
@@ -11358,6 +11651,15 @@
             <div class="status-nota">Fica registrado quem mudou e quando.</div>
           </div>
         </div>` : ''}
+        ${ehRevisor() && job.row && STATUS_JA_ENVIADA.indexOf(job.status) !== -1 ? `
+        <div class="hist-box">
+          <button type="button" class="hist-abrir" data-acao="historico">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+              stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v5l3 2"/><path d="M3.5 12a8.5 8.5 0 1 1 2.6 6.1"/><path d="M3 15v-4h4"/></svg>
+            Ver o que mudou
+          </button>
+          <div class="hist-lista" style="display:none;"></div>
+        </div>` : ''}
       `;
 
       // ---- sanfona de materiais/serviços ----
@@ -11372,6 +11674,33 @@
             .forEach(el => el.classList.toggle('aberta', abriu));
         });
       });
+
+      // ---- histórico: o que mudou depois do envio (só escritório) ----
+      const btnHist = details.querySelector('[data-acao="historico"]');
+      if(btnHist){
+        const painelHist = details.querySelector('.hist-lista');
+        btnHist.addEventListener('click', async (e)=>{
+          e.stopPropagation();
+          const abrindo = painelHist.style.display === 'none';
+          painelHist.style.display = abrindo ? '' : 'none';
+          btnHist.classList.toggle('on', abrindo);
+          // carrega uma vez só: reabrir e fechar não bate no servidor de novo
+          if(!abrindo || painelHist.dataset.carregado) return;
+          painelHist.innerHTML = '<div class="hist-vazio">Carregando...</div>';
+          try{
+            const {data, error} = await supabaseClient.from('obra_alteracoes')
+              .select('em,autor,papel,reabriu,status_antes,status_depois,mudancas')
+              .eq('relatorio_id', job.row.id)
+              .order('em', {ascending:false}).limit(30);
+            if(error) throw error;
+            painelHist.dataset.carregado = '1';
+            painelHist.innerHTML = htmlHistorico(data || []);
+          } catch(err){
+            painelHist.innerHTML = '<div class="hist-vazio">Não deu pra carregar o histórico: '
+              + esc(err.message || String(err)) + '</div>';
+          }
+        });
+      }
 
       // ---- alterar status na mão (só escritório) ----
       const btnAbrirStatus = details.querySelector('[data-acao="abrir-status"]');
