@@ -1063,6 +1063,42 @@
     font-family:'IBM Plex Mono',monospace;letter-spacing:0.02em;
   }
   .adm-chip.ativo{background:var(--accent-dim);border-color:var(--accent);color:var(--accent);}
+  /* Polo: CTA, CEL, LNA, MAT. Código curto e sem tradução porque é assim que a
+     equipe fala — inventar nome por extenso aqui só criaria um segundo
+     vocabulário pra mesma coisa. */
+  .polo-chips{display:flex;flex-wrap:wrap;gap:6px;}
+  .polo-chip{min-height:38px;padding:0 14px;cursor:pointer;
+    background:var(--bg-elev);border:1px solid var(--border);color:var(--text-dim);
+    border-radius:7px;font-family:'IBM Plex Mono',monospace;font-size:12.5px;
+    font-weight:600;letter-spacing:.05em;}
+  .polo-chip:hover{border-color:var(--accent);color:var(--accent);}
+  .polo-chip.ativo{border-color:var(--accent);color:var(--accent);background:var(--accent-dim);}
+  .selo-polo{display:inline-flex;align-items:center;font-family:'IBM Plex Mono',monospace;
+    font-size:10px;font-weight:700;letter-spacing:.06em;padding:2px 7px;border-radius:999px;
+    color:var(--text-dim);border:1px solid var(--border);background:var(--bg-elev-2);}
+  /* Filtro mensal da lista de obras. Setas pro mês passado (o caso comum) e
+     campo pra pular pra um mês distante sem ficar clicando. */
+  .mes-linha{display:flex;align-items:center;gap:6px;}
+  .mes-nav{flex:0 0 auto;min-width:40px;min-height:40px;cursor:pointer;
+    background:var(--bg-elev);border:1px solid var(--border);color:var(--text-dim);
+    border-radius:7px;font-size:19px;line-height:1;}
+  .mes-nav:hover{border-color:var(--accent);color:var(--accent);}
+  .mes-nav:disabled{opacity:.35;cursor:default;}
+  .mes-campo{flex:1 1 auto;min-width:0;min-height:40px;background:var(--bg-elev);
+    border:1px solid var(--border);color:var(--text);border-radius:7px;padding:0 10px;
+    font-family:'IBM Plex Mono',monospace;font-size:12.5px;}
+  .mes-campo:focus{outline:none;border-color:var(--accent);}
+  .mes-todos{flex:0 0 auto;min-height:40px;padding:0 13px;cursor:pointer;
+    background:var(--bg-elev);border:1px solid var(--border);color:var(--text-dim);
+    border-radius:7px;font-family:'Inter',sans-serif;font-size:12.5px;}
+  .mes-todos:hover{border-color:var(--accent);color:var(--accent);}
+  .mes-todos.ativo{border-color:var(--accent);color:var(--accent);background:var(--accent-dim);}
+  /* A obra que o filtro escondeu tem que se anunciar. Sem isto, o mês fechado
+     faz o analista achar que a obra sumiu do sistema. */
+  .mes-fora{font-family:'IBM Plex Mono',monospace;font-size:11px;
+    color:var(--text-dim);margin:-10px 0 14px;}
+  .mes-fora button{background:none;border:none;padding:0;color:var(--accent);
+    cursor:pointer;font:inherit;text-decoration:underline;}
   .jobs-filtro-linha{display:flex;align-items:flex-start;gap:10px;}
   .jobs-filtro-linha .adm-filtros{flex:1;min-width:0;}
   .jobs-export{flex:0 0 auto;min-height:34px;margin-top:-1px;cursor:pointer;
@@ -2398,6 +2434,10 @@
           <option value="modernizacao">Modernização</option>
         </select>
       </div>
+      <div class="med-campo">
+        <label class="med-rot" for="medPolo">Polo</label>
+        <select class="med-data" id="medPolo"><option value="">Todos</option></select>
+      </div>
       <div class="med-campo med-campo-tec">
         <label class="med-rot" for="medTecnico">Técnico</label>
         <select class="med-data" id="medTecnico"><option value="">Todos</option></select>
@@ -2531,6 +2571,8 @@
         <button type="button" class="med-modo" data-tipo="modernizacao">
           <b>Modernização</b>melhoria / manutenção de rede</button>
       </div>
+      <div class="field-label" style="margin-top:4px;">Polo *</div>
+      <div class="polo-chips" id="dPolo" style="padding:2px 0 14px;"></div>
       <div class="field-label" style="margin-top:4px;">Obra *</div>
       <input class="field-input" id="dNumero" inputmode="numeric" placeholder="Ex: 2438766" autocomplete="off">
       <div id="dLookup" style="font-size:11.5px;color:var(--text-faint);margin:4px 0 12px;"></div>
@@ -2693,6 +2735,13 @@
       </button>
       <input class="adm-busca" id="jobsBusca" placeholder="Buscar por contrato, cliente, técnico ou status" autocomplete="off" style="margin-top:12px;margin-bottom:0;">
       <div class="faixa-painel" id="faixaFiltroPainel" style="display:none;"></div>
+      <div class="polo-chips" id="jobsPolo" style="margin-top:10px;"></div>
+      <div class="mes-linha" id="jobsMesLinha" style="margin-top:10px;">
+        <button class="mes-nav" type="button" data-mes="-1" title="Mês anterior" aria-label="Mês anterior">&#8249;</button>
+        <input type="month" class="mes-campo" id="jobsMes" aria-label="Mês das obras">
+        <button class="mes-nav" type="button" data-mes="1" title="Próximo mês" aria-label="Próximo mês">&#8250;</button>
+        <button class="mes-todos" type="button" id="jobsMesTodos">Todos</button>
+      </div>
       <div class="jobs-filtro-linha" style="margin-top:10px;">
         <div class="adm-filtros" id="jobsStatusFiltro" style="margin-top:0;margin-bottom:0;padding-bottom:0;">
           <div class="adm-chip ativo" data-filtro="abertas">Pendentes/Rejeitadas</div>
@@ -2731,6 +2780,8 @@
         <div class="field-group">
           <label class="field-label">Número do contrato <span class="req">*</span></label>
           <input class="field-input" id="fNumero" inputmode="numeric" placeholder="Ex: 2237754">
+          <div class="field-label" style="margin-top:12px;">Polo <span class="req">*</span></div>
+          <div class="polo-chips" id="fPolo"></div>
           <div id="contratoLookupStatus" style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;margin-top:5px;display:none;"></div>
           <div id="fDuplicada" class="dup-aviso" style="display:none;"></div>
         </div>
@@ -3091,7 +3142,7 @@
 (function(){
   // Marque aqui a cada build enviado ao campo. O testador informa esta
   // string ao relatar um problema, senao nao da pra saber o que ele rodou.
-  const APP_VERSION = 'Enlace Ops · alpha-10.71 · 01/09/2026';
+  const APP_VERSION = 'Enlace Ops · alpha-10.73 · 01/09/2026';
 
   // ---------- Supabase config ----------
   // Troque pelos valores reais do seu projeto (Project Settings -> API no Supabase).
@@ -3158,6 +3209,48 @@
   // Tipo da obra que está aberta no assistente. Toda obra tem um; as antigas
   // são convencionais (é o que o banco preenche por padrão na migração).
   let tipoObraAtual = 'convencional';
+
+  // ---------- Polos ----------
+  //
+  // A operação é dividida em quatro. O código curto é o vocabulário da equipe:
+  // inventar nome por extenso aqui criaria um segundo jeito de chamar a mesma
+  // coisa, e alguém acabaria escrevendo um no papel e outro no sistema.
+  //
+  // Esta lista tem que combinar com a trava `relatorios_polo_ok` do banco. Se
+  // entrar um quinto polo, os dois lugares mudam juntos — senão o app oferece
+  // um polo que o banco recusa na hora de salvar.
+  const POLOS = ['CTA','CEL','LNA','MAT'];
+  const POLO_PADRAO = 'CTA';
+
+  function poloValido(p){ return POLOS.indexOf(String(p || '').toUpperCase()) !== -1; }
+
+  // Aceita a linha do banco ou o job da lista. Obra antiga (ou vinda de um
+  // banco ainda sem a coluna) cai em CTA, que é onde ela de fato está.
+  function poloDaObra(x){
+    const p = (x && (x.polo || (x.row && x.row.polo))) || '';
+    return poloValido(p) ? String(p).toUpperCase() : POLO_PADRAO;
+  }
+
+  // Polo da obra aberta no assistente.
+  let poloObraAtual = POLO_PADRAO;
+
+  // Fileira de chips. `comTodos` acrescenta o "Todos" na frente — quem filtra
+  // precisa dele, quem cadastra não: obra sem polo não existe.
+  function pintarChipsPolo(el, valor, aoEscolher, comTodos){
+    if(!el) return;
+    el.innerHTML = '';
+    const opcoes = comTodos ? [{v:'', r:'Todos'}] : [];
+    POLOS.forEach(p => opcoes.push({v:p, r:p}));
+    opcoes.forEach(o=>{
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'polo-chip' + (String(valor || '') === o.v ? ' ativo' : '');
+      b.textContent = o.r;
+      b.dataset.polo = o.v;
+      b.addEventListener('click', ()=> aoEscolher(o.v));
+      el.appendChild(b);
+    });
+  }
 
   // ---------- Tipos de obra ----------
   // Ativação convencional e modernização (manutenção/melhoria de rede) são
@@ -7195,6 +7288,7 @@
         contrato: contractNumero,
         status: 'enviado',
         tipo_obra: tipoObraAtual,
+        polo: poloObraAtual,
         empresa_id: obraEmpresaId || minhaEmpresa(),
         tecnico_id: obraDonoId || (perfilAtual && perfilAtual.id !== 'demo' ? perfilAtual.id : undefined),
         dados: {
@@ -7327,6 +7421,7 @@
       const contractNumero = dataState.contract.numero || ('sem-numero-' + Date.now());
       const uploaded = await uploadAllFiles(contractNumero);
       const campos = {
+        polo: poloObraAtual,
         dados: {
           contract: dataState.contract,
           tipoObra: tipoObraAtual,
@@ -7394,6 +7489,7 @@
         contrato: numero,
         status: 'rascunho',
         tipo_obra: tipoObraAtual,
+        polo: poloObraAtual,
         empresa_id: obraEmpresaId || minhaEmpresa(),
         tecnico_id: obraDonoId || (perfilAtual && perfilAtual.id !== 'demo' ? perfilAtual.id : undefined),
         dados: {
@@ -7527,6 +7623,8 @@
       Object.keys(dataState).forEach(k=>{
         dataState[k] = salvo.dados[k] || (Array.isArray(dataState[k]) ? [] : {});
       });
+      poloObraAtual = poloValido(salvo.dados.polo) ? salvo.dados.polo : POLO_PADRAO;
+      dataState.polo = poloObraAtual;
       preencherCamposContrato();
       renderDocsProjeto(); renderFotos(); renderDocsExecutados();
       renderMateriais(); renderValores();
@@ -7956,6 +8054,7 @@
       // os passos, o checklist de fotos e qual catálogo entra na tela
       aplicarTipoObra((job.row && job.row.tipo_obra) || (job.state && job.state.tipoObra)
                       || job.tipo || 'convencional', {semRedesenhar:true});
+      poloObraAtual = poloDaObra(job);
 
       preencherCamposContrato();
       aplicarModoLeitura();
@@ -8879,6 +8978,27 @@
   let tipoDespachoAtual = 'convencional';
   function tipoDespacho(){ return tipoDespachoAtual; }
 
+  // Polo escolhido no cadastro. Começa em CTA porque é o polo da maioria das
+  // obras — quem cadastra em outro polo troca com um toque.
+  let poloDespachoAtual = POLO_PADRAO;
+  function pintarPoloDespacho(){
+    pintarChipsPolo(document.getElementById('dPolo'), poloDespachoAtual, (v)=>{
+      poloDespachoAtual = v || POLO_PADRAO;
+      pintarPoloDespacho();
+    }, false);
+  }
+  pintarPoloDespacho();
+
+  (function ligarPoloMedicao(){
+    const sel = document.getElementById('medPolo');
+    if(!sel) return;
+    POLOS.forEach(pl=>{
+      const o = document.createElement('option');
+      o.value = pl; o.textContent = pl;
+      sel.appendChild(o);
+    });
+  })();
+
   (function ligarTipoDespacho(){
     const cx = document.getElementById('dTipoObra');
     if(!cx) return;
@@ -9079,6 +9199,7 @@
         contrato: numero,
         status: tecnico ? 'despachada' : 'pendente',
         tipo_obra: tipoDespacho(),
+        polo: poloDespachoAtual,
         empresa_id: emp,
         tecnico_id: tecnico || null,
         despachado_por: perfilAtual.id,
@@ -10308,22 +10429,22 @@
       ],
       convites: [], contratos: [],
       relatorios: [
-        {id:1, contrato:'9000001', status:'enviado',     empresa_id:1, tipo_obra:'convencional', tecnico_id:'d-t1',
+        {id:1, contrato:'9000001', status:'enviado',     polo:'CTA', empresa_id:1, tipo_obra:'convencional', tecnico_id:'d-t1',
          dados:{contract:contrato('9000001','Padaria Modelo Ltda','R DEMONSTRACAO, 100'), tecnico:'Carlos Andrade',
                 arquivos:anexos('9000001', ['asbuilt']), meta:{photos:{},projectDocs:{},docsAtt:{}},
                 materialsQty:{}, valuesQty:{},
                 reaberta:{em: hoje + 'T09:14:00.000Z', por:'Carlos Andrade', statusAnterior:'aprovado'}},
          __completa:true},
-        {id:2, contrato:'9000002', status:'em_execucao', empresa_id:1, tipo_obra:'convencional', tecnico_id:'d-t1',
+        {id:2, contrato:'9000002', status:'em_execucao', polo:'CTA', empresa_id:1, tipo_obra:'convencional', tecnico_id:'d-t1',
          dados:{contract:contrato('9000002','Mercado Central','AV EXEMPLO, 2395'), tecnico:'Carlos Andrade',
                 arquivos:{photos:{},projectDocs:{},docsAtt:{}}, meta:{photos:{},projectDocs:{},docsAtt:{}},
                 materialsQty:{}, valuesQty:{}}},
-        {id:3, contrato:'9000003', status:'despachada',  empresa_id:1, tipo_obra:'convencional', tecnico_id:'d-t2',
+        {id:3, contrato:'9000003', status:'despachada',  polo:'CEL', empresa_id:1, tipo_obra:'convencional', tecnico_id:'d-t2',
          observacao_os:'Cliente atende após as 9h',
          dados:{contract:contrato('9000003','Escola Municipal','R TESTE, 88'), tecnico:'Marcos Vieira',
                 arquivos:{photos:{},projectDocs:{},docsAtt:{}}, meta:{photos:{},projectDocs:{},docsAtt:{}},
                 materialsQty:{}, valuesQty:{}}},
-        {id:4, contrato:'9000004', status:'reprovado',   empresa_id:1, tipo_obra:'convencional', tecnico_id:'d-t2',
+        {id:4, contrato:'9000004', status:'reprovado',   polo:'LNA', empresa_id:1, tipo_obra:'convencional', tecnico_id:'d-t2',
          revisao:{nome:'Ana Despacho', observacao:'Falta a foto da caixa fechada no poste 3.'},
          dados:{contract:contrato('9000004','Clínica Exemplo','R MODELO, 555'), tecnico:'Marcos Vieira',
                 arquivos:anexos('9000004', ['f5','asbuilt','diagrama_att']), meta:{photos:{},projectDocs:{},docsAtt:{}},
@@ -10331,22 +10452,22 @@
         // esta é a única com serviço e material lançados de propósito: sem
         // isso a Medição e o consumo de material abriam sempre zerados na
         // demonstração, e não dava pra mostrar (nem testar) a conta
-        {id:5, contrato:'9000005', status:'aprovado',    empresa_id:1, tipo_obra:'convencional', tecnico_id:'d-t3',
+        {id:5, contrato:'9000005', status:'aprovado',    polo:'CTA', empresa_id:1, tipo_obra:'convencional', tecnico_id:'d-t3',
          dados:{contract:contrato('9000005','Condomínio Jardim','AV AMOSTRA, 70'), tecnico:'Rafael Nunes',
                 arquivos:anexos('9000005'), meta:{photos:{},projectDocs:{},docsAtt:{}},
                 materialsQty:{1:180, 8:1}, materialsExtra:{8:{serie:'ZTEGD4A1B2C3'}},
                 valuesQty:{'02.18':12, '03.06':2, '04.01':1}}},
-        {id:6, contrato:'9000006', status:'pendente',    empresa_id:1, tipo_obra:'convencional', tecnico_id:null,
+        {id:6, contrato:'9000006', status:'pendente',    polo:'MAT', empresa_id:1, tipo_obra:'convencional', tecnico_id:null,
          dados:{contract:contrato('9000006','Auto Peças Exemplo','R AMOSTRA, 1200'),
                 arquivos:{photos:{},projectDocs:{},docsAtt:{}}, meta:{photos:{},projectDocs:{},docsAtt:{}},
                 materialsQty:{}, valuesQty:{}}},
-        {id:7, contrato:'9000007', status:'pendente',    empresa_id:1, tipo_obra:'convencional', tecnico_id:null,
+        {id:7, contrato:'9000007', status:'pendente',    polo:'CEL', empresa_id:1, tipo_obra:'convencional', tecnico_id:null,
          dados:{contract:contrato('9000007','Restaurante Demo','AV TESTE, 4501'),
                 arquivos:{photos:{},projectDocs:{},docsAtt:{}}, meta:{photos:{},projectDocs:{},docsAtt:{}},
                 materialsQty:{}, valuesQty:{}}},
         // uma obra de MODERNIZAÇÃO na demonstração: sem ela o tipo novo não
         // aparece pra quem está conhecendo o produto, e nem dá pra testar
-        {id:8, contrato:'PNG - 201', status:'despachada', empresa_id:1, tecnico_id:'d-t1',
+        {id:8, contrato:'PNG - 201', status:'despachada', polo:'CTA', empresa_id:1, tecnico_id:'d-t1',
          tipo_obra:'modernizacao',
          dados:{contract:Object.assign(contrato('PNG - 201','Cip Telecom','R EUGENIO J DE SOUZA, 66'), {
                   atividade:'MELHORIA DE REDE – PNG - 201',
@@ -11065,6 +11186,7 @@
 
   function resetDataState(){
     dataState.tipoObra = tipoObraAtual;
+    dataState.polo = poloObraAtual;
     dataState.contract = {};
     dataState.projectDocs = {};
     dataState.photos = {};
@@ -11106,10 +11228,24 @@
       if(id === 'fAprovadorLigga' && !v) return;
       el.value = v || '';
     });
+    pintarPoloAssistente();
+  }
+
+  // O polo é escolha sua no cadastro, mas fica corrigível aqui: obra despachada
+  // no polo errado, hoje, só o escritório conserta — e o técnico é quem percebe.
+  function pintarPoloAssistente(){
+    pintarChipsPolo(document.getElementById('fPolo'), poloObraAtual, (v)=>{
+      poloObraAtual = v || POLO_PADRAO;
+      dataState.polo = poloObraAtual;
+      pintarPoloAssistente();
+      salvarRascunho();
+    }, false);
   }
 
   function loadJobSnapshot(job){
     const snap = job.snapshot;
+    poloObraAtual = poloValido(snap.polo) ? snap.polo : poloDaObra(job);
+    dataState.polo = poloObraAtual;
     dataState.contract = JSON.parse(JSON.stringify(snap.contract || {}));
     dataState.projectDocs = JSON.parse(JSON.stringify(snap.projectDocs || {}));
     dataState.photos = JSON.parse(JSON.stringify(snap.photos || {}));
@@ -11262,11 +11398,52 @@
     devolv:   {status:['reprovado'],                rot:'Devolvidas'},
   };
 
-  function obrasDoFiltro(){
+  // ---------- Filtro mensal ----------
+  //
+  // A data que vale é a do CONTRATO, a mesma que a Medição usa pra fechar o
+  // mês. A data de criação da linha diria quando alguém digitou a obra no
+  // sistema, não quando ela foi feita em campo — e são meses diferentes toda
+  // vez que uma obra do fim do mês é lançada no dia 2.
+  function mesDeHoje(){
+    const d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+  }
+  const MESES_PT = ['janeiro','fevereiro','março','abril','maio','junho','julho',
+                    'agosto','setembro','outubro','novembro','dezembro'];
+  function rotuloMes(ym){
+    const m = /^(\d{4})-(\d{2})$/.exec(String(ym || ''));
+    if(!m) return 'todos os meses';
+    return MESES_PT[Number(m[2]) - 1] + ' de ' + m[1];
+  }
+  function somarMes(ym, n){
+    const m = /^(\d{4})-(\d{2})$/.exec(String(ym || '')) ;
+    const base = m ? new Date(Number(m[1]), Number(m[2]) - 1 + n, 1)
+                   : new Date();
+    return base.getFullYear() + '-' + String(base.getMonth() + 1).padStart(2, '0');
+  }
+
+  // Abre no mês atual (decisão sua). '' = todos os meses.
+  let mesObras = mesDeHoje();
+  // Polo começa em "Todos": filtrar por polo já na abertura esconderia três
+  // quartos da operação de quem nem sabe que o filtro existe.
+  let poloObras = '';
+
+  function obrasDoFiltro(opts){
     let lista = reportsList.filter(j => filtroObras === 'historico'
       ? j.status === 'aprovado'
       : ABERTAS.includes(j.status));
     if(filtroPainel) lista = lista.filter(j => filtroPainel.status.includes(j.status));
+    if(poloObras && !(opts && opts.todosOsPolos)){
+      lista = lista.filter(j => poloDaObra(j) === poloObras);
+    }
+    if(mesObras && !(opts && opts.todosOsMeses)){
+      lista = lista.filter(j=>{
+        const iso = dataIsoObra(j);
+        // obra sem data preenchida nunca some. Sumir sem explicação é como o
+        // usuário descobre, tarde, que o filtro escondeu trabalho dele.
+        return !iso || iso.slice(0, 7) === mesObras;
+      });
+    }
     return lista;
   }
 
@@ -11279,6 +11456,10 @@
     filtroPainel = r;
     vemDoPainel = true;
     filtroObras = 'abertas';
+    // o número no cartão do painel conta todos os meses e todos os polos. Se a
+    // lista abrisse filtrada, o cartão diria "3 obras" e o analista acharia 1.
+    mesObras = '';
+    poloObras = '';
     document.querySelectorAll('#jobsStatusFiltro .adm-chip')
       .forEach(c => c.classList.toggle('ativo', c.dataset.filtro === 'abertas'));
     const busca = document.getElementById('jobsBusca');
@@ -11327,9 +11508,59 @@
   // O que está na tela AGORA: o recorte do filtro mais o que foi digitado na
   // busca. Exportar sempre "tudo" seria mais fácil de programar e pior de usar
   // — quem filtrou a tela quer aquilo, não o banco inteiro.
-  function obrasNaTela(){
+  // ---------- Controles do mês ----------
+  function pintarMesObras(){
+    const campo = document.getElementById('jobsMes');
+    const todos = document.getElementById('jobsMesTodos');
+    if(campo && campo.value !== mesObras) campo.value = mesObras;
+    if(todos) todos.classList.toggle('ativo', !mesObras);
+    document.querySelectorAll('#jobsMesLinha .mes-nav').forEach(b=>{ b.disabled = false; });
+  }
+
+  function trocarMes(ym){
+    mesObras = ym || '';
+    refreshJobsList();
+  }
+
+  function pintarPoloObras(){
+    pintarChipsPolo(document.getElementById('jobsPolo'), poloObras, (v)=>{
+      poloObras = v || '';
+      refreshJobsList();
+    }, true);
+  }
+
+  // O que o recorte escondeu tem que se anunciar, e sair do caminho com um
+  // toque. Sem isso o filtro vira "a obra sumiu do sistema".
+  function avisoForaDoFiltro(quantas){
+    const onde = (mesObras && poloObras) ? ['outro mês ou polo', 'outros meses ou polos']
+               : (mesObras ? ['outro mês', 'outros meses'] : ['outro polo', 'outros polos']);
+    const el = document.createElement('div');
+    el.className = 'mes-fora';
+    el.innerHTML = (quantas === 1 ? '1 obra em ' + onde[0] : quantas + ' obras em ' + onde[1])
+      + '. <button type="button">Ver todas</button>';
+    el.querySelector('button').addEventListener('click', ()=>{
+      poloObras = ''; mesObras = ''; refreshJobsList();
+    });
+    return el;
+  }
+
+  function ligarControlesDoMes(){
+    const campo = document.getElementById('jobsMes');
+    const todos = document.getElementById('jobsMesTodos');
+    if(campo) campo.addEventListener('change', ()=> trocarMes(campo.value));
+    if(todos) todos.addEventListener('click', ()=> trocarMes(''));
+    document.querySelectorAll('#jobsMesLinha .mes-nav').forEach(b=>{
+      b.addEventListener('click', ()=>{
+        // sem mês escolhido, a seta parte do mês atual em vez de não fazer nada
+        trocarMes(somarMes(mesObras || mesDeHoje(), Number(b.dataset.mes)));
+      });
+    });
+  }
+  ligarControlesDoMes();
+
+  function obrasNaTela(opts){
     const termo = (document.getElementById('jobsBusca').value || '').trim().toLowerCase();
-    return obrasDoFiltro().filter(job=>{
+    return obrasDoFiltro(opts).filter(job=>{
       if(!termo) return true;
       const rot = ROTULO_STATUS_LISTA[job.status] || job.status;
       return [job.contrato, job.cliente, job.tecnico, job.status, rot]
@@ -11352,16 +11583,18 @@
     if(btn) btn.disabled = true;
     try{
       const recorte = (filtroObras === 'historico' ? 'Aprovadas' : 'Em aberto')
-        + (filtroPainel ? ' - ' + filtroPainel.rot : '');
+        + (filtroPainel ? ' - ' + filtroPainel.rot : '')
+        + (poloObras ? ' - ' + poloObras : '')
+        + (mesObras ? ' - ' + rotuloMes(mesObras) : '');
 
       // --- aba 1: uma linha por obra
-      const abaObras = [[CAB('Contrato'), CAB('Tipo'), CAB('Cliente'), CAB('Data'), CAB('Técnico'), CAB('Status'),
+      const abaObras = [[CAB('Contrato'), CAB('Polo'), CAB('Tipo'), CAB('Cliente'), CAB('Data'), CAB('Técnico'), CAB('Status'),
                          CAB('Serviços'), CAB('Materiais'), CAB('Total R$')]];
       // --- aba 2: uma linha por serviço lançado
-      const abaServ = [[CAB('Contrato'), CAB('Tipo'), CAB('Cliente'), CAB('Data'), CAB('Técnico'),
+      const abaServ = [[CAB('Contrato'), CAB('Polo'), CAB('Tipo'), CAB('Cliente'), CAB('Data'), CAB('Técnico'),
                         CAB('Código'), CAB('Serviço'), CAB('Qtd'), CAB('Unitário'), CAB('Total R$')]];
       // --- aba 3: uma linha por material lançado
-      const abaMat = [[CAB('Contrato'), CAB('Tipo'), CAB('Cliente'), CAB('Data'), CAB('Técnico'),
+      const abaMat = [[CAB('Contrato'), CAB('Polo'), CAB('Tipo'), CAB('Cliente'), CAB('Data'), CAB('Técnico'),
                        CAB('Material'), CAB('Qtd'), CAB('Série'), CAB('Retirado')]];
 
       const porServico = {}, porMaterial = {};
@@ -11369,7 +11602,9 @@
 
       lista.forEach(job=>{
         const iso = dataIsoObra(job);
-        const base = [job.contrato, rotuloTipo(job.tipo), job.cliente, DAT(iso), job.tecnico || ''];
+        // o polo entra no `base`, que alimenta as três abas de uma vez —
+        // assim a tabela dinâmica da planilha consegue somar por polo
+        const base = [job.contrato, poloDaObra(job), rotuloTipo(job.tipo), job.cliente, DAT(iso), job.tecnico || ''];
         const tot = jobTotal(job);
         totalGeral += tot;
         abaObras.push(base.concat([
@@ -11400,7 +11635,7 @@
       });
 
       const linhaTotal = abaObras.length + 1;
-      abaObras.push([NEG('TOTAL'), null, null, null, null, null, null, null, {v: totalGeral, t:'n', s:5}]);
+      abaObras.push([NEG('TOTAL'), null, null, null, null, null, null, null, null, {v: totalGeral, t:'n', s:5}]);
 
       const resServ = [[CAB('Código'), CAB('Serviço'), CAB('Qtd total'), CAB('Unitário'), CAB('Total R$'), CAB('Obras')]];
       Object.values(porServico)
@@ -11416,9 +11651,9 @@
 
       const hoje = new Date().toISOString().slice(0, 10);
       baixarXlsx('Obras-' + recorte.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'') + '-' + hoje + '.xlsx', [
-        {nome:'Obras',            larguras:[15,15,36,12,24,14,10,11,14], linhas: abaObras, filtroAte: linhaTotal - 1},
-        {nome:'Serviços',         larguras:[15,15,34,12,24,10,52,8,13,14], linhas: abaServ},
-        {nome:'Materiais',        larguras:[15,15,34,12,24,52,8,20,10],   linhas: abaMat},
+        {nome:'Obras',            larguras:[15,8,15,36,12,24,14,10,11,14], linhas: abaObras, filtroAte: linhaTotal - 1},
+        {nome:'Serviços',         larguras:[15,8,15,34,12,24,10,52,8,13,14], linhas: abaServ},
+        {nome:'Materiais',        larguras:[15,8,15,34,12,24,52,8,20,10],   linhas: abaMat},
         {nome:'Resumo serviços',  larguras:[10,52,11,13,14,8],         linhas: resServ, filtroAte: totServ - 1},
         {nome:'Resumo materiais', larguras:[52,12,11,11,8],            linhas: resMat},
       ]);
@@ -11437,17 +11672,28 @@
     jobsList.innerHTML = '';
     const termoJobs = (document.getElementById('jobsBusca').value || '').trim().toLowerCase();
     const lista = obrasNaTela();   // mesma conta que o botão de exportar usa
+    // quantas o filtro de mês está escondendo, com a mesma busca aplicada
+    const foraDoFiltro = (mesObras || poloObras)
+      ? obrasNaTela({todosOsMeses:true, todosOsPolos:true}).length - lista.length : 0;
 
     pintarFaixaPainel();
+    pintarMesObras();
+    pintarPoloObras();
     if(!lista.length){
       jobsList.innerHTML = '<div class="job-service-empty" style="padding:24px 4px;">'
         + (termoJobs
              ? 'Nada encontrado com esse termo.'
-             : (filtroObras === 'historico'
-                  ? 'Nenhuma obra aprovada ainda.'
-                  : (ehRevisor() ? 'Nenhuma obra em aberto no momento.'
-                                 : 'Nenhuma obra despachada para você no momento.')))
+             : (mesObras
+                  ? 'Nenhuma obra em ' + esc(rotuloMes(mesObras))
+                      + (poloObras ? ' no polo ' + esc(poloObras) : '') + '.'
+                  : (filtroObras === 'historico'
+                       ? 'Nenhuma obra aprovada ainda.'
+                       : (poloObras
+                            ? 'Nenhuma obra em aberto no polo ' + esc(poloObras) + '.'
+                            : (ehRevisor() ? 'Nenhuma obra em aberto no momento.'
+                                           : 'Nenhuma obra despachada para você no momento.')))))
         + '</div>';
+      if(foraDoFiltro) jobsList.appendChild(avisoForaDoFiltro(foraDoFiltro));
       return;
     }
 
@@ -11455,8 +11701,13 @@
     const summary = document.createElement('div');
     summary.className = 'values-total-row';
     summary.style.marginBottom = '16px';
-    summary.innerHTML = `<span>${filtroObras === 'historico' ? 'Aprovadas' : 'Em aberto'} (${lista.length})</span><span>${formatBRL(totalGeral)}</span>`;
+    summary.innerHTML = `<span>${filtroObras === 'historico' ? 'Aprovadas' : 'Em aberto'}`
+      + `${poloObras ? ' · ' + esc(poloObras) : ''}`
+      + `${mesObras ? ' · ' + esc(rotuloMes(mesObras)) : ''} (${lista.length})</span>`
+      + `<span>${formatBRL(totalGeral)}</span>`;
     jobsList.appendChild(summary);
+
+    if(foraDoFiltro) jobsList.appendChild(avisoForaDoFiltro(foraDoFiltro));
 
     // quantas da lista estão incompletas, dito uma vez no topo: sem isto o
     // analista teria que abrir cartão por cartão pra descobrir
@@ -11484,6 +11735,7 @@
           <div class="job-item-title" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
             <span>${job.tipo === 'modernizacao' ? '' : 'Contrato '}${esc(job.contrato)}</span>
             <span class="selo-tipo ${esc(job.tipo || 'convencional')}">${esc(rotuloTipo(job.tipo))}</span>
+            <span class="selo-polo" title="Polo da obra">${esc(poloDaObra(job))}</span>
             ${pend ? `<span class="selo-falta" title="${esc(pend.grupos.map(g => g.rot + ': ' + g.itens.join(', ')).join(' | '))}">falta ${pend.total}</span>` : ''}
           </div>
           <div class="job-item-sub">${esc(job.cliente)} &middot; ${esc(job.data)}${job.tecnico && ehRevisor() ? ' &middot; ' + esc(job.tecnico) : ''}</div>
@@ -11926,7 +12178,7 @@
     try{
       const emp = empresaContexto ? empresaContexto.id : minhaEmpresa();
       let q = supabaseClient.from(SUPABASE_TABLE)
-        .select('id, contrato, dados, tecnico_id, status, atualizado_em');
+        .select('id, contrato, dados, tecnico_id, status, atualizado_em, polo');
       // material sai do estoque quando o técnico instala, não quando o
       // escritório aprova — por isso o recorte de status muda com o modo
       q = (ehMaterial && !consumoSoAprovadas)
@@ -11938,6 +12190,10 @@
       // fechar um boletim com os dois misturados seria erro de faturamento
       const filtroTipo = (document.getElementById('medTipo') || {}).value || '';
       if(filtroTipo) q = q.eq('tipo_obra', filtroTipo);
+      // polo é recorte de operação: fecha medição e olha consumo de material de
+      // um polo só, sem os outros três no meio
+      const filtroPolo = (document.getElementById('medPolo') || {}).value || '';
+      if(filtroPolo) q = q.eq('polo', filtroPolo);
       const {data, error} = await q;
       if(error) throw error;
 
@@ -12409,6 +12665,19 @@
     if(!medicaoAtual) return;
     const m = medicaoAtual;
     if(!ehOperador()){ showToast('Só o escritório fecha medição'); return; }
+    // O fechamento congela o total do PERÍODO INTEIRO da empresa. Se houvesse
+    // filtro ativo, o boletim salvo seria o de um recorte, gravado como se
+    // fosse o mês fechado — e o erro só apareceria na hora de faturar.
+    const recortes = [
+      [(document.getElementById('medPolo')    || {}).value, 'polo'],
+      [(document.getElementById('medTipo')    || {}).value, 'tipo de obra'],
+      [(document.getElementById('medTecnico') || {}).value, 'técnico'],
+    ].filter(([v]) => v).map(([, r]) => r);
+    if(recortes.length){
+      showToast('Tire o filtro de ' + recortes.join(' e ')
+        + ' antes de fechar — o fechamento vale pro período inteiro, não pro recorte');
+      return;
+    }
     if(!confirm(
         'Fechar a medição de ' + toDateBR(m.de) + ' a ' + toDateBR(m.ate) + '?\n\n'
       + 'Total: ' + formatBRL(m.total) + ' em ' + m.obras.length + ' obra(s).\n\n'
@@ -12892,12 +13161,14 @@
       }
     }
     aplicarTipoObra(alvo, {semRedesenhar:true});
+    poloObraAtual = POLO_PADRAO;
     resetDataState();
     obraEditandoId = null;
     obraDonoId = null;
     obraEmpresaId = null;
     idbApagar('atual');
     aplicarModoLeitura();   // limpa o modo-leitura/aviso de uma obra aberta antes
+    pintarPoloAssistente();
     renderFotos(); renderMateriais(); renderValores();
     showAppView('wizard');
     showStep(0);
@@ -13036,6 +13307,7 @@
           tecnico: nomeDoVinculo(row.tecnico_id) || d.tecnico || '',
           servicos: servicos,
           reaberta: d.reaberta || null,
+          polo: poloDaObra(row),
           row: row,
         };
       });
