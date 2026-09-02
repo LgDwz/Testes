@@ -563,36 +563,83 @@
     font-family:'IBM Plex Mono',monospace;font-size:12px;cursor:pointer;text-transform:uppercase;letter-spacing:0.03em;}
   .multi-add-btn:hover{border-color:var(--accent);color:var(--accent);}
 
-  /* MATERIALS LIST */
+  /* MATERIAIS E VALORES
+     Duas listas longas de itens que quase sempre estão em zero. O que estava
+     feio: cartão de altura desigual, campo de quantidade estreito demais pro
+     número caber ("1733" saía cortado), e um "R$ 0,00" verde repetido em cada
+     serviço não usado — verde quer dizer dinheiro, e vinte zeros verdes só
+     ensinam a pessoa a ignorar a cor.
+     A regra aqui: item LANÇADO se destaca, item em branco desaparece
+     discretamente no fundo. */
   .material-row{display:flex;align-items:center;gap:12px;background:var(--bg-elev);
-    border:1px solid var(--border);border-radius:7px;padding:12px 14px;margin-bottom:8px;}
-  .material-num{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--text-faint);width:18px;flex-shrink:0;}
-  .material-name{flex:1;font-size:12.5px;line-height:1.35;}
-  .material-qty{width:64px;min-height:44px;background:var(--bg-elev-2);border:1px solid var(--border);color:var(--text);
-    font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:600;padding:8px;border-radius:6px;text-align:center;flex-shrink:0;}
-  .material-qty:focus{outline:none;border-color:var(--accent);}
+    border:1px solid var(--border);border-radius:9px;padding:12px 14px;margin-bottom:8px;
+    transition:border-color .12s, background .12s;}
+  .material-num{font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--text-faint);
+    width:22px;flex-shrink:0;text-align:right;}
+  .material-name{flex:1;font-size:13px;line-height:1.4;}
+  .material-qty{width:84px;min-height:46px;background:var(--bg-elev-2);border:1px solid var(--border);
+    color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:600;
+    padding:8px 10px;border-radius:7px;text-align:right;flex-shrink:0;
+    font-variant-numeric:tabular-nums;}
+  .material-qty:focus{outline:none;border-color:var(--accent);
+    box-shadow:0 0 0 3px rgba(0,162,245,.14);}
+  /* o item preenchido ganha borda e faixa verde: dá pra achar o que foi
+     lançado passando o olho, sem ler número nenhum */
+  .material-row.lancado{border-color:var(--success);
+    background:linear-gradient(90deg, var(--success-dim), var(--bg-elev) 46%);
+    box-shadow:inset 3px 0 0 var(--success);}
+  .material-row.lancado .material-qty{border-color:var(--success);color:var(--text);}
 
-  /* VALUES LIST (service codes + prices) */
-  .value-row{background:var(--bg-elev);border:1px solid var(--border);border-radius:7px;
-    padding:12px 14px;margin-bottom:8px;}
+  .value-row{background:var(--bg-elev);border:1px solid var(--border);border-radius:9px;
+    padding:12px 14px;margin-bottom:8px;display:flex;flex-direction:column;
+    transition:border-color .12s, background .12s;}
   .value-top{display:flex;align-items:flex-start;gap:10px;}
   .value-code{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--accent);
-    background:var(--accent-dim);padding:3px 7px;border-radius:5px;flex-shrink:0;margin-top:1px;}
-  .value-desc{flex:1;font-size:12.5px;line-height:1.35;}
-  .value-bottom{display:flex;align-items:center;justify-content:space-between;margin-top:10px;
-    padding-top:10px;border-top:1px solid var(--border);}
-  .value-price{font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--text-dim);}
-  .value-qty-wrap{display:flex;align-items:center;gap:8px;}
-  .value-qty{width:64px;min-height:44px;background:var(--bg-elev-2);border:1px solid var(--border);color:var(--text);
-    font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:600;padding:7px;border-radius:6px;
-    text-align:center;flex-shrink:0;}
-  .value-qty:focus{outline:none;border-color:var(--accent);}
-  .value-subtotal{font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;color:var(--success);
-    min-width:74px;text-align:right;}
+    background:var(--accent-dim);padding:3px 7px;border-radius:5px;flex-shrink:0;margin-top:1px;
+    letter-spacing:.03em;}
+  .value-desc{flex:1;font-size:13px;line-height:1.4;}
+  .value-bottom{display:flex;align-items:center;justify-content:space-between;gap:10px;
+    margin-top:auto;padding-top:11px;}
+  .value-price{font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--text-faint);
+    white-space:nowrap;}
+  .value-qty-wrap{display:flex;align-items:center;gap:10px;}
+  .value-qty{width:84px;min-height:46px;background:var(--bg-elev-2);border:1px solid var(--border);
+    color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:600;
+    padding:8px 10px;border-radius:7px;text-align:right;flex-shrink:0;
+    font-variant-numeric:tabular-nums;}
+  .value-qty:focus{outline:none;border-color:var(--accent);
+    box-shadow:0 0 0 3px rgba(0,162,245,.14);}
+  .value-subtotal{font-family:'IBM Plex Mono',monospace;font-size:13.5px;font-weight:600;
+    color:var(--success);min-width:86px;text-align:right;font-variant-numeric:tabular-nums;}
+  /* serviço não lançado não mostra R$ 0,00 — mostra um traço apagado */
+  .value-subtotal.zero{color:var(--text-faint);font-weight:400;}
+  .value-row.lancado{border-color:var(--success);
+    background:linear-gradient(90deg, var(--success-dim), var(--bg-elev) 46%);
+    box-shadow:inset 3px 0 0 var(--success);}
+  .value-row.lancado .value-qty{border-color:var(--success);}
+
+  /* Total colado no rodapé da tela: o técnico digita lá embaixo na lista e
+     precisa ver o número mudar sem rolar até o fim. */
   .values-total-row{display:flex;justify-content:space-between;align-items:center;
-    background:var(--accent-dim);border:1px solid var(--accent);border-radius:7px;
+    background:var(--accent-dim);border:1px solid var(--accent);border-radius:9px;
     padding:14px 16px;margin-top:14px;font-family:'Barlow Condensed',sans-serif;font-weight:700;
     font-size:18px;text-transform:uppercase;letter-spacing:0.02em;color:var(--accent);}
+  /* A barra flutua por cima da lista: sem fundo OPACO ela vira uma sombra de
+     texto em cima dos cartões. As duas camadas dão o tom de destaque por cima
+     de uma base sólida, e funcionam nos dois temas. */
+  .values-total-row.grudada{position:sticky;bottom:96px;z-index:5;
+    background:linear-gradient(var(--accent-dim), var(--accent-dim)), var(--bg-elev-2);
+    border-width:1.5px;box-shadow:0 8px 26px rgba(0,0,0,.45);}
+  /* No celular a barra de Voltar/Salvar/Gerar também é grudada e tem 88px:
+     sem esse recuo o total pousava exatamente em cima dos botões. No desktop
+     essa barra vira rodapé normal e o total desce pro pé da tela. */
+  #stepValores{padding-bottom:18px;}
+  /* Resumo do passo de materiais: quantos itens e quantas unidades. */
+  .mat-resumo{display:flex;justify-content:space-between;align-items:center;gap:10px;
+    background:var(--bg-elev-2);border:1px solid var(--border);border-radius:9px;
+    padding:11px 15px;margin-top:14px;font-family:'IBM Plex Mono',monospace;
+    font-size:12px;color:var(--text-dim);}
+  .mat-resumo b{color:var(--text);font-size:13px;}
 
   /* catálogo editável: excluir item + form de adicionar (materiais/valores) */
   /* Busca e filtro do catálogo. O catálogo importado do CRM tem 27 materiais
@@ -720,25 +767,55 @@
   .cat-atalho:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
   .cat-vazio{padding:22px 14px;text-align:center;font-size:13px;color:var(--text-faint);
     border:1px dashed var(--border);border-radius:7px;margin-bottom:8px;line-height:1.5;}
-  .cat-del-btn{background:none;border:none;color:var(--text-faint);cursor:pointer;
-    font-size:15px;padding:4px 6px;border-radius:5px;flex-shrink:0;line-height:1;
-    min-width:40px;min-height:40px;}
-  .cat-del-btn:hover{color:var(--warning);background:var(--warning-dim);}
-  .cat-add-btn{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;margin-top:4px;
-    background:none;border:1.5px dashed var(--border);color:var(--text-dim);border-radius:7px;
-    padding:12px;font-size:12.5px;cursor:pointer;font-family:'Inter',sans-serif;}
-  .cat-add-btn:hover{border-color:var(--accent);color:var(--accent);}
-  .cat-add-form{background:var(--bg-elev);border:1px solid var(--accent);border-radius:7px;
-    padding:12px 14px;margin-top:8px;display:flex;flex-direction:column;gap:8px;}
-  .cat-add-form input{width:100%;background:var(--bg-elev-2);border:1px solid var(--border);color:var(--text);
-    font-size:12.5px;padding:8px 10px;border-radius:6px;font-family:'Inter',sans-serif;}
-  .cat-add-form .cat-add-row{display:flex;gap:8px;}
-  .cat-add-form .cat-add-row input{flex:1;}
-  .cat-add-form-btns{display:flex;gap:8px;margin-top:2px;}
-  .cat-add-form-btns button{flex:1;padding:8px;border-radius:6px;font-size:12px;cursor:pointer;
-    font-family:'Inter',sans-serif;font-weight:600;}
-  .cat-add-salvar{background:var(--accent);border:none;color:var(--accent-ink);}
-  .cat-add-cancelar{background:none;border:1px solid var(--border);color:var(--text-dim);}
+  /* Excluir do catálogo: some pro canto de cima do cartão. Antes ficava na
+     mesma linha do campo de quantidade, do tamanho de um botão de verdade —
+     duas ações de peso muito diferente disputando o mesmo espaço, com o dedo
+     do técnico no meio. */
+  .cat-del-btn{position:absolute;top:6px;right:6px;background:none;border:none;
+    color:var(--text-faint);cursor:pointer;font-size:12px;line-height:1;
+    width:26px;height:26px;border-radius:6px;opacity:.5;
+    display:flex;align-items:center;justify-content:center;padding:0;}
+  .cat-del-btn:hover{color:var(--warning);background:var(--warning-dim);opacity:1;}
+  .material-row, .value-row{position:relative;}
+  .material-row.tem-del .material-name, .value-row.tem-del .value-desc{padding-right:24px;}
+
+  /* ADICIONAR AO CATÁLOGO
+     Isto é administração, não preenchimento de obra. Fica fora da grade de
+     itens e com cara de painel, senão o botão vira meio cartão espremido ao
+     lado de um material e parece mais um item da lista. */
+  .cat-add-btn{display:flex;align-items:center;justify-content:center;gap:9px;width:100%;
+    margin-top:14px;background:none;border:1.5px dashed var(--border);color:var(--text-dim);
+    border-radius:9px;padding:14px;font-size:13px;cursor:pointer;font-family:'Inter',sans-serif;}
+  .cat-add-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-dim);}
+  .cat-add-mais{font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:700;line-height:1;}
+
+  .cat-add-form{background:var(--bg-elev);border:1px solid var(--accent);border-radius:9px;
+    padding:16px;margin-top:14px;display:flex;flex-direction:column;gap:12px;
+    box-shadow:0 4px 18px rgba(0,0,0,.28);}
+  .cat-add-titulo{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:17px;
+    text-transform:uppercase;letter-spacing:.03em;color:var(--accent);}
+  .cat-add-campo{display:flex;flex-direction:column;gap:5px;flex:1;min-width:0;}
+  .cat-add-campo > span{font-family:'IBM Plex Mono',monospace;font-size:10.5px;
+    text-transform:uppercase;letter-spacing:.07em;color:var(--text-dim);}
+  .cat-add-form input{width:100%;min-height:44px;background:var(--bg-elev-2);
+    border:1px solid var(--border);color:var(--text);font-size:14px;padding:10px 12px;
+    border-radius:7px;font-family:'Inter',sans-serif;}
+  .cat-add-form input:focus{outline:none;border-color:var(--accent);
+    box-shadow:0 0 0 3px rgba(0,162,245,.14);}
+  .cat-add-form .cat-add-row{display:flex;gap:10px;flex-wrap:wrap;}
+  .cat-add-nota{font-size:11.5px;color:var(--text-faint);line-height:1.5;}
+  .cat-add-form-btns{display:flex;gap:10px;margin-top:2px;}
+  .cat-add-form-btns button{min-height:44px;padding:10px 18px;border-radius:7px;font-size:13px;
+    cursor:pointer;font-family:'Inter',sans-serif;font-weight:600;}
+  /* o botão que age é o cheio e maior; cancelar é discreto e não divide
+     igualmente a atenção */
+  .cat-add-salvar{flex:1;background:var(--accent);border:none;color:var(--accent-ink);}
+  .cat-add-cancelar{flex:0 0 auto;background:none;border:1px solid var(--border);color:var(--text-dim);}
+  .cat-add-cancelar:hover{border-color:var(--text-dim);color:var(--text);}
+  /* A barra de Voltar/Salvar/Próximo é grudada e sobe 110px por cima do
+     conteúdo. Sem esta folga, o botão "Adicionar" do formulário nascia
+     debaixo dela e não dava pra tocar. */
+  #materiaisAdd, #valoresAdd{padding-bottom:120px;}
 
   /* RESPONSAVEIS */
   .resp-card{background:var(--bg-elev);border:1px solid var(--border);border-radius:7px;padding:14px;margin-bottom:12px;}
@@ -1407,11 +1484,34 @@
     padding:0 var(--sp3); border-bottom:1px solid var(--line); overflow:hidden;
   }
   .sb-logo img{ height:26px; width:auto; flex:0 0 auto; }
-  .sb-nav{ flex:1; overflow-y:auto; padding:var(--sp3) var(--sp2); }
+  .sb-nav{ flex:1; overflow-y:auto; padding:var(--sp2) var(--sp2) var(--sp3); }
   .sb-sec{
     font-size:10px; letter-spacing:.12em; text-transform:uppercase;
-    color:#4A5C7A; padding:var(--sp3) var(--sp2) var(--sp1);
+    color:#6B80A4; padding:var(--sp3) var(--sp2) var(--sp1);
     font-family:'IBM Plex Mono',monospace;
+  }
+  .sb-nav > .sb-sec:first-child{ padding-top:0; }
+  /* Quem está logado, dentro do menu. É daqui que a pessoa sai da conta —
+     tem que estar escrito de qual conta. */
+  .sb-quem{
+    display:flex; align-items:center; gap:10px;
+    padding:12px var(--sp3); border-bottom:1px solid var(--line);
+  }
+  .sb-quem-av{
+    flex:0 0 34px; width:34px; height:34px; border-radius:50%;
+    background:rgba(0,162,245,.16); color:var(--st-azul);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'IBM Plex Mono',monospace; font-size:12.5px; font-weight:700;
+  }
+  .sb-quem-txt{ min-width:0; }
+  .sb-quem-txt b{
+    display:block; font-size:13px; color:var(--text); font-weight:600;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .sb-quem-txt span{
+    display:block; font-size:10.5px; color:var(--text-dim); text-transform:uppercase;
+    letter-spacing:.06em; font-family:'IBM Plex Mono',monospace;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
   }
   .sb-item{
     display:flex; align-items:center; gap:12px; padding:11px var(--sp2);
@@ -1420,7 +1520,11 @@
     transition:background .12s, color .12s;
   }
   .sb-item:hover{ background:var(--hover); color:var(--text); }
-  .sb-item.on{ background:rgba(0,162,245,.14); color:var(--st-azul); font-weight:600; }
+  /* a barrinha à esquerda diz onde você está sem depender só da cor de fundo */
+  .sb-item.on{
+    background:rgba(0,162,245,.14); color:var(--st-azul); font-weight:600;
+    box-shadow:inset 3px 0 0 var(--st-azul);
+  }
   .sb-item svg{ flex:0 0 20px; opacity:.9; }
   .sb-badge{
     margin-left:auto; font-size:10px; min-width:19px; height:19px; padding:0 6px;
@@ -1428,7 +1532,9 @@
     display:flex; align-items:center; justify-content:center;
     font-family:'IBM Plex Mono',monospace; font-weight:600;
   }
-  .sb-foot{ padding:var(--sp2) var(--sp3); border-top:1px solid var(--line); }
+  .sb-foot{ padding:var(--sp2); border-top:1px solid var(--line); }
+  .sb-sair{ margin-bottom:var(--sp2); }
+  .sb-sair:hover{ background:rgba(230,90,90,.12); color:#FF8B8B; }
   .sb-sync{
     border:1px solid var(--line); border-radius:var(--r-md);
     padding:var(--sp2); font-size:11px; color:var(--text-dim); overflow:hidden;
@@ -2007,8 +2113,19 @@
     .checklist{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
     .checklist > .multi-group{ grid-column:1 / -1; }
     .checklist > .multi-group-pair{ grid-column:1 / -1; }
-    #materialsList, #valuesList{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .values-total-row.grudada{ bottom:12px; }
+    /* no desktop o botão não precisa atravessar a tela inteira pra ter peso */
+    .cat-add-form-btns{ justify-content:flex-end; }
+    .cat-add-salvar{ flex:0 0 auto; min-width:190px; }
+    /* no desktop a barra de navegação é rodapé normal: a folga não é precisa */
+    #materiaisAdd, #valoresAdd{ padding-bottom:0; }
+    #materialsList, #valuesList{ display:grid; grid-template-columns:1fr 1fr; gap:10px;
+      align-items:stretch; }
     .material-row, .value-row{ margin-bottom:0; }
+    /* o cartão de material só cresce quando está lançado (abre o Instalado/
+       Retirado). Alinhar pelo topo faz esse crescimento parecer intencional
+       em vez de grade quebrada. */
+    .material-row{ align-self:start; }
 
     .review-photo-grid{ grid-template-columns:repeat(4, 1fr); }
 
@@ -2357,8 +2474,21 @@
       <div class="sb-logo">
         <img id="sbLogo" alt="Enlace Ops">
       </div>
+      <div class="sb-quem" id="sbQuem" style="display:none;">
+        <div class="sb-quem-av" id="sbQuemAv"></div>
+        <div class="sb-quem-txt">
+          <b id="sbQuemNome"></b>
+          <span id="sbQuemSub"></span>
+        </div>
+      </div>
       <div class="sb-nav" id="sbNav"></div>
       <div class="sb-foot">
+        <div class="sb-item sb-sair" id="sbSair">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+          <span>Sair</span>
+        </div>
         <div class="sb-sync">
           <b id="sbSyncT">&#9679; Sincronizado</b>
           <span id="sbSyncD">&mdash;</span>
@@ -2881,7 +3011,7 @@
     <section class="step-section" id="stepFotos">
       <div class="step-eyebrow">Passo 3 de 6</div>
       <div class="step-title">Fotos do serviço</div>
-      <div class="step-sub">Envie as fotos obrigatórias. Itens de caixa aceitam múltiplas fotos.</div>
+      <div class="step-sub">Envie as fotos obrigatórias. Cabo e caixa aceitam mais de uma foto — uma por bobina, uma por caixa.</div>
       <div class="checklist" id="fotosChecklist"></div>
     </section>
 
@@ -2904,6 +3034,11 @@
       <div class="cat-atalhos" id="materiaisAtalhos" style="display:none;"></div>
       <div class="cat-vazio" id="materiaisVazio" style="display:none;"></div>
       <div id="materialsList"></div>
+      <div id="materiaisAdd"></div>
+      <div class="mat-resumo" id="materiaisResumo" style="display:none;">
+        <span id="materiaisResumoItens">&mdash;</span>
+        <span id="materiaisResumoUnid">&mdash;</span>
+      </div>
     </section>
 
     <section class="step-section" id="stepValores">
@@ -2918,10 +3053,11 @@
       <div class="cat-atalhos" id="valoresAtalhos" style="display:none;"></div>
       <div class="cat-vazio" id="valoresVazio" style="display:none;"></div>
       <div id="valuesList"></div>
-      <div class="values-total-row" id="valuesTotalRow">
+      <div class="values-total-row grudada" id="valuesTotalRow">
         <span>Total</span>
         <span id="valuesTotal">R$ 0,00</span>
       </div>
+      <div id="valoresAdd"></div>
     </section>
 
     <section class="step-section" id="stepReview">
@@ -3142,7 +3278,7 @@
 (function(){
   // Marque aqui a cada build enviado ao campo. O testador informa esta
   // string ao relatar um problema, senao nao da pra saber o que ele rodou.
-  const APP_VERSION = 'Enlace Ops · alpha-10.73 · 01/09/2026';
+  const APP_VERSION = 'Enlace Ops · alpha-10.76 · 02/09/2026';
 
   // ---------- Supabase config ----------
   // Troque pelos valores reais do seu projeto (Project Settings -> API no Supabase).
@@ -3290,7 +3426,11 @@
 
   // ---------- Itens de foto, por tipo ----------
   const ITENS_CONVENCIONAL = [
-    {id:1, title:"Início do cabo com metragem", needsMeter:true, multiple:false, storeKey:'photos'},
+    // Uma obra pode consumir mais de uma bobina (duas de 4 km, por exemplo), e
+    // cada uma precisa da própria metragem inicial e final pra a conta fechar.
+    // A foto N do início pareia com a foto N do final — mesma bobina.
+    {id:1, title:"Início do cabo com metragem", needsMeter:true, multiple:true, storeKey:'photos',
+     unidade:{sing:'bobina', plu:'bobinas', rot:'Bobina', dica:'Bobina / lance — ex: bobina 1'}},
     {id:8, title:"Chegada no poste do cliente", needsMeter:false, multiple:false, storeKey:'photos'},
     // Assinatura entra em photoItems de propósito: herda upload, rascunho
     // offline e página no PDF sem código novo. "opcional" porque em obra de
@@ -3298,7 +3438,8 @@
     // aviso de pendências e o stepper ignoram itens opcionais.
     {id:9, title:"Assinatura do cliente", needsMeter:false, multiple:false,
      storeKey:'photos', assinatura:true, opcional:true},
-    {id:2, title:"Final do cabo com metragem", needsMeter:true, multiple:false, storeKey:'photos'},
+    {id:2, title:"Final do cabo com metragem", needsMeter:true, multiple:true, storeKey:'photos',
+     unidade:{sing:'bobina', plu:'bobinas', rot:'Bobina', dica:'Bobina / lance — ex: bobina 1'}},
     {id:3, title:"Caixa aberta", needsMeter:false, multiple:true, storeKey:'photos'},
     {id:4, title:"Identificação do cliente dentro da caixa", needsMeter:false, multiple:true, storeKey:'photos'},
     {id:5, title:"Caixa fechada e acomodada no local", needsMeter:false, multiple:true, storeKey:'photos'},
@@ -3826,7 +3967,19 @@
       });
       return;
     }
+    // início (1) e final (2) do cabo também viram um par: são a mesma bobina
+    // vista das duas pontas, e anexar uma sem a outra não faz sentido
     photoItems.forEach(item=>{
+      if(item.id === 2) return;      // entra dentro do par do cabo
+      if(item.id === 1){
+        const itemFimCabo = photoItems.find(i => i.id === 2);
+        const linha = document.createElement('div');
+        linha.className = 'multi-group-pair';
+        linha.appendChild(buildMultiPhotoGroup(item));
+        if(itemFimCabo) linha.appendChild(buildMultiPhotoGroup(itemFimCabo));
+        fotosChecklist.appendChild(linha);
+        return;
+      }
       if(item.id === idPar2) return; // já foi colocado dentro do par abaixo
       if(item.id === idPar1){
         const itemPar2 = photoItems.find(i => i.id === idPar2);
@@ -4147,14 +4300,19 @@
     // "caixa" é o vocabulário da ativação convencional (caixa aberta, fechada).
     // Na modernização a mesma mecânica guarda EVIDÊNCIA, e a legenda é o
     // elemento (Fosc, NAP) — chamar de caixa ali confundiria o técnico.
-    const uni = ehModernizacao()
+    // o item pode trazer o próprio vocabulário (bobina, no caso do cabo);
+    // fora isso vale caixa na convencional e evidência na modernização
+    const uni = item.unidade || (ehModernizacao()
       ? {sing:'evidência', plu:'evidências', rot:'Evidência', dica:'Elemento — Fosc, NAP, poste…'}
-      : {sing:'caixa', plu:'caixas', rot:'Caixa', dica:'Identificação da caixa / observação...'};
+      : {sing:'caixa', plu:'caixas', rot:'Caixa', dica:'Identificação da caixa / observação...'});
     const entriesHtml = entries.map((entry, idx)=>`
       <div class="multi-entry" data-idx="${idx}">
         <div class="multi-entry-thumb"><img src="${entry.imgSrc}"></div>
         <div class="multi-entry-body">
-          <div class="multi-entry-label">${uni.rot} ${idx+1} &middot; ${entry.time}</div>
+          <div class="multi-entry-label">${uni.rot} ${idx+1}${
+            item.needsMeter && entry.meter
+              ? ' &middot; <span class="metragem">' + esc(entry.meter) + ' m</span>'
+              : ''} &middot; ${entry.time}</div>
           <input class="multi-entry-legend" placeholder="${uni.dica}" value="${esc(entry.legend||'')}" data-item-id="${item.id}" data-idx="${idx}">
         </div>
         <button class="multi-entry-remove" data-item-id="${item.id}" data-idx="${idx}" aria-label="Remover">&#10005;</button>
@@ -4217,6 +4375,24 @@
   function formatBRL(n){
     return 'R$ ' + n.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
   }
+  // Quantos itens e quantas unidades foram lançados. O passo de Valores tem o
+  // total em dinheiro; o de Materiais não tinha número nenhum, e a pessoa
+  // terminava sem saber se lançou 3 itens ou 30.
+  function recomputarResumoMateriais(){
+    const cx = document.getElementById('materiaisResumo');
+    if(!cx) return;
+    let itens = 0, unidades = 0;
+    Object.keys(dataState.materialsQty || {}).forEach(id=>{
+      const q = Number(dataState.materialsQty[id]) || 0;
+      if(q > 0){ itens++; unidades += q; }
+    });
+    cx.style.display = itens ? 'flex' : 'none';
+    document.getElementById('materiaisResumoItens').innerHTML =
+      '<b>' + itens + '</b> ' + (itens === 1 ? 'item lançado' : 'itens lançados');
+    document.getElementById('materiaisResumoUnid').innerHTML =
+      '<b>' + unidades.toLocaleString('pt-BR') + '</b> unidades';
+  }
+
   function recomputeValuesTotal(){
     let total = 0;
     valuesItems.forEach(v=>{
@@ -4411,7 +4587,8 @@
       const qty = Number(dataState.valuesQty[v.code]) || 0;
       const subtotal = qty * v.price;
       const row = document.createElement('div');
-      row.className = 'value-row';
+      row.className = 'value-row' + (qty > 0 ? ' lancado' : '')
+        + (podeEditarCatalogo ? ' tem-del' : '');
       row.innerHTML = `
         <div class="value-top">
           <span class="value-code">${esc(v.code)}</span>
@@ -4422,7 +4599,7 @@
           <span class="value-price">${formatBRL(v.price)} / un</span>
           <div class="value-qty-wrap">
             <input class="value-qty" type="number" inputmode="numeric" min="0" value="${dataState.valuesQty[v.code] || ''}" data-code="${v.code}">
-            <span class="value-subtotal" data-subtotal-for="${v.code}">${formatBRL(subtotal)}</span>
+            <span class="value-subtotal${qty > 0 ? '' : ' zero'}" data-subtotal-for="${v.code}">${qty > 0 ? formatBRL(subtotal) : '\u2014'}</span>
           </div>
         </div>
       `;
@@ -4431,7 +4608,10 @@
       qtyInput.addEventListener('input', (e)=>{
         dataState.valuesQty[v.code] = e.target.value;
         salvarRascunho();
-        subtotalEl.textContent = formatBRL((Number(e.target.value)||0) * v.price);
+        const q = Number(e.target.value) || 0;
+        subtotalEl.textContent = q > 0 ? formatBRL(q * v.price) : '\u2014';
+        subtotalEl.classList.toggle('zero', q <= 0);
+        row.classList.toggle('lancado', q > 0);
         recomputeValuesTotal();
         refrescarChipCat('valores');
       });
@@ -4440,25 +4620,44 @@
       valuesList.appendChild(row);
     });
     recomputeValuesTotal();
-    if(podeEditarCatalogo) valuesList.appendChild(montarFormAddServico());
+    // idem Materiais: fora da grade, depois do total
+    const addServ = document.getElementById('valoresAdd');
+    if(addServ){
+      addServ.innerHTML = '';
+      if(podeEditarCatalogo) addServ.appendChild(montarFormAddServico());
+    }
   }
 
   function montarFormAddServico(){
     const wrap = document.createElement('div');
     const btn = document.createElement('button');
     btn.type = 'button'; btn.className = 'cat-add-btn';
-    btn.textContent = '+ Adicionar serviço ao catálogo';
+    btn.innerHTML = '<span class="cat-add-mais">+</span> Adicionar serviço ao catálogo';
     const form = document.createElement('div');
     form.className = 'cat-add-form'; form.style.display = 'none';
+    // Rótulo em cima de cada campo. Placeholder some quando a pessoa digita, e
+    // aí três caixas cinzas não dizem mais qual é qual — no campo de preço isso
+    // vira número errado no catálogo que fatura.
     form.innerHTML = `
+      <div class="cat-add-titulo">Novo serviço no catálogo</div>
       <div class="cat-add-row">
-        <input type="text" placeholder="Código (ex: 05.01)" class="cat-add-code">
-        <input type="number" step="0.01" placeholder="Preço (R$)" class="cat-add-price">
+        <label class="cat-add-campo" style="flex:0 0 120px;">
+          <span>Código</span>
+          <input type="text" placeholder="05.01" class="cat-add-code" autocomplete="off">
+        </label>
+        <label class="cat-add-campo" style="flex:0 0 140px;">
+          <span>Preço unitário</span>
+          <input type="number" step="0.01" min="0" placeholder="0,00" class="cat-add-price" inputmode="decimal">
+        </label>
       </div>
-      <input type="text" placeholder="Descrição do serviço" class="cat-add-desc">
+      <label class="cat-add-campo">
+        <span>Descrição</span>
+        <input type="text" placeholder="Como aparece na tabela da operadora" class="cat-add-desc" autocomplete="off">
+      </label>
+      <div class="cat-add-nota">Entra no catálogo da empresa e passa a valer para as próximas obras.</div>
       <div class="cat-add-form-btns">
-        <button type="button" class="cat-add-salvar">Adicionar</button>
         <button type="button" class="cat-add-cancelar">Cancelar</button>
+        <button type="button" class="cat-add-salvar">Adicionar serviço</button>
       </div>
     `;
     btn.addEventListener('click', ()=>{ btn.style.display = 'none'; form.style.display = 'flex'; form.querySelector('.cat-add-code').focus(); });
@@ -4528,8 +4727,9 @@
     renderAtalhosCat('materiais');
     visiveis.forEach(m=>{
       const row = document.createElement('div');
-      row.className = 'material-row' + (ehEquipamento(m) ? ' com-serie' : '');
       const lancado = preenchido(dataState.materialsQty[m.id]);
+      row.className = 'material-row' + (ehEquipamento(m) ? ' com-serie' : '')
+        + (lancado ? ' lancado' : '') + (podeEditarCatalogo ? ' tem-del' : '');
       const extra = dataState.materialsExtra[m.id] || {};
       row.innerHTML = `
         <div class="material-topo">
@@ -4561,6 +4761,7 @@
         dataState.materialsQty[m.id] = e.target.value;
         salvarRascunho();
         refrescarChipCat('materiais');
+        recomputarResumoMateriais();
         // só redesenha quando cruza de "vazio" pra "lançado" (ou o contrário),
         // pra abrir/fechar o detalhe sem tirar o campo debaixo do dedo
         if(antes !== preenchido(e.target.value)){
@@ -4590,21 +4791,34 @@
       if(delBtn) delBtn.addEventListener('click', ()=> excluirMaterial(m.id));
       materialsList.appendChild(row);
     });
-    if(podeEditarCatalogo) materialsList.appendChild(montarFormAddMaterial());
+    // O bloco de "adicionar ao catálogo" mora FORA da lista. Dentro dela, na
+    // grade de duas colunas do desktop, ele virava meio cartão espremido ao
+    // lado de um material — parecia item do catálogo, não ação.
+    const addMat = document.getElementById('materiaisAdd');
+    if(addMat){
+      addMat.innerHTML = '';
+      if(podeEditarCatalogo) addMat.appendChild(montarFormAddMaterial());
+    }
+    recomputarResumoMateriais();
   }
 
   function montarFormAddMaterial(){
     const wrap = document.createElement('div');
     const btn = document.createElement('button');
     btn.type = 'button'; btn.className = 'cat-add-btn';
-    btn.textContent = '+ Adicionar material ao catálogo';
+    btn.innerHTML = '<span class="cat-add-mais">+</span> Adicionar material ao catálogo';
     const form = document.createElement('div');
     form.className = 'cat-add-form'; form.style.display = 'none';
     form.innerHTML = `
-      <input type="text" placeholder="Nome do material" class="cat-add-nome">
+      <div class="cat-add-titulo">Novo material no catálogo</div>
+      <label class="cat-add-campo">
+        <span>Nome do material</span>
+        <input type="text" placeholder="Como está na nota de saída do almoxarifado" class="cat-add-nome" autocomplete="off">
+      </label>
+      <div class="cat-add-nota">Entra no catálogo da empresa e passa a valer para as próximas obras.</div>
       <div class="cat-add-form-btns">
-        <button type="button" class="cat-add-salvar">Adicionar</button>
         <button type="button" class="cat-add-cancelar">Cancelar</button>
+        <button type="button" class="cat-add-salvar">Adicionar material</button>
       </div>
     `;
     btn.addEventListener('click', ()=>{ btn.style.display = 'none'; form.style.display = 'flex'; form.querySelector('.cat-add-nome').focus(); });
@@ -5171,9 +5385,10 @@
     captureObsField.style.display = item.multiple ? 'block' : 'none';
     // na modernização a legenda é o ELEMENTO, e ela vira o título da foto no
     // relatório — o texto do campo tem que dizer isso
-    captureObsInput.placeholder = ehModernizacao()
-      ? 'Elemento — Fosc, NAP, poste…'
-      : 'Identificação da caixa / observação...';
+    captureObsInput.placeholder = (item.unidade && item.unidade.dica)
+      || (ehModernizacao()
+            ? 'Elemento — Fosc, NAP, poste…'
+            : 'Identificação da caixa / observação...');
     captureObsInput.value = (item.multiple && existing) ? (existing.legend || '') : '';
     meterField.classList.toggle('show', !!item.needsMeter);
     meterInput.value = existing ? existing.meter || '' : '';
@@ -5490,16 +5705,21 @@
     photoItems.forEach(item=>{
       if(item.multiple){
         const arr = dataState.photos[item.id] || [];
+        // "caixa" não serve pra tudo: no cabo a unidade é bobina, e chamar de
+        // caixa na conferência faria o analista procurar coisa que não existe
+        const uni = item.unidade || {sing:'caixa', rot:'caixa'};
         if(arr.length === 0){
           const cell = document.createElement('div');
           cell.className = 'review-photo-cell';
-          cell.innerHTML = `<div class="review-photo-empty">Sem caixa</div><div class="review-photo-label">${item.id}. ${item.title}</div>`;
+          cell.innerHTML = `<div class="review-photo-empty">Sem ${esc(uni.sing)}</div><div class="review-photo-label">${item.id}. ${item.title}</div>`;
           photoGrid.appendChild(cell);
         } else {
           arr.forEach((entry, idx)=>{
             const cell = document.createElement('div');
             cell.className = 'review-photo-cell';
-            cell.innerHTML = `<img src="${entry.imgSrc}"><div class="review-photo-label">${item.id}. ${item.title} &middot; caixa ${idx+1}${seloGaleria(entry)}</div>`;
+            cell.innerHTML = `<img src="${entry.imgSrc}"><div class="review-photo-label">${item.id}. ${item.title} &middot; ${esc(uni.sing)} ${idx+1}`
+              + (item.needsMeter && entry.meter ? ' &middot; ' + esc(entry.meter) + ' m' : '')
+              + `${seloGaleria(entry)}</div>`;
             photoGrid.appendChild(cell);
           });
         }
@@ -5868,7 +6088,10 @@
 
   function entriesOf(item, st){
     const s = (st || dataState).photos[item.id];
-    if(item.multiple) return s || [];
+    // Obra gravada antes de o cabo aceitar várias bobinas tem uma foto ÚNICA
+    // onde hoje se espera lista. Aceitar as duas formas aqui evita que um
+    // relatório antigo quebre na hora de reimprimir.
+    if(Array.isArray(s)) return s;
     return s ? [s] : [];
   }
 
@@ -6069,14 +6292,32 @@
 
     const secoes = [];
 
-    // 1. cabo — só entra se pelo menos uma das duas pontas tiver foto
-    const fotoIni = entriesOf(itemIni, st)[0] || null;
-    const fotoFim = entriesOf(itemFim, st)[0] || null;
+    // 1. cabo — uma página por BOBINA. A foto N do início pareia com a foto N
+    // do final: é a mesma bobina vista das duas pontas. Obra com duas bobinas
+    // de 4 km precisa evidenciar as duas, cada uma com a própria conta.
+    const fotosIni = entriesOf(itemIni, st);
+    const fotosFim = entriesOf(itemFim, st);
+    const nBobinas = Math.max(fotosIni.length, fotosFim.length);
+    const paginasCabo = [];
+    for(let i = 0; i < nBobinas; i++){
+      paginasCabo.push({ini: fotosIni[i] || null, fim: fotosFim[i] || null});
+    }
+    // A soma das bobinas é o metro que vai pro serviço de instalação de cabo.
+    // Deixar essa conta pro analista fazer na mão é convite a erro de fatura.
+    let totalCabo = 0, bobinasComConta = 0;
+    paginasCabo.forEach(pg=>{
+      const a = Number(pg.ini && pg.ini.meter), b = Number(pg.fim && pg.fim.meter);
+      if(pg.ini && pg.fim && !isNaN(a) && !isNaN(b)){
+        totalCabo += Math.abs(a - b);
+        bobinasComConta++;
+      }
+    });
     secoes.push({
       tipo: 'cabo',
       indiceLabel: pdfPhotoMeta[1].indice,
-      paginas: [{ini: fotoIni, fim: fotoFim}],
-      vazia: !fotoIni && !fotoFim,
+      paginas: paginasCabo,
+      totalCabo, bobinasComConta,
+      vazia: !nBobinas,
     });
 
     // 2. chegada no poste do cliente — o técnico às vezes sai do cabo, passa
@@ -6212,36 +6453,50 @@
       const numSecao = secIdx + 1;
 
       if(sec.tipo === 'cabo'){
-        const pag = sec.paginas[0];
-        doc.addPage(); header();
-        let py = CONTENT_TOP + 4;
-        doc.setFont('helvetica','normal'); doc.setFontSize(12); doc.setTextColor(0,0,0);
-        doc.text(numSecao + '. Fotos do início e fim do cabo com metragem', M+7, py);
-        py += 10;
+        const varias = sec.paginas.length > 1;
+        sec.paginas.forEach((pag, i)=>{
+          doc.addPage(); header();
+          let py = CONTENT_TOP + 4;
+          doc.setFont('helvetica','normal'); doc.setFontSize(12); doc.setTextColor(0,0,0);
+          doc.text(numSecao + '. Fotos do início e fim do cabo com metragem'
+                   + (varias ? ' — bobina ' + (i+1) + ' de ' + sec.paginas.length : ''), M+7, py);
+          py += 10;
 
-        const gap = 8, colW = (CW - gap) / 2, maxH = 178;
-        const colEsq = M, colDir = M + colW + gap;
-        const rIni = desenharFotoNaColuna(pag.ini, colEsq, colW, py, maxH);
-        const rFim = desenharFotoNaColuna(pag.fim, colDir, colW, py, maxH);
+          const gap = 8, colW = (CW - gap) / 2, maxH = 178;
+          const colEsq = M, colDir = M + colW + gap;
+          const rIni = desenharFotoNaColuna(pag.ini, colEsq, colW, py, maxH);
+          const rFim = desenharFotoNaColuna(pag.fim, colDir, colW, py, maxH);
 
-        const labelY = py + Math.max(rIni.imgH, rFim.imgH, 6) + 7;
-        doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(0,0,0);
-        doc.text('Início do cabo' + (pag.ini && pag.ini.meter ? ' — ' + pag.ini.meter + 'm' : ''), colEsq, labelY);
-        doc.text('Final do cabo' + (pag.fim && pag.fim.meter ? ' — ' + pag.fim.meter + 'm' : ''), colDir, labelY);
+          const labelY = py + Math.max(rIni.imgH, rFim.imgH, 6) + 7;
+          doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(0,0,0);
+          doc.text('Início do cabo' + (pag.ini && pag.ini.meter ? ' — ' + pag.ini.meter + 'm' : ''), colEsq, labelY);
+          doc.text('Final do cabo' + (pag.fim && pag.fim.meter ? ' — ' + pag.fim.meter + 'm' : ''), colDir, labelY);
 
-        const legY = labelY + 6;
-        const hEsq = desenharLegenda(pag.ini && pag.ini.legend, colEsq, legY, colW);
-        const hDir = desenharLegenda(pag.fim && pag.fim.legend, colDir, legY, colW);
-        const deltaY = legY + Math.max(hEsq, hDir) + (Math.max(hEsq, hDir) ? 6 : 5);
+          const legY = labelY + 6;
+          const hEsq = desenharLegenda(pag.ini && pag.ini.legend, colEsq, legY, colW);
+          const hDir = desenharLegenda(pag.fim && pag.fim.legend, colDir, legY, colW);
+          let deltaY = legY + Math.max(hEsq, hDir) + (Math.max(hEsq, hDir) ? 6 : 5);
 
-        if(pag.ini && pag.ini.meter && pag.fim && pag.fim.meter){
-          const a = Number(pag.ini.meter), b = Number(pag.fim.meter);
-          if(!isNaN(a) && !isNaN(b)){
-            const maior = Math.max(a,b), menor = Math.min(a,b), delta = maior - menor;
-            doc.setFont('helvetica','bold'); doc.setFontSize(12);
-            doc.text(maior + ' - ' + menor + ' = ' + delta + 'm', PW/2, deltaY, {align:'center'});
+          if(pag.ini && pag.ini.meter && pag.fim && pag.fim.meter){
+            const a = Number(pag.ini.meter), b = Number(pag.fim.meter);
+            if(!isNaN(a) && !isNaN(b)){
+              const maior = Math.max(a,b), menor = Math.min(a,b), delta = maior - menor;
+              doc.setFont('helvetica','bold'); doc.setFontSize(12);
+              doc.text(maior + ' - ' + menor + ' = ' + delta + 'm', PW/2, deltaY, {align:'center'});
+              deltaY += 9;
+            }
           }
-        }
+
+          // O total só faz sentido na última bobina, e só quando há mais de uma
+          // conta fechada — senão repetiria o número que já está logo acima.
+          if(i === sec.paginas.length - 1 && sec.bobinasComConta > 1){
+            doc.setDrawColor(150,150,150); doc.setLineWidth(0.35);
+            doc.line(PW/2 - 42, deltaY - 4, PW/2 + 42, deltaY - 4);
+            doc.setFont('helvetica','bold'); doc.setFontSize(13);
+            doc.text('TOTAL DE CABO LANÇADO: ' + sec.totalCabo + 'm ('
+                     + sec.bobinasComConta + ' bobinas)', PW/2, deltaY + 4, {align:'center'});
+          }
+        });
         return;
       }
 
@@ -6779,9 +7034,17 @@
         st.photos[item.id] = {
           imgSrc: await pathToDataUrl(v),
           fileMeta: String(v).split('/').pop(),
-          meter: mk.meter || null, legend: mk.legend || '', time: mk.time || ''
+          meter: mk.meter || null, legend: mk.legend || '', time: mk.time || '',
+          dbm: (mk.dbm != null ? mk.dbm : null)
         };
       }
+      // Encaixa no formato que o item usa HOJE. O cabo passou a aceitar várias
+      // bobinas: obra antiga tem foto única onde a tela espera lista. Ajustar
+      // aqui, num lugar só, evita testar "é array?" em cada tela e no PDF.
+      if(item.multiple && !Array.isArray(st.photos[item.id]))
+        st.photos[item.id] = st.photos[item.id] ? [st.photos[item.id]] : [];
+      if(!item.multiple && Array.isArray(st.photos[item.id]))
+        st.photos[item.id] = st.photos[item.id][0] || null;
     }
 
     for(const [chave, itens] of [['projectDocs', projectDocItems], ['docsAtt', docExecItems]]){
@@ -7623,6 +7886,7 @@
       Object.keys(dataState).forEach(k=>{
         dataState[k] = salvo.dados[k] || (Array.isArray(dataState[k]) ? [] : {});
       });
+      normalizarFotos(dataState);
       poloObraAtual = poloValido(salvo.dados.polo) ? salvo.dados.polo : POLO_PADRAO;
       dataState.polo = poloObraAtual;
       preencherCamposContrato();
@@ -8121,6 +8385,27 @@
     return L;
   }
 
+  // Quem está logado, dentro do próprio menu. O nome só aparecia no canto
+  // superior direito; num celular estreito ele some, e o menu — que é onde a
+  // pessoa vai pra sair da conta — não dizia de qual conta ela ia sair.
+  function pintarQuemSou(){
+    const bloco = document.getElementById('sbQuem');
+    if(!bloco) return;
+    if(!perfilAtual){ bloco.style.display = 'none'; return; }
+    const nome = perfilAtual.nome || perfilAtual.email || 'Usuário';
+    // só palavras que começam com letra: "Você (demonstração)" virava "V(" ,
+    // e inicial com parêntese é o tipo de detalhe que faz o app parecer tosco
+    const iniciais = nome.trim().split(/\s+/)
+      .filter(x => /^[A-Za-zÀ-ÿ]/.test(x)).slice(0, 2)
+      .map(x => x[0]).join('').toUpperCase();
+    document.getElementById('sbQuemAv').textContent = iniciais || '?';
+    document.getElementById('sbQuemNome').textContent = nome;
+    document.getElementById('sbQuemSub').textContent =
+      (ROTULO_PAPEL[papelAtual()] || papelAtual() || '')
+      + (perfilAtual.empresa_nome ? ' · ' + perfilAtual.empresa_nome : '');
+    bloco.style.display = '';
+  }
+
   function montarMenu(){
     const L = itensMenu();
     sbNav.innerHTML = '<div class="sb-sec">Operação</div>';
@@ -8140,16 +8425,10 @@
       sbNav.appendChild(el);
     });
 
-    // sair fica separado, no fim
-    sbNav.insertAdjacentHTML('beforeend', '<div class="sb-sec">&nbsp;</div>');
-    const sair = document.createElement('div');
-    sair.className = 'sb-item';
-    sair.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" '
-      + 'stroke="currentColor" stroke-width="1.8" stroke-linecap="round" '
-      + 'stroke-linejoin="round">' + IC.sair + '</svg><span>Sair</span>';
-    sair.addEventListener('click', ()=> logoutLink.click());
-    sbNav.appendChild(sair);
-
+    // "Sair" mora no rodapé, ao lado do estado de sincronia. Antes ficava no
+    // fim da lista de navegação, separado por um espaçador vazio — e o vão
+    // gigante entre ele e o rodapé era a parte mais feia do menu.
+    pintarQuemSou();
     atualizarHome();
   }
 
@@ -10360,8 +10639,12 @@
       mime:'image/jpeg', legend:'', time:'10:42'}, extra || {});
     return {
       photos: {
-        1: f({tipo:'metragem', txt:'05938M'}, {meter:'5938'}),
-        2: f({tipo:'metragem', txt:'04205M'}, {meter:'4205'}),
+        // duas bobinas: sem isto o recurso de várias metragens ficava
+        // invisível na demonstração e não dava pra conferir a soma no PDF
+        1: [ f({tipo:'metragem', txt:'05938M'}, {meter:'5938', legend:'Bobina 1'}),
+             f({tipo:'metragem', txt:'08400M'}, {meter:'8400', legend:'Bobina 2'}) ],
+        2: [ f({tipo:'metragem', txt:'04205M'}, {meter:'4205', legend:'Bobina 1'}),
+             f({tipo:'metragem', txt:'06180M'}, {meter:'6180', legend:'Bobina 2'}) ],
         3: [ f({tipo:'caixa'}, {legend:'Caixa 01 — R Demonstração'}), f({tipo:'caixa'}) ],
         4: [ f({tipo:'caixa'}, {legend:'Etiqueta 9000001'}) ],
         5: [ f({tipo:'poste'}) ],
@@ -10686,6 +10969,12 @@
       loginUser.value = email;
     }
   });
+
+  // o "Sair" do rodapé do menu reaproveita exatamente o mesmo caminho
+  (function(){
+    const b = document.getElementById('sbSair');
+    if(b) b.addEventListener('click', ()=> logoutLink.click());
+  })();
 
   logoutLink.addEventListener('click', async ()=>{
     // Sair é raro e custoso no campo: melhor confirmar do que desconectar sem querer.
@@ -11242,6 +11531,19 @@
     }, false);
   }
 
+  // Mesma normalização do carregamento do servidor, para rascunho local e
+  // snapshot de obra enviada offline.
+  function normalizarFotos(estado){
+    if(!estado || !estado.photos) return estado;
+    photoItems.forEach(item=>{
+      const v = estado.photos[item.id];
+      if(v == null) return;
+      if(item.multiple && !Array.isArray(v)) estado.photos[item.id] = [v];
+      if(!item.multiple && Array.isArray(v)) estado.photos[item.id] = v[0] || null;
+    });
+    return estado;
+  }
+
   function loadJobSnapshot(job){
     const snap = job.snapshot;
     poloObraAtual = poloValido(snap.polo) ? snap.polo : poloDaObra(job);
@@ -11252,6 +11554,7 @@
     dataState.docsAtt = JSON.parse(JSON.stringify(snap.docsAtt || {}));
     dataState.materialsQty = JSON.parse(JSON.stringify(snap.materialsQty || {}));
     dataState.valuesQty = JSON.parse(JSON.stringify(snap.valuesQty || {}));
+    normalizarFotos(dataState);
 
     const c = dataState.contract;
     document.getElementById('fNumero').value = c.numero || '';
