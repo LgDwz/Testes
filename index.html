@@ -1207,6 +1207,68 @@
     font-family:'IBM Plex Mono',monospace;letter-spacing:0.02em;
   }
   .adm-chip.ativo{background:var(--accent-dim);border-color:var(--accent);color:var(--accent);}
+  /* CATÁLOGO — tela própria.
+     Antes só dava pra mexer no catálogo entrando numa obra, o que é o lugar
+     errado: administrar a lista é tarefa do escritório, não de quem está
+     lançando material no poste. */
+  .cat-tela-barra{display:flex; flex-direction:column; gap:12px; padding:0 16px 14px;}
+  .ct-add{margin:0 16px 16px; background:var(--bg-elev); border:1px solid var(--border);
+    border-radius:11px; padding:14px 16px; display:flex; gap:10px; flex-wrap:wrap;
+    align-items:flex-end;}
+  .ct-campo{display:flex; flex-direction:column; gap:5px; flex:1 1 200px; min-width:0;}
+  .ct-campo > span{font-family:'IBM Plex Mono',monospace; font-size:10px;
+    text-transform:uppercase; letter-spacing:.07em; color:var(--text-dim);}
+  .ct-campo input{width:100%; min-width:0; min-height:44px; background:var(--bg-elev-2);
+    border:1px solid var(--border); color:var(--text); border-radius:7px; padding:9px 12px;
+    font-family:'Inter',sans-serif; font-size:14px;}
+  .ct-campo.curto{flex:0 0 110px;}
+  .ct-campo.preco{flex:0 0 130px;}
+  .ct-campo.preco input, .ct-campo.curto input{font-family:'IBM Plex Mono',monospace;}
+  .ct-campo input:focus{outline:none; border-color:var(--accent);
+    box-shadow:0 0 0 3px rgba(0,162,245,.14);}
+  .ct-add-btn{flex:0 0 auto; min-height:44px; padding:0 20px; cursor:pointer; border:none;
+    border-radius:7px; background:var(--accent); color:var(--accent-ink);
+    font-family:'Inter',sans-serif; font-size:14px; font-weight:600;}
+
+  .ct-cab{display:flex; align-items:baseline; justify-content:space-between; gap:10px;
+    padding:0 18px 8px; font-family:'IBM Plex Mono',monospace; font-size:10.5px;
+    letter-spacing:.07em; text-transform:uppercase; color:var(--text-dim);}
+  .ct-lista{margin:0 16px 24px; border:1px solid var(--border); border-radius:11px;
+    overflow:hidden; background:var(--bg-elev);}
+  .ct-item{display:flex; align-items:center; gap:10px; padding:9px 10px 9px 14px;
+    border-bottom:1px solid var(--border);}
+  .ct-item:last-child{border-bottom:none;}
+  .ct-num{flex:0 0 34px; font-family:'IBM Plex Mono',monospace; font-size:11.5px;
+    color:var(--text-faint); text-align:right;}
+  .ct-cod{flex:0 0 62px; font-family:'IBM Plex Mono',monospace; font-size:11.5px;
+    color:var(--accent); background:var(--accent-dim); padding:3px 7px; border-radius:5px;
+    text-align:center;}
+  .ct-in{flex:1 1 auto; min-width:0; min-height:40px; background:transparent;
+    border:1px solid transparent; color:var(--text); border-radius:7px; padding:8px 10px;
+    font-family:'Inter',sans-serif; font-size:13.5px;}
+  .ct-in:hover{border-color:var(--border);}
+  .ct-in:focus{outline:none; background:var(--bg-elev-2); border-color:var(--accent);}
+  .ct-in.dinheiro{flex:0 0 120px; text-align:right; font-family:'IBM Plex Mono',monospace;
+    font-size:14px; font-variant-numeric:tabular-nums;}
+  .ct-in.zerado{color:var(--st-ambar);}
+  .ct-in.tec{color:var(--st-verde);}
+  .ct-in.tec.zerado{color:var(--st-ambar);}
+  .ct-in.ct-uni{flex:0 0 108px; font-family:'IBM Plex Mono',monospace; font-size:12.5px;}
+  .ct-cab-p{display:inline-block; min-width:96px; text-align:right; font-weight:600;}
+  .ct-x{flex:0 0 auto; width:36px; height:36px; cursor:pointer; background:none; border:none;
+    color:var(--text-faint); border-radius:7px; font-size:13px;}
+  .ct-x:hover{color:var(--danger); background:rgba(230,90,90,.12);}
+  .ct-salvo{flex:0 0 auto; font-family:'IBM Plex Mono',monospace; font-size:10px;
+    color:var(--success); opacity:0; transition:opacity .2s;}
+  .ct-salvo.on{opacity:1;}
+  .ct-vazio{margin:0 16px; padding:30px 16px; text-align:center; font-size:13.5px;
+    color:var(--text-faint); border:1px dashed var(--border); border-radius:11px;}
+  @media (max-width:560px){
+    .ct-item{flex-wrap:wrap;}
+    .ct-in{flex:1 1 100%; order:3;}
+    .ct-in.dinheiro{flex:0 0 110px; order:4;}
+  }
+
   /* FECHAMENTO POR TÉCNICO
      Modelo de saldo: liberado é dinheiro certo, retido está esperando revisão,
      devolvido não conta. A barra mostra a proporção sem obrigar a fazer conta. */
@@ -2712,6 +2774,27 @@
     </div>
   </div>
 
+  <!-- ============ CATÁLOGO: MATERIAIS E SERVIÇOS ============ -->
+  <div class="users-screen" id="catalogoScreen">
+    <div class="ph">
+      <div>
+        <div class="ph-t">Materiais e serviços</div>
+        <div class="ph-s">O catálogo da empresa. O que está aqui é o que o técnico encontra
+          na busca ao lançar uma obra.</div>
+      </div>
+    </div>
+    <div class="cat-tela-barra">
+      <div class="med-modos" id="catAbas">
+        <button type="button" class="med-modo ativo" data-aba="materiais"><b>Materiais</b>o que é consumido</button>
+        <button type="button" class="med-modo" data-aba="servicos"><b>Serviços</b>o que é faturado</button>
+      </div>
+      <div class="polo-chips" id="catTipos"></div>
+    </div>
+    <div class="dup-aviso" id="catTelaAviso" style="display:none;"></div>
+    <div id="catTelaAdd"></div>
+    <div id="catTelaLista"></div>
+  </div>
+
   <!-- ============ FECHAMENTO POR TÉCNICO ============ -->
   <div class="users-screen" id="fechamentoScreen">
     <div class="ph">
@@ -3199,7 +3282,6 @@
       <div class="dup-aviso" id="materiaisSemEmpresa" style="display:none;"></div>
       <div class="cat-atalhos" id="materiaisAtalhos" style="display:none;"></div>
       <div id="materialsList"></div>
-      <div id="materiaisAdd"></div>
       <div class="mat-resumo" id="materiaisResumo" style="display:none;">
         <span id="materiaisResumoItens">&mdash;</span>
         <span id="materiaisResumoUnid">&mdash;</span>
@@ -3228,7 +3310,6 @@
         <span>Total</span>
         <span id="valuesTotal">R$ 0,00</span>
       </div>
-      <div id="valoresAdd"></div>
     </section>
 
     <section class="step-section" id="stepReview">
@@ -3449,7 +3530,7 @@
 (function(){
   // Marque aqui a cada build enviado ao campo. O testador informa esta
   // string ao relatar um problema, senao nao da pra saber o que ele rodou.
-  const APP_VERSION = 'Enlace Ops · alpha-10.79 · 02/09/2026';
+  const APP_VERSION = 'Enlace Ops · alpha-10.81 · 02/09/2026';
 
   // ---------- Supabase config ----------
   // Troque pelos valores reais do seu projeto (Project Settings -> API no Supabase).
@@ -4881,7 +4962,7 @@
       const subtotal = qty * v.price;
       const row = document.createElement('div');
       row.className = 'value-row' + (qty > 0 ? ' lancado' : '')
-        + (podeEditarCatalogo ? ' tem-del' : '');
+        + ' tem-del';
       row.innerHTML = `
         <div class="value-top">
           <span class="value-code">${esc(v.code)}</span>
@@ -4923,98 +5004,11 @@
       valuesList.appendChild(row);
     });
     recomputeValuesTotal();
-    // idem Materiais: fora da grade, depois do total
-    const addServ = document.getElementById('valoresAdd');
-    if(addServ){
-      addServ.innerHTML = '';
-      if(podeEditarCatalogo){
-        addServ.appendChild(montarFormAddServico());
-        addServ.appendChild(montarGestaoCatalogo('valores'));
-      }
-    }
+
   }
 
-  function montarFormAddServico(){
-    const wrap = document.createElement('div');
-    const btn = document.createElement('button');
-    btn.type = 'button'; btn.className = 'cat-add-btn';
-    btn.innerHTML = '<span class="cat-add-mais">+</span> Adicionar serviço ao catálogo';
-    const form = document.createElement('div');
-    form.className = 'cat-add-form'; form.style.display = 'none';
-    // Rótulo em cima de cada campo. Placeholder some quando a pessoa digita, e
-    // aí três caixas cinzas não dizem mais qual é qual — no campo de preço isso
-    // vira número errado no catálogo que fatura.
-    form.innerHTML = `
-      <div class="cat-add-titulo">Novo serviço no catálogo</div>
-      <div class="cat-add-row">
-        <label class="cat-add-campo" style="flex:0 0 120px;">
-          <span>Código</span>
-          <input type="text" placeholder="05.01" class="cat-add-code" autocomplete="off">
-        </label>
-        <label class="cat-add-campo" style="flex:0 0 140px;">
-          <span>Preço unitário</span>
-          <input type="number" step="0.01" min="0" placeholder="0,00" class="cat-add-price" inputmode="decimal">
-        </label>
-      </div>
-      <label class="cat-add-campo">
-        <span>Descrição</span>
-        <input type="text" placeholder="Como aparece na tabela da operadora" class="cat-add-desc" autocomplete="off">
-      </label>
-      <div class="cat-add-nota">Entra no catálogo da empresa e passa a valer para as próximas obras.</div>
-      <div class="cat-add-form-btns">
-        <button type="button" class="cat-add-cancelar">Cancelar</button>
-        <button type="button" class="cat-add-salvar">Adicionar serviço</button>
-      </div>
-    `;
-    btn.addEventListener('click', ()=>{ btn.style.display = 'none'; form.style.display = 'flex'; form.querySelector('.cat-add-code').focus(); });
-    form.querySelector('.cat-add-cancelar').addEventListener('click', ()=>{ form.style.display = 'none'; btn.style.display = 'flex'; });
-    form.querySelector('.cat-add-salvar').addEventListener('click', async ()=>{
-      const code = form.querySelector('.cat-add-code').value.trim();
-      const desc = form.querySelector('.cat-add-desc').value.trim();
-      const price = Number(form.querySelector('.cat-add-price').value);
-      if(!code || !desc || !price){ showToast('Preencha código, descrição e preço'); return; }
-      if(valuesItems.some(v => v.code === code)){ showToast('Já existe um serviço com esse código'); return; }
-      await adicionarServico(code, desc, price);
-    });
-    wrap.appendChild(btn); wrap.appendChild(form);
-    return wrap;
-  }
 
-  async function adicionarServico(code, desc, price){
-    const empId = empresaDoCatalogo();
-    if(supabaseConfigured && !empId){
-      showToast(ehSuper()
-        ? 'Escolha a empresa antes de mexer no catálogo dela'
-        : 'Sua conta não está vinculada a uma empresa — avise o administrador');
-      return;
-    }
-    valuesItems.push({code, desc, price});
-    if(supabaseConfigured && online && empId){
-      try{
-        const {error} = await supabaseClient.from('servicos_catalogo')
-          .insert({empresa_id: empId, code, descricao: desc, preco: price, ordem: valuesItems.length});
-        if(error) throw error;
-      } catch(e){ showToast('Adicionado aqui, mas não salvou no servidor: ' + (e.message || e)); }
-    }
-    showToast('Serviço adicionado ao catálogo');
-    renderValores();
-  }
 
-  async function excluirServico(code){
-    if(!confirm('Remover esse serviço do catálogo? Ele deixa de aparecer nas próximas obras.')) return;
-    const empId = empresaDoCatalogo();
-    const idx = valuesItems.findIndex(v => v.code === code);
-    if(idx > -1) valuesItems.splice(idx, 1);
-    if(supabaseConfigured && online && empId){
-      try{
-        const {error} = await supabaseClient.from('servicos_catalogo').delete()
-          .eq('empresa_id', empId).eq('code', code);
-        if(error) throw error;
-      } catch(e){ showToast('Removido aqui, mas não removeu no servidor: ' + (e.message || e)); }
-    }
-    showToast('Serviço removido do catálogo');
-    renderValores();
-  }
 
   // ---------- Step: Materiais ----------
   const materialsList = document.getElementById('materialsList');
@@ -5035,7 +5029,7 @@
       const row = document.createElement('div');
       const lancado = preenchido(dataState.materialsQty[m.id]);
       row.className = 'material-row' + (ehEquipamento(m) ? ' com-serie' : '')
-        + (lancado ? ' lancado' : '') + (podeEditarCatalogo ? ' tem-del' : '');
+        + (lancado ? ' lancado' : '') + ' tem-del';
       const extra = dataState.materialsExtra[m.id] || {};
       row.innerHTML = `
         <div class="material-topo">
@@ -5101,126 +5095,15 @@
       });
       materialsList.appendChild(row);
     });
-    // O bloco de "adicionar ao catálogo" mora FORA da lista. Dentro dela, na
-    // grade de duas colunas do desktop, ele virava meio cartão espremido ao
-    // lado de um material — parecia item do catálogo, não ação.
-    const addMat = document.getElementById('materiaisAdd');
-    if(addMat){
-      addMat.innerHTML = '';
-      if(podeEditarCatalogo){
-        addMat.appendChild(montarFormAddMaterial());
-        addMat.appendChild(montarGestaoCatalogo('materiais'));
-      }
-    }
     recomputarResumoMateriais();
   }
 
   // O X de excluir do catálogo saiu das linhas da obra (lá ele agora só tira o
   // item da obra). A gestão do catálogo mora aqui, no painel que só o
   // escritório abre — longe do dedo do técnico lançando material.
-  function montarGestaoCatalogo(qual){
-    const wrap = document.createElement('div');
-    wrap.className = 'cat-gestao';
-    const itens = qual === 'materiais'
-      ? materials.map(m => ({ch:String(m.id), rot:m.name}))
-      : valuesItems.map(v => ({ch:v.code, rot:v.code + ' — ' + v.desc}));
-    const bt = document.createElement('button');
-    bt.type = 'button'; bt.className = 'cat-gestao-abrir';
-    bt.textContent = 'Catálogo da empresa · ' + itens.length + ' '
-      + (qual === 'materiais' ? 'materiais' : 'serviços');
-    const lista = document.createElement('div');
-    lista.className = 'cat-gestao-lista'; lista.style.display = 'none';
-    itens.forEach(i=>{
-      const l = document.createElement('div');
-      l.className = 'cat-gestao-item';
-      l.innerHTML = '<span>' + esc(i.rot) + '</span>';
-      const x = document.createElement('button');
-      x.type = 'button'; x.className = 'cat-gestao-x';
-      x.title = 'Excluir do catálogo'; x.setAttribute('aria-label', 'Excluir ' + i.rot);
-      x.innerHTML = '&#10005;';
-      x.addEventListener('click', ()=>{
-        if(qual === 'materiais') excluirMaterial(i.ch); else excluirServico(i.ch);
-      });
-      l.appendChild(x);
-      lista.appendChild(l);
-    });
-    bt.addEventListener('click', ()=>{
-      const abrindo = lista.style.display === 'none';
-      lista.style.display = abrindo ? '' : 'none';
-      bt.classList.toggle('on', abrindo);
-    });
-    wrap.appendChild(bt); wrap.appendChild(lista);
-    return wrap;
-  }
 
-  function montarFormAddMaterial(){
-    const wrap = document.createElement('div');
-    const btn = document.createElement('button');
-    btn.type = 'button'; btn.className = 'cat-add-btn';
-    btn.innerHTML = '<span class="cat-add-mais">+</span> Adicionar material ao catálogo';
-    const form = document.createElement('div');
-    form.className = 'cat-add-form'; form.style.display = 'none';
-    form.innerHTML = `
-      <div class="cat-add-titulo">Novo material no catálogo</div>
-      <label class="cat-add-campo">
-        <span>Nome do material</span>
-        <input type="text" placeholder="Como está na nota de saída do almoxarifado" class="cat-add-nome" autocomplete="off">
-      </label>
-      <div class="cat-add-nota">Entra no catálogo da empresa e passa a valer para as próximas obras.</div>
-      <div class="cat-add-form-btns">
-        <button type="button" class="cat-add-cancelar">Cancelar</button>
-        <button type="button" class="cat-add-salvar">Adicionar material</button>
-      </div>
-    `;
-    btn.addEventListener('click', ()=>{ btn.style.display = 'none'; form.style.display = 'flex'; form.querySelector('.cat-add-nome').focus(); });
-    form.querySelector('.cat-add-cancelar').addEventListener('click', ()=>{ form.style.display = 'none'; btn.style.display = 'flex'; });
-    form.querySelector('.cat-add-salvar').addEventListener('click', async ()=>{
-      const nome = form.querySelector('.cat-add-nome').value.trim();
-      if(!nome){ showToast('Digite o nome do material'); return; }
-      await adicionarMaterial(nome);
-    });
-    wrap.appendChild(btn); wrap.appendChild(form);
-    return wrap;
-  }
 
-  async function adicionarMaterial(nome){
-    const empId = empresaDoCatalogo();
-    // Sem empresa não há onde gravar. Antes o item entrava só na tela e sumia
-    // no próximo carregamento, sem ninguém avisar.
-    if(supabaseConfigured && !empId){
-      showToast(ehSuper()
-        ? 'Escolha a empresa antes de mexer no catálogo dela'
-        : 'Sua conta não está vinculada a uma empresa — avise o administrador');
-      return;
-    }
-    const novoId = (materials.reduce((max,m)=> Math.max(max, Number(m.id)||0), 0)) + 1;
-    materials.push({id: novoId, name: nome});
-    if(supabaseConfigured && online && empId){
-      try{
-        const {error} = await supabaseClient.from('materiais_catalogo')
-          .insert({empresa_id: empId, item_id: novoId, nome, ordem: novoId});
-        if(error) throw error;
-      } catch(e){ showToast('Adicionado aqui, mas não salvou no servidor: ' + (e.message || e)); }
-    }
-    showToast('Material adicionado ao catálogo');
-    renderMateriais();
-  }
 
-  async function excluirMaterial(id){
-    if(!confirm('Remover esse material do catálogo? Ele deixa de aparecer nas próximas obras.')) return;
-    const empId = empresaDoCatalogo();
-    const idx = materials.findIndex(m => m.id === id);
-    if(idx > -1) materials.splice(idx, 1);
-    if(supabaseConfigured && online && empId){
-      try{
-        const {error} = await supabaseClient.from('materiais_catalogo').delete()
-          .eq('empresa_id', empId).eq('item_id', id);
-        if(error) throw error;
-      } catch(e){ showToast('Removido aqui, mas não removeu no servidor: ' + (e.message || e)); }
-    }
-    showToast('Material removido do catálogo');
-    renderMateriais();
-  }
 
   ligarFerramentasCat('materiais');
   ligarFerramentasCat('valores');
@@ -5267,11 +5150,25 @@
       const acervo = catalogoDe(alvo);
       if(!errMats && mats && mats.length){
         acervo.materiais.length = 0;
-        mats.forEach(m => acervo.materiais.push({id: m.item_id, name: m.nome}));
+        mats.forEach(m => acervo.materiais.push({
+          id: m.item_id, name: m.nome,
+          // a unidade vem do CRM (metro x unidade) e só existe depois do
+          // sql-catalogo-do-crm.sql; sem ela, "unidade" é o padrão de sempre
+          unidade: m.unidade || 'unidade',
+        }));
       }
       if(!errServs && servs && servs.length){
         acervo.servicos.length = 0;
-        servs.forEach(x => acervo.servicos.push({code: x.code, desc: x.descricao, price: Number(x.preco)}));
+        servs.forEach(x => acervo.servicos.push({
+          code: x.code, desc: x.descricao,
+          // `price` é o que a CiP FATURA da Ligga — é ele que monta a medição.
+          price: Number(x.preco) || 0,
+          // `precoTec` é o que o técnico RECEBE, e é o que o Fechamento soma.
+          // Enquanto a coluna não existir no banco, cai no mesmo preço: melhor
+          // repetir o número do que mostrar zero no fechamento de alguém.
+          precoTec: (x.preco_tecnico == null || Number(x.preco_tecnico) === 0)
+                      ? (Number(x.preco) || 0) : Number(x.preco_tecnico),
+        }));
       }
       // só marca como carregado se as DUAS deram certo — antes, uma falha
       // isolada numa das tabelas travava o catálogo inteiro na lista antiga
@@ -8732,6 +8629,7 @@
     nova     :'<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/><path d="M12 11v6"/><path d="M9 14h6"/>',
     medicao  :'<path d="M3 20h18"/><path d="M6 20V9"/><path d="M11 20V4"/><path d="M16 20v-7"/><path d="M21 20v-4"/>',
     fechamento:'<rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10.5h18"/><path d="M7.5 15h3"/>',
+    catalogo :'<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H19v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 1 6.5 18H19v3H6.5"/><path d="M8.5 7.5h7M8.5 11h5"/>',
   };
 
   let rotaAtual = '';
@@ -8746,6 +8644,7 @@
     if(ehTecnico()) L.push({id:'nova', t:'Nova obra', ic:'nova'});
     L.push({id:'obras',     t: ehRevisor() ? 'Obras' : 'Minhas obras', ic:'obras', badge:true});
     L.push({id:'historico', t:'Histórico', ic:'historico'});
+    if(!ehTecnico()) L.push({id:'catalogo', t:'Materiais e serviços', ic:'catalogo'});
     if(ehRevisor()) L.push({id:'fechamento', t:'Fechamento', ic:'fechamento'});
     if(ehRevisor()) L.push({id:'medicao',    t:'Medição',    ic:'medicao'});
     if(ehRevisor()) L.push({id:'relatorios', t:'Relatórios', ic:'relatorios'});
@@ -8805,7 +8704,7 @@
     dashboard:'Dashboard', despacho:'Despacho', tecnicos:'Técnicos',
     obras:'Obras', historico:'Histórico', relatorios:'Relatórios',
     config:'Configurações', empresas:'Empresas', nova:'Nova obra', medicao:'Medição',
-    fechamento:'Fechamento',
+    fechamento:'Fechamento', catalogo:'Materiais e serviços',
   };
 
   function navegarMenu(rota){
@@ -8825,6 +8724,7 @@
       case 'nova':      abrirObraNova(); break;
       case 'medicao':   showAppView('medicao'); prepararMedicao(); break;
       case 'fechamento': showAppView('fechamento'); prepararFechamento(); break;
+      case 'catalogo':   showAppView('catalogo'); prepararCatalogoTela(); break;
       case 'tecnicos':  showAppView('usuarios'); escopoTecnicos = true; escopoEmpresas = false; filtroUsuarios = 'tecnico'; renderUsuarios(); break;
       case 'obras':
         // entrar em Obras pelo menu mostra tudo; vindo de um cartão do painel,
@@ -8895,6 +8795,7 @@
   const quadroScreen = document.getElementById('quadroScreen');
   const medicaoScreen = document.getElementById('medicaoScreen');
   const fechamentoScreen = document.getElementById('fechamentoScreen');
+  const catalogoScreen = document.getElementById('catalogoScreen');
   const quadroCard   = document.getElementById('quadroCard');
 
   const ROTULO_STATUS = {
@@ -8971,7 +8872,8 @@
     const lista = [];
     valuesItems.forEach(v=>{
       const q = Number(qtds[v.code]) || 0;
-      if(q > 0) lista.push({code: v.code, desc: v.desc, qtd: q, preco: v.price});
+      if(q > 0) lista.push({code: v.code, desc: v.desc, qtd: q,
+                            preco: v.price, precoTec: (v.precoTec != null ? v.precoTec : v.price)});
     });
     Object.keys(qtds).forEach(code=>{
       const q = Number(qtds[code]) || 0;
@@ -8979,7 +8881,7 @@
       if(valuesItems.some(v => String(v.code) === String(code))) return;
       // sem preço no catálogo não dá pra inventar valor — entra com 0 e
       // aparecendo, pra alguém notar em vez de sumir da conta
-      lista.push({code, desc: 'Serviço ' + code + ' (fora do catálogo)', qtd: q, preco: 0});
+      lista.push({code, desc: 'Serviço ' + code + ' (fora do catálogo)', qtd: q, preco: 0, precoTec: 0});
     });
     return lista;
   }
@@ -11163,13 +11065,33 @@
         insert(reg){ (Array.isArray(reg)?reg:[reg]).forEach(x=>{ x.id = x.id || ++seq; db[tab].push(x); });
                      return Promise.resolve({data:reg, error:null}); },
         upsert(reg){ return api.insert(reg); },
-        update(campos){ return { eq(c,v){
-            (db[tab]||[]).filter(l => String(l[c]) === String(v)).forEach(l => Object.assign(l, campos));
-            return Promise.resolve({data:null, error:null}); } }; },
-        delete(){ const rm = (c,v,many)=>{ db[tab] = (db[tab]||[]).filter(l => many
-                      ? !v.map(String).includes(String(l[c])) : String(l[c]) !== String(v));
-                    return Promise.resolve({data:null, error:null}); };
-                  return { eq:(c,v)=>rm(c,v,false), in:(c,v)=>rm(c,v,true) }; },
+        // update e delete aceitam VÁRIOS .eq() encadeados, como o cliente de
+        // verdade. Com um só, `.eq(empresa).eq(tipo).eq(code)` — que é como o
+        // catálogo por tipo consulta — quebrava na demonstração.
+        update(campos){
+          const f = [];
+          const w = {
+            eq(c,v){ f.push(l => String(l[c]) === String(v)); return w; },
+            in(c,v){ f.push(l => v.map(String).includes(String(l[c]))); return w; },
+            then(r){
+              (db[tab]||[]).filter(l => f.every(fn => fn(l))).forEach(l => Object.assign(l, campos));
+              return Promise.resolve({data:null, error:null}).then(r);
+            },
+          };
+          return w;
+        },
+        delete(){
+          const f = [];
+          const w = {
+            eq(c,v){ f.push(l => String(l[c]) === String(v)); return w; },
+            in(c,v){ f.push(l => v.map(String).includes(String(l[c]))); return w; },
+            then(r){
+              db[tab] = (db[tab]||[]).filter(l => !f.every(fn => fn(l)));
+              return Promise.resolve({data:null, error:null}).then(r);
+            },
+          };
+          return w;
+        },
       };
       return api;
     };
@@ -11846,6 +11768,7 @@
     quadroScreen.classList.toggle('show', view === 'quadro');
     medicaoScreen.classList.toggle('show', view === 'medicao');
     fechamentoScreen.classList.toggle('show', view === 'fechamento');
+    catalogoScreen.classList.toggle('show', view === 'catalogo');
     wizardScreen.classList.toggle('show', view === 'wizard');
     bottomBar.style.display = (view === 'wizard' && steps[currentStep] !== 'review') ? 'flex' : 'none';
     if(view !== 'wizard') empilhar({tela: view});   // o wizard empilha por passo, no showStep
@@ -12910,6 +12833,302 @@
     }
   }
 
+  // ---------- Tela do catálogo ----------
+  //
+  // Antes só dava pra mexer no catálogo entrando numa obra. Lugar errado por
+  // dois motivos: administrar a lista é tarefa do escritório, não de quem está
+  // no poste; e pra corrigir o preço de um serviço era preciso abrir uma obra
+  // qualquer, o que é um caminho que ninguém adivinha.
+  let catAba = 'materiais';
+  let catTipoTela = 'convencional';
+  let avisouPreco = false;   // o aviso do preço retroativo é dado uma vez por sessão
+
+  function prepararCatalogoTela(){
+    document.querySelectorAll('#catAbas .med-modo').forEach(b=>{
+      b.classList.toggle('ativo', b.dataset.aba === catAba);
+    });
+    pintarTiposCatalogo();
+    garantirCatalogo(catTipoTela).then(()=> renderCatalogoTela(), ()=> renderCatalogoTela());
+    renderCatalogoTela();
+  }
+
+  function pintarTiposCatalogo(){
+    const el = document.getElementById('catTipos');
+    if(!el) return;
+    el.innerHTML = '';
+    Object.keys(TIPOS_OBRA).forEach(t=>{
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'polo-chip' + (t === catTipoTela ? ' ativo' : '');
+      b.textContent = TIPOS_OBRA[t].rot;
+      b.addEventListener('click', ()=>{
+        catTipoTela = t;
+        pintarTiposCatalogo();
+        garantirCatalogo(t).then(()=> renderCatalogoTela(), ()=> renderCatalogoTela());
+        renderCatalogoTela();
+      });
+      el.appendChild(b);
+    });
+  }
+
+  (function ligarAbasCatalogo(){
+    document.querySelectorAll('#catAbas .med-modo').forEach(b=>{
+      b.addEventListener('click', ()=>{
+        catAba = b.dataset.aba;
+        document.querySelectorAll('#catAbas .med-modo').forEach(o=>
+          o.classList.toggle('ativo', o === b));
+        renderCatalogoTela();
+      });
+    });
+  })();
+
+  function renderCatalogoTela(){
+    const add = document.getElementById('catTelaAdd');
+    const lista = document.getElementById('catTelaLista');
+    const aviso = document.getElementById('catTelaAviso');
+    if(!lista) return;
+
+    // superadmin fora de uma empresa não tem catálogo pra editar: dizer isso
+    // é melhor que deixar ele mexer na lista embutida e nada salvar
+    const empId = empresaDoCatalogo();
+    const semEmpresa = supabaseConfigured && !empId;
+    if(aviso){
+      aviso.style.display = semEmpresa ? '' : 'none';
+      if(semEmpresa) aviso.textContent = ehSuper()
+        ? 'Entre por uma empresa (menu Empresas) para editar o catálogo dela. O que aparece aqui é a lista padrão do app.'
+        : 'Sua conta não está vinculada a uma empresa. Avise o administrador.';
+    }
+
+    const cat = catalogoDe(catTipoTela);
+    const ehMat = catAba === 'materiais';
+    const itens = ehMat ? cat.materiais : cat.servicos;
+
+    // ---- formulário de adicionar, sempre visível: adicionar é a razão da tela
+    add.innerHTML = ehMat
+      ? '<div class="ct-add">'
+        + '<label class="ct-campo"><span>Nome do material</span>'
+        + '<input type="text" id="ctNome" placeholder="Como está na nota do almoxarifado" autocomplete="off"></label>'
+        + '<label class="ct-campo curto"><span>Unidade</span>'
+        + '<select id="ctUni"><option value="unidade">unidade</option><option value="metro">metro</option></select></label>'
+        + '<button type="button" class="ct-add-btn" id="ctAdd">Adicionar material</button></div>'
+      : '<div class="ct-add">'
+        + '<label class="ct-campo curto"><span>Código</span>'
+        + '<input type="text" id="ctCod" placeholder="05.01" autocomplete="off"></label>'
+        + '<label class="ct-campo"><span>Descrição</span>'
+        + '<input type="text" id="ctDesc" placeholder="Como aparece na tabela da operadora" autocomplete="off"></label>'
+        + '<label class="ct-campo preco"><span>Fatura da Ligga</span>'
+        + '<input type="number" step="0.01" min="0" id="ctPreco" placeholder="0,00" inputmode="decimal"></label>'
+        + '<label class="ct-campo preco"><span>Paga o técnico</span>'
+        + '<input type="number" step="0.01" min="0" id="ctPrecoTec" placeholder="0,00" inputmode="decimal"></label>'
+        + '<button type="button" class="ct-add-btn" id="ctAdd">Adicionar serviço</button></div>';
+    document.getElementById('ctAdd').addEventListener('click', ()=> adicionarNoCatalogo(ehMat));
+
+    // ---- lista editável
+    lista.innerHTML = '';
+    const cab = document.createElement('div');
+    cab.className = 'ct-cab';
+    cab.innerHTML = '<span>' + (ehMat ? 'Materiais' : 'Serviços') + ' · '
+      + TIPOS_OBRA[catTipoTela].rot + '</span><span>'
+      + (ehMat ? '' : '<b class="ct-cab-p">fatura&nbsp;CiP</b> &nbsp; <b class="ct-cab-p">paga&nbsp;téc.</b> &nbsp; ')
+      + itens.length + (itens.length === 1 ? ' item' : ' itens') + '</span>';
+    lista.appendChild(cab);
+
+    if(!itens.length){
+      const v = document.createElement('div');
+      v.className = 'ct-vazio';
+      v.textContent = 'O catálogo de ' + (ehMat ? 'materiais' : 'serviços') + ' de '
+        + TIPOS_OBRA[catTipoTela].rot.toLowerCase() + ' está vazio. Use o campo acima.';
+      lista.appendChild(v);
+      return;
+    }
+
+    const caixa = document.createElement('div');
+    caixa.className = 'ct-lista';
+    itens.forEach(item=>{
+      const linha = document.createElement('div');
+      linha.className = 'ct-item';
+      if(ehMat){
+        const uni = item.unidade || 'unidade';
+        linha.innerHTML = '<span class="ct-num">' + esc(item.id) + '</span>'
+          + '<input class="ct-in" type="text" value="' + esc(item.name) + '">'
+          // "12" de cabo é 12 metros; "12" de conector é 12 peças. No relatório
+          // que vai pra operadora isso muda a leitura do documento.
+          + '<select class="ct-in ct-uni">'
+          +   '<option value="unidade"' + (uni === 'unidade' ? ' selected' : '') + '>unidade</option>'
+          +   '<option value="metro"'   + (uni === 'metro'   ? ' selected' : '') + '>metro</option>'
+          + '</select>'
+          + '<span class="ct-salvo">salvo</span>'
+          + '<button class="ct-x" type="button" title="Excluir do catálogo" aria-label="Excluir">&#10005;</button>';
+      } else {
+        // O CÓDIGO não é editável de propósito: é a chave que liga o serviço às
+        // obras já lançadas. Trocar aqui deixaria toda obra antiga apontando pra
+        // um código que não existe mais.
+        linha.innerHTML = '<span class="ct-cod" title="O código não muda: é o que liga o serviço às obras já lançadas">'
+            + esc(item.code) + '</span>'
+          + '<input class="ct-in" type="text" value="' + esc(item.desc) + '">'
+          + '<input class="ct-in dinheiro' + (Number(item.price) > 0 ? '' : ' zerado')
+            + '" type="number" step="0.01" min="0" value="' + (Number(item.price) || 0) + '"'
+            + ' title="Preço que a CiP fatura da Ligga — é este que monta a medição"'
+            + (Number(item.price) > 0 ? '' : ' data-vazio="1"') + '>'
+          // O contrato tem dois números por serviço: o que a CiP cobra e o que
+          // o técnico recebe. Guardar um só fazia o fechamento do técnico usar
+          // o preço de faturamento — quase o triplo, em alguns códigos.
+          + '<input class="ct-in dinheiro tec' + (Number(item.precoTec) > 0 ? '' : ' zerado')
+            + '" type="number" step="0.01" min="0" value="'
+            + (Number(item.precoTec != null ? item.precoTec : item.price) || 0) + '"'
+            + ' title="Preço que o técnico recebe — é este que monta o fechamento">'
+          + '<span class="ct-salvo">salvo</span>'
+          + '<button class="ct-x" type="button" title="Excluir do catálogo" aria-label="Excluir">&#10005;</button>';
+      }
+      const marca = linha.querySelector('.ct-salvo');
+      const piscar = ()=>{
+        marca.classList.add('on');
+        setTimeout(()=> marca.classList.remove('on'), 1400);
+      };
+      const campos = linha.querySelectorAll('.ct-in');
+      // grava ao SAIR do campo, não a cada tecla: escrever no banco a cada letra
+      // é uma requisição por caractere e um histórico ilegível
+      campos.forEach(c => c.addEventListener('change', ()=> salvarLinhaCatalogo(ehMat, item, linha, piscar)));
+      linha.querySelector('.ct-x').addEventListener('click', ()=> excluirDoCatalogo(ehMat, item));
+      caixa.appendChild(linha);
+    });
+    lista.appendChild(caixa);
+  }
+
+  async function salvarLinhaCatalogo(ehMat, item, linha, piscar){
+    const empId = empresaDoCatalogo();
+    const campos = linha.querySelectorAll('.ct-in');
+    if(ehMat){
+      const nome = (campos[0].value || '').trim();
+      const uni = (linha.querySelector('.ct-uni') || {}).value || 'unidade';
+      if(!nome){ campos[0].value = item.name; showToast('O material precisa de um nome'); return; }
+      if(nome === item.name && uni === (item.unidade || 'unidade')) return;
+      item.name = nome;
+      item.unidade = uni;
+      if(supabaseConfigured && online && empId){
+        const {error} = await supabaseClient.from('materiais_catalogo')
+          .update({nome, unidade: uni})
+          .eq('empresa_id', empId).eq('tipo', catTipoTela).eq('item_id', item.id);
+        if(error){ showToast('Não salvou no servidor: ' + error.message); return; }
+      }
+      piscar();
+      return;
+    }
+
+    const desc = (campos[0].value || '').trim();
+    const preco = Number(campos[1].value) || 0;
+    const precoTec = Number(campos[2].value) || 0;
+    if(!desc){ campos[0].value = item.desc; showToast('O serviço precisa de uma descrição'); return; }
+    const antesTec = Number(item.precoTec != null ? item.precoTec : item.price) || 0;
+    const mudouPreco = Math.round(preco * 100) !== Math.round((Number(item.price) || 0) * 100)
+                    || Math.round(precoTec * 100) !== Math.round(antesTec * 100);
+    if(!mudouPreco && desc === item.desc) return;
+
+    // O valor de uma obra é calculado com o preço ATUAL do catálogo. Mudar o
+    // preço mexe em toda obra que ainda não entrou numa medição fechada — as
+    // fechadas estão congeladas no boletim e não se movem.
+    if(mudouPreco && !avisouPreco){
+      const ok = confirm(
+          'Mudar o preço de um serviço muda o valor de TODAS as obras que ainda não '
+        + 'entraram numa medição fechada.\n\nAs medições já fechadas ficam como estão.\n\nContinuar?');
+      if(!ok){ campos[1].value = Number(item.price) || 0; return; }
+      avisouPreco = true;
+    }
+
+    item.desc = desc;
+    item.price = preco;
+    item.precoTec = precoTec;
+    campos[1].classList.toggle('zerado', !(preco > 0));
+    campos[2].classList.toggle('zerado', !(precoTec > 0));
+    if(supabaseConfigured && online && empId){
+      const campos2 = {descricao: desc, preco, preco_tecnico: precoTec};
+      let {error} = await supabaseClient.from('servicos_catalogo')
+        .update(campos2).eq('empresa_id', empId)
+        .eq('tipo', catTipoTela).eq('code', item.code);
+      // banco ainda sem a coluna dos dois preços: grava o que dá e avisa, em
+      // vez de perder a edição inteira por causa de uma coluna que falta
+      if(error && /preco_tecnico/.test(error.message || '')){
+        const r2 = await supabaseClient.from('servicos_catalogo')
+          .update({descricao: desc, preco}).eq('empresa_id', empId)
+          .eq('tipo', catTipoTela).eq('code', item.code);
+        error = r2.error;
+        if(!error) showToast('Preço do técnico não salvou — rode o sql-catalogo-do-crm.sql');
+      }
+      if(error){ showToast('Não salvou no servidor: ' + error.message); return; }
+    }
+    piscar();
+  }
+
+  async function adicionarNoCatalogo(ehMat){
+    const empId = empresaDoCatalogo();
+    if(supabaseConfigured && !empId){
+      showToast(ehSuper()
+        ? 'Escolha a empresa antes de mexer no catálogo dela'
+        : 'Sua conta não está vinculada a uma empresa — avise o administrador');
+      return;
+    }
+    const cat = catalogoDe(catTipoTela);
+    if(ehMat){
+      const nome = (document.getElementById('ctNome').value || '').trim();
+      if(!nome){ showToast('Digite o nome do material'); return; }
+      const uni = (document.getElementById('ctUni') || {}).value || 'unidade';
+      const novoId = cat.materiais.reduce((mx, m) => Math.max(mx, Number(m.id) || 0), 0) + 1;
+      cat.materiais.push({id: novoId, name: nome, unidade: uni});
+      if(supabaseConfigured && online && empId){
+        const {error} = await supabaseClient.from('materiais_catalogo')
+          .insert({empresa_id: empId, tipo: catTipoTela, item_id: novoId, nome,
+                   unidade: uni, ordem: novoId});
+        if(error) showToast('Adicionado aqui, mas não salvou no servidor: ' + error.message);
+      }
+      showToast('Material adicionado');
+    } else {
+      const code = (document.getElementById('ctCod').value || '').trim();
+      const desc = (document.getElementById('ctDesc').value || '').trim();
+      const preco = Number(document.getElementById('ctPreco').value) || 0;
+      const precoTec = Number((document.getElementById('ctPrecoTec') || {}).value) || 0;
+      if(!code || !desc){ showToast('Preencha o código e a descrição'); return; }
+      if(cat.servicos.some(v => v.code === code)){ showToast('Já existe um serviço com esse código'); return; }
+      cat.servicos.push({code, desc, price: preco, precoTec: precoTec || preco});
+      if(supabaseConfigured && online && empId){
+        const reg = {empresa_id: empId, tipo: catTipoTela, code, descricao: desc,
+                     preco, preco_tecnico: precoTec || preco, ordem: cat.servicos.length};
+        let {error} = await supabaseClient.from('servicos_catalogo').insert(reg);
+        if(error && /preco_tecnico/.test(error.message || '')){
+          delete reg.preco_tecnico;
+          const r2 = await supabaseClient.from('servicos_catalogo').insert(reg);
+          error = r2.error;
+          if(!error) showToast('Salvo sem o preço do técnico — rode o sql-catalogo-do-crm.sql');
+        }
+        if(error) showToast('Adicionado aqui, mas não salvou no servidor: ' + error.message);
+      }
+      showToast(preco > 0 ? 'Serviço adicionado' : 'Serviço adicionado sem preço — corrija antes de faturar');
+    }
+    renderCatalogoTela();
+  }
+
+  async function excluirDoCatalogo(ehMat, item){
+    const nome = ehMat ? item.name : (item.code + ' — ' + item.desc);
+    if(!confirm('Excluir "' + nome + '" do catálogo?\n\n'
+      + 'Ele deixa de aparecer na busca das próximas obras. As obras que já usaram '
+      + 'este item continuam com ele no relatório.')) return;
+    const empId = empresaDoCatalogo();
+    const cat = catalogoDe(catTipoTela);
+    const lista = ehMat ? cat.materiais : cat.servicos;
+    const i = ehMat ? lista.findIndex(m => m.id === item.id) : lista.findIndex(v => v.code === item.code);
+    if(i > -1) lista.splice(i, 1);
+    if(supabaseConfigured && online && empId){
+      const q = ehMat
+        ? supabaseClient.from('materiais_catalogo').delete()
+            .eq('empresa_id', empId).eq('tipo', catTipoTela).eq('item_id', item.id)
+        : supabaseClient.from('servicos_catalogo').delete()
+            .eq('empresa_id', empId).eq('tipo', catTipoTela).eq('code', item.code);
+      const {error} = await q;
+      if(error) showToast('Removido aqui, mas não removeu no servidor: ' + error.message);
+    }
+    showToast(ehMat ? 'Material excluído' : 'Serviço excluído');
+    renderCatalogoTela();
+  }
+
   // ---------- Fechamento por técnico ----------
   //
   // Modelo de saldo, como o usuário descreveu: LIBERADO é o que já passou pela
@@ -13004,8 +13223,13 @@
       }
       const t = porTec.get(id);
       const tipo = r.tipo_obra || (r.dados || {}).tipoObra || 'convencional';
+      // Aqui é o que o TÉCNICO recebe (`precoTec`), não o que a CiP fatura da
+      // Ligga (`preco`). São números diferentes no contrato — em 07/2026 o
+      // serviço 02.05 pagava R$ 1,21 e era faturado a R$ 3,04. Somar o de
+      // faturar aqui prometeria ao técnico quase o triplo.
       const valor = servicosDaObra(r.dados || {}, tipo)
-        .reduce((sum, sv) => sum + (Number(sv.qtd) || 0) * (Number(sv.preco) || 0), 0);
+        .reduce((sum, sv) => sum + (Number(sv.qtd) || 0)
+                * (Number(sv.precoTec != null ? sv.precoTec : sv.preco) || 0), 0);
       t[balde.id].obras.push({
         contrato: r.contrato,
         cliente: ((r.dados || {}).contract || {}).empresa || 'Cliente não informado',
