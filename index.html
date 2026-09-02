@@ -779,6 +779,53 @@
   .material-row, .value-row{position:relative;}
   .material-row.tem-del .material-name, .value-row.tem-del .value-desc{padding-right:24px;}
 
+  /* BARRA DE LANÇAMENTO
+     A tela abre VAZIA. O catálogo tem 27 materiais e 19 serviços; mostrar tudo
+     de uma vez fazia o técnico rolar dezenas de linhas em zero pra achar as
+     quatro que usou. Agora ele digita, escolhe no menu suspenso e adiciona —
+     e a lista embaixo é só o que ele lançou. */
+  .ba{display:flex; gap:8px; align-items:flex-start; margin-bottom:16px; flex-wrap:wrap;}
+  .ba-campo{position:relative; flex:1 1 260px; min-width:0;}
+  .ba-input{width:100%; min-height:48px; background:var(--bg-elev); border:1px solid var(--border);
+    color:var(--text); border-radius:9px; padding:12px 14px; font-family:'Inter',sans-serif;
+    font-size:14.5px;}
+  .ba-input:focus{outline:none; border-color:var(--accent); box-shadow:0 0 0 3px rgba(0,162,245,.14);}
+  /* `min-width:auto` do flex usa a largura intrínseca do input number (~20
+     caracteres) e ignora o flex-basis: sem o `min-width:0` o campo de
+     quantidade nasce com 235px e empurra o botão pra outra linha no celular. */
+  .ba-qtd{flex:0 0 94px; width:94px; min-width:0; min-height:48px;
+    background:var(--bg-elev); border:1px solid var(--border);
+    color:var(--text); border-radius:9px; padding:12px; text-align:right;
+    font-family:'IBM Plex Mono',monospace; font-size:16px; font-weight:600;
+    font-variant-numeric:tabular-nums;}
+  .ba-qtd:focus{outline:none; border-color:var(--accent); box-shadow:0 0 0 3px rgba(0,162,245,.14);}
+  .ba-add{flex:1 1 120px; min-height:48px; padding:0 20px; cursor:pointer; border:none;
+    border-radius:9px; background:var(--accent); color:var(--accent-ink);
+    font-family:'Inter',sans-serif; font-size:14px; font-weight:600;}
+  .ba-add:disabled{background:var(--bg-elev-2); color:var(--text-faint); cursor:default;}
+
+  .ba-drop{position:absolute; top:calc(100% + 6px); left:0; right:0; z-index:40;
+    background:var(--bg-elev); border:1px solid var(--accent); border-radius:9px;
+    max-height:340px; overflow-y:auto; box-shadow:0 14px 36px rgba(0,0,0,.45);}
+  .ba-op{display:flex; gap:10px; align-items:baseline; padding:11px 14px; cursor:pointer;
+    border-bottom:1px solid var(--border); text-align:left; width:100%; background:none;
+    border-left:none; border-right:none; border-top:none; color:var(--text);
+    font-family:'Inter',sans-serif;}
+  .ba-op:last-child{border-bottom:none;}
+  .ba-op:hover, .ba-op.marcada{background:var(--accent-dim);}
+  .ba-op-cod{font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--accent);
+    background:var(--accent-dim); padding:2px 6px; border-radius:5px; flex:0 0 auto;}
+  .ba-op-txt{flex:1; font-size:13px; line-height:1.4; min-width:0;}
+  .ba-op-preco{font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--text-dim);
+    flex:0 0 auto; white-space:nowrap;}
+  .ba-op-ja{font-family:'IBM Plex Mono',monospace; font-size:9.5px; letter-spacing:.06em;
+    text-transform:uppercase; color:var(--success); flex:0 0 auto;}
+  .ba-op.ja{opacity:.6;}
+  .ba-vazio{padding:16px 14px; font-size:13px; color:var(--text-faint); text-align:center;}
+  /* Lista sem nada ainda: precisa dizer o que fazer, não só "vazio". */
+  .lista-vazia{padding:26px 16px; text-align:center; font-size:13.5px; color:var(--text-faint);
+    border:1px dashed var(--border); border-radius:9px; line-height:1.6;}
+
   /* ADICIONAR AO CATÁLOGO
      Isto é administração, não preenchimento de obra. Fica fora da grade de
      itens e com cara de painel, senão o botão vira meio cartão espremido ao
@@ -812,6 +859,21 @@
   .cat-add-salvar{flex:1;background:var(--accent);border:none;color:var(--accent-ink);}
   .cat-add-cancelar{flex:0 0 auto;background:none;border:1px solid var(--border);color:var(--text-dim);}
   .cat-add-cancelar:hover{border-color:var(--text-dim);color:var(--text);}
+  .cat-gestao{margin-top:10px;}
+  .cat-gestao-abrir{width:100%; min-height:42px; cursor:pointer; background:none;
+    border:1px solid var(--border); border-radius:8px; color:var(--text-dim);
+    font-family:'Inter',sans-serif; font-size:12.5px;}
+  .cat-gestao-abrir:hover,.cat-gestao-abrir.on{border-color:var(--accent); color:var(--accent);}
+  .cat-gestao-lista{margin-top:8px; max-height:260px; overflow-y:auto;
+    border:1px solid var(--border); border-radius:8px; background:var(--bg-elev);}
+  .cat-gestao-item{display:flex; align-items:center; gap:10px; padding:8px 6px 8px 13px;
+    border-bottom:1px solid var(--border); font-size:12.5px; line-height:1.4;}
+  .cat-gestao-item:last-child{border-bottom:none;}
+  .cat-gestao-item span{flex:1; min-width:0;}
+  .cat-gestao-x{flex:0 0 auto; width:32px; height:32px; cursor:pointer; background:none;
+    border:none; color:var(--text-faint); border-radius:6px; font-size:12px;}
+  .cat-gestao-x:hover{color:var(--danger); background:rgba(230,90,90,.12);}
+
   /* A barra de Voltar/Salvar/Próximo é grudada e sobe 110px por cima do
      conteúdo. Sem esta folga, o botão "Adicionar" do formulário nascia
      debaixo dela e não dava pra tocar. */
@@ -2115,6 +2177,7 @@
     .checklist > .multi-group-pair{ grid-column:1 / -1; }
     .values-total-row.grudada{ bottom:12px; }
     /* no desktop o botão não precisa atravessar a tela inteira pra ter peso */
+    .ba-add{ flex:0 0 auto; }
     .cat-add-form-btns{ justify-content:flex-end; }
     .cat-add-salvar{ flex:0 0 auto; min-width:190px; }
     /* no desktop a barra de navegação é rodapé normal: a folga não é precisa */
@@ -3025,14 +3088,20 @@
     <section class="step-section" id="stepMateriais">
       <div class="step-eyebrow">Passo 5 de 6</div>
       <div class="step-title">Inventário de materiais</div>
-      <div class="step-sub">Busque o material e informe a quantidade. Só o que você usou precisa ser preenchido.</div>
-      <div class="cat-tools">
-        <input class="cat-busca" id="materiaisBusca" placeholder="Buscar material..." autocomplete="off" inputmode="search">
-        <button class="cat-chip" id="materiaisSoPreench" type="button">Só preenchidos</button>
+      <div class="step-sub">Digite o material, escolha na lista e informe a quantidade.</div>
+      <div class="ba">
+        <div class="ba-campo">
+          <input class="ba-input" id="materiaisBusca" placeholder="Digite o nome do material..."
+                 autocomplete="off" role="combobox" aria-expanded="false"
+                 aria-autocomplete="list" aria-controls="materiaisDrop">
+          <div class="ba-drop" id="materiaisDrop" role="listbox" style="display:none;"></div>
+        </div>
+        <input class="ba-qtd" id="materiaisQtd" type="number" inputmode="numeric" min="0"
+               placeholder="Qtd" aria-label="Quantidade">
+        <button class="ba-add" id="materiaisAddBtn" type="button" disabled>Adicionar</button>
       </div>
       <div class="dup-aviso" id="materiaisSemEmpresa" style="display:none;"></div>
       <div class="cat-atalhos" id="materiaisAtalhos" style="display:none;"></div>
-      <div class="cat-vazio" id="materiaisVazio" style="display:none;"></div>
       <div id="materialsList"></div>
       <div id="materiaisAdd"></div>
       <div class="mat-resumo" id="materiaisResumo" style="display:none;">
@@ -3044,14 +3113,20 @@
     <section class="step-section" id="stepValores">
       <div class="step-eyebrow">Passo 6 de 6</div>
       <div class="step-title">Valores</div>
-      <div class="step-sub">Busque pelo código ou pela descrição. Só o que você executou precisa ser preenchido.</div>
-      <div class="cat-tools">
-        <input class="cat-busca" id="valoresBusca" placeholder="Buscar por código ou descrição..." autocomplete="off" inputmode="search">
-        <button class="cat-chip" id="valoresSoPreench" type="button">Só preenchidos</button>
+      <div class="step-sub">Digite o código ou a descrição, escolha na lista e informe a quantidade.</div>
+      <div class="ba">
+        <div class="ba-campo">
+          <input class="ba-input" id="valoresBusca" placeholder="Digite o código ou a descrição..."
+                 autocomplete="off" role="combobox" aria-expanded="false"
+                 aria-autocomplete="list" aria-controls="valoresDrop">
+          <div class="ba-drop" id="valoresDrop" role="listbox" style="display:none;"></div>
+        </div>
+        <input class="ba-qtd" id="valoresQtd" type="number" inputmode="numeric" min="0"
+               placeholder="Qtd" aria-label="Quantidade">
+        <button class="ba-add" id="valoresAddBtn" type="button" disabled>Adicionar</button>
       </div>
       <div class="dup-aviso" id="valoresSemEmpresa" style="display:none;"></div>
       <div class="cat-atalhos" id="valoresAtalhos" style="display:none;"></div>
-      <div class="cat-vazio" id="valoresVazio" style="display:none;"></div>
       <div id="valuesList"></div>
       <div class="values-total-row grudada" id="valuesTotalRow">
         <span>Total</span>
@@ -3278,7 +3353,7 @@
 (function(){
   // Marque aqui a cada build enviado ao campo. O testador informa esta
   // string ao relatar um problema, senao nao da pra saber o que ele rodou.
-  const APP_VERSION = 'Enlace Ops · alpha-10.76 · 02/09/2026';
+  const APP_VERSION = 'Enlace Ops · alpha-10.77 · 02/09/2026';
 
   // ---------- Supabase config ----------
   // Troque pelos valores reais do seu projeto (Project Settings -> API no Supabase).
@@ -4425,15 +4500,131 @@
   }
   function preenchido(v){ return Number(v) > 0; }
 
-  // Mantém o chip e o aviso de "nada encontrado" em dia. A barra de busca fica
-  // FORA da lista que é redesenhada, senão o campo perde o foco a cada tecla.
   const CAT_UI = {
-    materiais: {busca:'materiaisBusca', chip:'materiaisSoPreench', vazio:'materiaisVazio', oq:'material'},
-    valores:   {busca:'valoresBusca',   chip:'valoresSoPreench',   vazio:'valoresVazio',   oq:'serviço'},
+    materiais: {busca:'materiaisBusca', drop:'materiaisDrop', qtd:'materiaisQtd',
+                add:'materiaisAddBtn',  oq:'material', oqPlu:'materiais'},
+    valores:   {busca:'valoresBusca',   drop:'valoresDrop',   qtd:'valoresQtd',
+                add:'valoresAddBtn',    oq:'serviço',  oqPlu:'serviços'},
   };
 
-  function atualizarFerramentasCat(qual, total, visiveis, cheios){
+  // ---------- Busca com menu suspenso ----------
+  //
+  // O catálogo importado do CRM tem 27 materiais e 19 serviços. Mostrar tudo de
+  // uma vez fazia o técnico rolar dezenas de linhas zeradas pra achar as quatro
+  // que ele usou. Agora a tela abre vazia: ele digita, escolhe no menu e
+  // adiciona, e a lista embaixo é só o que foi lançado.
+  const escolhaCat = {materiais:null, valores:null};   // item escolhido no menu
+  const marcadoCat = {materiais:-1, valores:-1};       // navegação pelo teclado
+  let opcoesCat = {materiais:[], valores:[]};
+
+  // O catálogo do tipo, já com a marca de quem entrou na obra.
+  function opcoesDoCatalogo(qual, texto){
+    const busca = chave(texto);
+    const lista = qual === 'materiais'
+      ? materials.map(m => ({ch:String(m.id), cod:String(m.id), rot:m.name,
+                             procura: m.name + ' ' + m.id,
+                             ja: preenchido(dataState.materialsQty[m.id])}))
+      : valuesItems.map(v => ({ch:v.code, cod:v.code, rot:v.desc, preco:v.price,
+                               procura: v.code + ' ' + v.desc,
+                               ja: preenchido(dataState.valuesQty[v.code])}));
+    const achou = busca ? lista.filter(i => chave(i.procura).includes(busca)) : lista;
+    // quem ainda não entrou na obra vem primeiro: é o que ele está procurando
+    return achou.sort((a,b) => (a.ja === b.ja) ? 0 : (a.ja ? 1 : -1)).slice(0, 40);
+  }
+
+  function pintarDrop(qual){
     const ui = CAT_UI[qual];
+    const drop = document.getElementById(ui.drop);
+    const inp = document.getElementById(ui.busca);
+    if(!drop || !inp) return;
+    const itens = opcoesDoCatalogo(qual, filtroCat[qual].texto);
+    opcoesCat[qual] = itens;
+    drop.innerHTML = '';
+    if(!itens.length){
+      drop.innerHTML = '<div class="ba-vazio">Nenhum ' + esc(CAT_UI[qual].oq)
+        + ' com "' + esc(filtroCat[qual].texto) + '".'
+        + (ehTecnico() ? '' : '<br>Dá pra cadastrar no botão abaixo da lista.') + '</div>';
+    } else {
+      itens.forEach((i, idx)=>{
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'ba-op' + (i.ja ? ' ja' : '') + (idx === marcadoCat[qual] ? ' marcada' : '');
+        b.setAttribute('role', 'option');
+        b.innerHTML = (qual === 'valores' ? '<span class="ba-op-cod">' + esc(i.cod) + '</span>' : '')
+          + '<span class="ba-op-txt">' + esc(i.rot) + '</span>'
+          + (i.ja ? '<span class="ba-op-ja">já lançado</span>' : '')
+          + (qual === 'valores' ? '<span class="ba-op-preco">' + formatBRL(i.preco) + '</span>' : '');
+        b.addEventListener('mousedown', (e)=>{ e.preventDefault(); escolherDoDrop(qual, idx); });
+        drop.appendChild(b);
+      });
+    }
+    drop.style.display = '';
+    inp.setAttribute('aria-expanded', 'true');
+  }
+
+  function fecharDrop(qual){
+    const drop = document.getElementById(CAT_UI[qual].drop);
+    const inp = document.getElementById(CAT_UI[qual].busca);
+    if(drop) drop.style.display = 'none';
+    if(inp) inp.setAttribute('aria-expanded', 'false');
+    marcadoCat[qual] = -1;
+  }
+
+  function escolherDoDrop(qual, idx){
+    const item = opcoesCat[qual][idx];
+    if(!item) return;
+    const ui = CAT_UI[qual];
+    escolhaCat[qual] = item;
+    const inp = document.getElementById(ui.busca);
+    inp.value = (qual === 'valores' ? item.cod + ' — ' : '') + item.rot;
+    filtroCat[qual].texto = inp.value;
+    fecharDrop(qual);
+    document.getElementById(ui.add).disabled = false;
+    // Item já lançado não vira linha duplicada: leva o técnico até a que existe.
+    if(item.ja){
+      limparBarra(qual);
+      const campo = document.querySelector(qual === 'materiais'
+        ? `.material-qty[data-mat-id="${item.ch}"]` : `.value-qty[data-code="${item.ch}"]`);
+      if(campo){ campo.focus(); campo.select(); campo.scrollIntoView({block:'center'}); }
+      showToast('Esse ' + ui.oq + ' já está na obra — corrija a quantidade');
+      return;
+    }
+    const q = document.getElementById(ui.qtd);
+    q.focus(); q.select();
+  }
+
+  function limparBarra(qual){
+    const ui = CAT_UI[qual];
+    escolhaCat[qual] = null;
+    filtroCat[qual].texto = '';
+    const inp = document.getElementById(ui.busca);
+    const q = document.getElementById(ui.qtd);
+    if(inp) inp.value = '';
+    if(q) q.value = '';
+    document.getElementById(ui.add).disabled = true;
+    fecharDrop(qual);
+  }
+
+  function adicionarLancamento(qual){
+    const ui = CAT_UI[qual];
+    const item = escolhaCat[qual];
+    if(!item){ showToast('Escolha um ' + ui.oq + ' na lista primeiro'); return; }
+    const q = document.getElementById(ui.qtd);
+    // sem quantidade digitada entra 1: o técnico corrige na linha, e é melhor
+    // que barrar quem tocou em Adicionar com a intenção óbvia de lançar um
+    const qtd = String(Number(q.value) > 0 ? Number(q.value) : 1);
+    if(qual === 'materiais') dataState.materialsQty[item.ch] = qtd;
+    else dataState.valuesQty[item.ch] = qtd;
+    salvarRascunho();
+    limparBarra(qual);
+    redesenharCat(qual);
+    // volta o cursor pra busca: quem lança um item quase sempre lança o próximo
+    const inp = document.getElementById(ui.busca);
+    if(inp) inp.focus();
+    showToast(item.rot.slice(0, 34) + (item.rot.length > 34 ? '…' : '') + ' · ' + qtd);
+  }
+
+  function atualizarFerramentasCat(qual){
     // superadmin sem empresa escolhida vê a lista embutida, não a da empresa —
     // dizer isso na cara evita que ele ache que o catálogo foi apagado
     const semEmpresa = supabaseConfigured && !empresaDoCatalogo();
@@ -4446,39 +4637,6 @@
           : 'Sua conta não está vinculada a uma empresa, então o catálogo da empresa não carrega. Avise o administrador.';
       }
     }
-    const f = filtroCat[qual];
-    const chip = document.getElementById(ui.chip);
-    if(chip){
-      chip.classList.toggle('on', f.so);
-      chip.textContent = cheios ? 'Só preenchidos · ' + cheios : 'Só preenchidos';
-      chip.disabled = !cheios && !f.so;
-      chip.style.opacity = chip.disabled ? '.5' : '';
-    }
-    const vazio = document.getElementById(ui.vazio);
-    if(vazio){
-      if(visiveis === 0 && f.so){
-        vazio.textContent = 'Nenhum ' + ui.oq + ' preenchido ainda. Toque no filtro pra ver o catálogo inteiro (' + total + ').';
-        vazio.style.display = '';
-      } else if(visiveis === 0){
-        vazio.textContent = 'Nenhum ' + ui.oq + ' encontrado com "' + f.texto + '".';
-        vazio.style.display = '';
-      } else {
-        vazio.style.display = 'none';
-      }
-    }
-  }
-
-  // Só o rótulo do chip, sem redesenhar a lista: se redesenhasse a cada tecla,
-  // a linha sumiria debaixo do dedo do técnico enquanto ele digita a quantidade.
-  function refrescarChipCat(qual){
-    const cheios = qual === 'materiais'
-      ? materials.filter(m => preenchido(dataState.materialsQty[m.id])).length
-      : valuesItems.filter(v => preenchido(dataState.valuesQty[v.code])).length;
-    const chip = document.getElementById(CAT_UI[qual].chip);
-    if(!chip) return;
-    chip.textContent = cheios ? 'Só preenchidos · ' + cheios : 'Só preenchidos';
-    chip.disabled = !cheios && !filtroCat[qual].so;
-    chip.style.opacity = chip.disabled ? '.5' : '';
   }
 
   // ---------- Atalhos "mais usados" ----------
@@ -4556,33 +4714,72 @@
     if(qual === 'materiais') renderMateriais(); else renderValores();
   }
 
-  function ligarFerramentasCat(qual, redesenhar){
+  function ligarFerramentasCat(qual){
     const ui = CAT_UI[qual];
     const inp = document.getElementById(ui.busca);
-    const chip = document.getElementById(ui.chip);
-    if(inp) inp.addEventListener('input', (e)=>{
+    const q = document.getElementById(ui.qtd);
+    const add = document.getElementById(ui.add);
+    if(!inp) return;
+
+    inp.addEventListener('input', (e)=>{
       filtroCat[qual].texto = e.target.value;
-      redesenhar();
+      // digitou de novo: a escolha anterior não vale mais
+      escolhaCat[qual] = null;
+      marcadoCat[qual] = -1;
+      add.disabled = true;
+      pintarDrop(qual);
     });
-    if(chip) chip.addEventListener('click', ()=>{
-      filtroCat[qual].so = !filtroCat[qual].so;
-      redesenhar();
+    // foco com o campo vazio abre o catálogo inteiro: quem não sabe o nome
+    // exato ainda consegue folhear, só que sem ocupar a tela toda
+    inp.addEventListener('focus', ()=> pintarDrop(qual));
+    inp.addEventListener('blur', ()=> setTimeout(()=> fecharDrop(qual), 120));
+
+    inp.addEventListener('keydown', (e)=>{
+      const n = opcoesCat[qual].length;
+      const aberto = document.getElementById(ui.drop).style.display !== 'none';
+      if(e.key === 'ArrowDown' || e.key === 'ArrowUp'){
+        e.preventDefault();
+        if(!aberto){ pintarDrop(qual); return; }
+        if(!n) return;
+        marcadoCat[qual] = e.key === 'ArrowDown'
+          ? (marcadoCat[qual] + 1) % n
+          : (marcadoCat[qual] <= 0 ? n - 1 : marcadoCat[qual] - 1);
+        pintarDrop(qual);
+        const alvo = document.getElementById(ui.drop).children[marcadoCat[qual]];
+        if(alvo && alvo.scrollIntoView) alvo.scrollIntoView({block:'nearest'});
+        return;
+      }
+      if(e.key === 'Enter'){
+        e.preventDefault();
+        // um resultado só: Enter escolhe direto, sem obrigar a descer a seta
+        if(marcadoCat[qual] >= 0) escolherDoDrop(qual, marcadoCat[qual]);
+        else if(n === 1) escolherDoDrop(qual, 0);
+        return;
+      }
+      if(e.key === 'Escape'){ fecharDrop(qual); }
     });
+
+    if(q) q.addEventListener('keydown', (e)=>{
+      if(e.key === 'Enter'){ e.preventDefault(); adicionarLancamento(qual); }
+    });
+    if(add) add.addEventListener('click', ()=> adicionarLancamento(qual));
   }
 
   function renderValores(){
     garantirCatalogo();
     valuesList.innerHTML = '';
     const podeEditarCatalogo = !ehTecnico();
-    const f = filtroCat.valores;
-    const busca = chave(f.texto);
-    const visiveis = valuesItems.filter(v =>
-      (!f.so || preenchido(dataState.valuesQty[v.code])) &&
-      (!busca || chave(v.code).includes(busca) || chave(v.desc).includes(busca))
-    );
-    atualizarFerramentasCat('valores', valuesItems.length, visiveis.length,
-      valuesItems.filter(v => preenchido(dataState.valuesQty[v.code])).length);
+    // a lista é só o que entrou na obra. O catálogo inteiro vive no menu
+    // suspenso da busca, não na tela.
+    const visiveis = valuesItems.filter(v => preenchido(dataState.valuesQty[v.code]));
+    atualizarFerramentasCat('valores');
     renderAtalhosCat('valores');
+    if(!visiveis.length){
+      const vazio = document.createElement('div');
+      vazio.className = 'lista-vazia';
+      vazio.textContent = 'Nenhum serviço lançado ainda. Use a busca acima para adicionar o que você executou.';
+      valuesList.appendChild(vazio);
+    }
     visiveis.forEach(v=>{
       const qty = Number(dataState.valuesQty[v.code]) || 0;
       const subtotal = qty * v.price;
@@ -4593,7 +4790,7 @@
         <div class="value-top">
           <span class="value-code">${esc(v.code)}</span>
           <span class="value-desc">${esc(v.desc)}</span>
-          ${podeEditarCatalogo ? `<button class="cat-del-btn" type="button" data-code="${esc(v.code)}" title="Excluir do catálogo" aria-label="Excluir">&#10005;</button>` : ''}
+          <button class="cat-del-btn" type="button" title="Tirar da obra" aria-label="Tirar ${esc(v.code)} da obra">&#10005;</button>
         </div>
         <div class="value-bottom">
           <span class="value-price">${formatBRL(v.price)} / un</span>
@@ -4613,10 +4810,20 @@
         subtotalEl.classList.toggle('zero', q <= 0);
         row.classList.toggle('lancado', q > 0);
         recomputeValuesTotal();
-        refrescarChipCat('valores');
       });
+      qtyInput.addEventListener('blur', ()=>{
+        if(!preenchido(dataState.valuesQty[v.code])) renderValores();
+      });
+      // Tira da OBRA, não do catálogo. Antes esse X apagava o serviço do
+      // catálogo da empresa — ação rara e perigosa, no mesmo lugar onde o
+      // técnico só queria desfazer um lançamento errado.
       const delBtn = row.querySelector('.cat-del-btn');
-      if(delBtn) delBtn.addEventListener('click', ()=> excluirServico(v.code));
+      if(delBtn) delBtn.addEventListener('click', ()=>{
+        delete dataState.valuesQty[v.code];
+        salvarRascunho();
+        renderValores();
+        showToast(v.code + ' tirado da obra');
+      });
       valuesList.appendChild(row);
     });
     recomputeValuesTotal();
@@ -4624,7 +4831,10 @@
     const addServ = document.getElementById('valoresAdd');
     if(addServ){
       addServ.innerHTML = '';
-      if(podeEditarCatalogo) addServ.appendChild(montarFormAddServico());
+      if(podeEditarCatalogo){
+        addServ.appendChild(montarFormAddServico());
+        addServ.appendChild(montarGestaoCatalogo('valores'));
+      }
     }
   }
 
@@ -4716,15 +4926,15 @@
     garantirCatalogo();
     materialsList.innerHTML = '';
     const podeEditarCatalogo = !ehTecnico();
-    const f = filtroCat.materiais;
-    const busca = chave(f.texto);
-    const visiveis = materials.filter(m =>
-      (!f.so || preenchido(dataState.materialsQty[m.id])) &&
-      (!busca || chave(m.name).includes(busca) || String(m.id) === busca)
-    );
-    atualizarFerramentasCat('materiais', materials.length, visiveis.length,
-      materials.filter(m => preenchido(dataState.materialsQty[m.id])).length);
+    const visiveis = materials.filter(m => preenchido(dataState.materialsQty[m.id]));
+    atualizarFerramentasCat('materiais');
     renderAtalhosCat('materiais');
+    if(!visiveis.length){
+      const vazio = document.createElement('div');
+      vazio.className = 'lista-vazia';
+      vazio.textContent = 'Nenhum material lançado ainda. Use a busca acima para adicionar o que você usou.';
+      materialsList.appendChild(vazio);
+    }
     visiveis.forEach(m=>{
       const row = document.createElement('div');
       const lancado = preenchido(dataState.materialsQty[m.id]);
@@ -4736,7 +4946,7 @@
           <div class="material-num">${m.id}</div>
           <div class="material-name">${esc(m.name)}</div>
           <input class="material-qty" type="number" inputmode="numeric" min="0" value="${dataState.materialsQty[m.id] || ''}" data-mat-id="${m.id}">
-          ${podeEditarCatalogo ? `<button class="cat-del-btn" type="button" data-mat-id="${m.id}" title="Excluir do catálogo" aria-label="Excluir">&#10005;</button>` : ''}
+          <button class="cat-del-btn" type="button" title="Tirar da obra" aria-label="Tirar ${esc(m.name)} da obra">&#10005;</button>
         </div>
         ${lancado ? `
         <div class="material-detalhe">
@@ -4760,16 +4970,14 @@
         const antes = preenchido(dataState.materialsQty[m.id]);
         dataState.materialsQty[m.id] = e.target.value;
         salvarRascunho();
-        refrescarChipCat('materiais');
         recomputarResumoMateriais();
-        // só redesenha quando cruza de "vazio" pra "lançado" (ou o contrário),
-        // pra abrir/fechar o detalhe sem tirar o campo debaixo do dedo
-        if(antes !== preenchido(e.target.value)){
-          const foco = e.target.selectionStart;
-          renderMateriais();
-          const novo = document.querySelector(`.material-qty[data-mat-id="${m.id}"]`);
-          if(novo){ novo.focus(); try{ novo.setSelectionRange(foco, foco); }catch(err){} }
-        }
+        row.classList.toggle('lancado', preenchido(e.target.value));
+      });
+      // A lista mostra só o que foi lançado, então zerar a quantidade tira a
+      // linha da tela. Isso só pode acontecer ao SAIR do campo: fazendo no
+      // "input", apagar pra redigitar sumiria com a linha debaixo do dedo.
+      row.querySelector('.material-qty').addEventListener('blur', ()=>{
+        if(!preenchido(dataState.materialsQty[m.id])) renderMateriais();
       });
       row.querySelectorAll('.mat-fluxo-op').forEach(b=>{
         b.addEventListener('click', ()=>{
@@ -4788,7 +4996,13 @@
       const btnScan = row.querySelector('.mat-scan');
       if(btnScan) btnScan.addEventListener('click', ()=> lerCodigo(m.id));
       const delBtn = row.querySelector('.cat-del-btn');
-      if(delBtn) delBtn.addEventListener('click', ()=> excluirMaterial(m.id));
+      if(delBtn) delBtn.addEventListener('click', ()=>{
+        delete dataState.materialsQty[m.id];
+        delete dataState.materialsExtra[m.id];
+        salvarRascunho();
+        renderMateriais();
+        showToast('Material tirado da obra');
+      });
       materialsList.appendChild(row);
     });
     // O bloco de "adicionar ao catálogo" mora FORA da lista. Dentro dela, na
@@ -4797,9 +5011,50 @@
     const addMat = document.getElementById('materiaisAdd');
     if(addMat){
       addMat.innerHTML = '';
-      if(podeEditarCatalogo) addMat.appendChild(montarFormAddMaterial());
+      if(podeEditarCatalogo){
+        addMat.appendChild(montarFormAddMaterial());
+        addMat.appendChild(montarGestaoCatalogo('materiais'));
+      }
     }
     recomputarResumoMateriais();
+  }
+
+  // O X de excluir do catálogo saiu das linhas da obra (lá ele agora só tira o
+  // item da obra). A gestão do catálogo mora aqui, no painel que só o
+  // escritório abre — longe do dedo do técnico lançando material.
+  function montarGestaoCatalogo(qual){
+    const wrap = document.createElement('div');
+    wrap.className = 'cat-gestao';
+    const itens = qual === 'materiais'
+      ? materials.map(m => ({ch:String(m.id), rot:m.name}))
+      : valuesItems.map(v => ({ch:v.code, rot:v.code + ' — ' + v.desc}));
+    const bt = document.createElement('button');
+    bt.type = 'button'; bt.className = 'cat-gestao-abrir';
+    bt.textContent = 'Catálogo da empresa · ' + itens.length + ' '
+      + (qual === 'materiais' ? 'materiais' : 'serviços');
+    const lista = document.createElement('div');
+    lista.className = 'cat-gestao-lista'; lista.style.display = 'none';
+    itens.forEach(i=>{
+      const l = document.createElement('div');
+      l.className = 'cat-gestao-item';
+      l.innerHTML = '<span>' + esc(i.rot) + '</span>';
+      const x = document.createElement('button');
+      x.type = 'button'; x.className = 'cat-gestao-x';
+      x.title = 'Excluir do catálogo'; x.setAttribute('aria-label', 'Excluir ' + i.rot);
+      x.innerHTML = '&#10005;';
+      x.addEventListener('click', ()=>{
+        if(qual === 'materiais') excluirMaterial(i.ch); else excluirServico(i.ch);
+      });
+      l.appendChild(x);
+      lista.appendChild(l);
+    });
+    bt.addEventListener('click', ()=>{
+      const abrindo = lista.style.display === 'none';
+      lista.style.display = abrindo ? '' : 'none';
+      bt.classList.toggle('on', abrindo);
+    });
+    wrap.appendChild(bt); wrap.appendChild(lista);
+    return wrap;
   }
 
   function montarFormAddMaterial(){
@@ -4871,8 +5126,8 @@
     renderMateriais();
   }
 
-  ligarFerramentasCat('materiais', renderMateriais);
-  ligarFerramentasCat('valores',   renderValores);
+  ligarFerramentasCat('materiais');
+  ligarFerramentasCat('valores');
 
   // Obra nova (ou outra obra) não pode herdar a busca da anterior — senão o
   // técnico abre o passo e vê "nenhum material encontrado" sem entender por quê.
