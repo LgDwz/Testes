@@ -56,12 +56,17 @@
     /* Paleta de estado que estava espalhada em hexadecimal pelo CSS. Virou
        token porque no tema claro esses pastéis somem sobre branco — âmbar
        claro sobre branco dá 1,8:1, ilegível. */
-    --st-azul:var(--st-azul);  --st-azul-2:var(--st-azul-2);  --st-azul-forte:var(--st-azul-forte);
-    --st-verde:var(--st-verde); --st-verde-2:var(--st-verde-2); --st-verde-forte:var(--st-verde-forte);
-    --st-ambar:var(--st-ambar); --st-ambar-2:var(--st-ambar-2); --st-ambar-forte:var(--st-ambar-forte);
-    --st-vermelho:var(--st-vermelho);
-    --st-roxo:var(--st-roxo);
-    --hover:var(--hover);        /* realce de item de menu / botão do topo */
+    /* BUG que estava aqui: cada um destes era `--st-azul:var(--st-azul)`, quer
+       dizer, o token apontando pra si mesmo. Em CSS isso é ciclo, o valor vira
+       inválido e a variável RESOLVE PRA NADA. No tema escuro toda cor de estado
+       estava vazia; só funcionava dentro de `.sb` e do tema claro, que as
+       redeclaram. Agora são valores de verdade. */
+    --st-azul:#4FC0FF;  --st-azul-2:#7BD2FF;  --st-azul-forte:#2FA9EE;
+    --st-verde:#3ED08A; --st-verde-2:#6BDDA8; --st-verde-forte:#22B872;
+    --st-ambar:#D9A441; --st-ambar-2:#E6BA6B; --st-ambar-forte:#C08C2C;
+    --st-vermelho:#E5837A;
+    --st-roxo:#A98BEA;
+    --hover:#0C1B36;             /* realce de item de menu / botão do topo */
     --bg-fora:#05070a;      /* o que aparece fora do app, atrás de tudo */
     --hd-vidro:rgba(6,15,34,.72);   /* barra de topo, translúcida */
     --pilula:rgba(6,15,34,.86);     /* etiquetas flutuantes sobre foto */
@@ -1202,6 +1207,70 @@
     font-family:'IBM Plex Mono',monospace;letter-spacing:0.02em;
   }
   .adm-chip.ativo{background:var(--accent-dim);border-color:var(--accent);color:var(--accent);}
+  /* FECHAMENTO POR TÉCNICO
+     Modelo de saldo: liberado é dinheiro certo, retido está esperando revisão,
+     devolvido não conta. A barra mostra a proporção sem obrigar a fazer conta. */
+  .fe-barra{display:flex; flex-direction:column; gap:10px; padding:0 16px 14px;}
+  .fe-topo{margin:0 16px 16px; background:var(--bg-elev); border:1px solid var(--border);
+    border-radius:11px; padding:16px 18px;}
+  .fe-topo-rot{font-family:'IBM Plex Mono',monospace; font-size:10.5px; letter-spacing:.08em;
+    text-transform:uppercase; color:var(--text-dim); margin-bottom:4px;}
+  .fe-topo-n{font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:34px;
+    line-height:1; color:var(--text);}
+  .fe-topo-sub{font-size:12.5px; color:var(--text-dim); margin-top:6px;}
+
+  .fe-card{margin:0 16px 12px; background:var(--bg-elev); border:1px solid var(--border);
+    border-radius:11px; overflow:hidden;}
+  .fe-cab{display:flex; align-items:center; gap:12px; padding:14px 16px; cursor:pointer;}
+  .fe-av{flex:0 0 36px; width:36px; height:36px; border-radius:50%; background:var(--bg-elev-2);
+    color:var(--st-azul); display:flex; align-items:center; justify-content:center;
+    font-family:'IBM Plex Mono',monospace; font-size:12.5px; font-weight:700;}
+  .fe-nome{flex:1; min-width:0;}
+  .fe-nome b{display:block; font-size:14.5px; font-weight:600;}
+  .fe-nome span{font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--text-dim);}
+  .fe-total{text-align:right; flex:0 0 auto;}
+  .fe-total b{display:block; font-family:'Barlow Condensed',sans-serif; font-weight:700;
+    font-size:23px; line-height:1.1; color:var(--text); font-variant-numeric:tabular-nums;}
+  .fe-total span{font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:.06em;
+    text-transform:uppercase; color:var(--text-dim);}
+  .fe-chev{flex:0 0 auto; color:var(--text-faint); transition:transform .15s;}
+  .fe-card.aberto .fe-chev{transform:rotate(90deg);}
+
+  /* proporção liberado x retido, sem obrigar a fazer conta */
+  .fe-barra-prop{display:flex; height:6px; background:var(--bg-elev-2);}
+  .fe-prop-lib{background:var(--success);}
+  .fe-prop-ret{background:var(--st-ambar);}
+
+  .fe-linhas{display:grid; gap:1px; background:var(--border);}
+  .fe-linha{display:flex; align-items:center; gap:10px; padding:11px 16px; background:var(--bg-elev);}
+  .fe-ponto{flex:0 0 9px; width:9px; height:9px; border-radius:50%;}
+  .fe-ponto.lib{background:var(--success);}
+  .fe-ponto.ret{background:var(--st-ambar);}
+  .fe-ponto.dev{background:var(--danger);}
+  .fe-linha-rot{flex:1; font-size:13px;}
+  .fe-linha-rot em{font-style:normal; color:var(--text-dim); font-size:12px;}
+  .fe-linha-n{font-family:'IBM Plex Mono',monospace; font-size:13.5px; font-weight:600;
+    font-variant-numeric:tabular-nums;}
+  .fe-linha.lib .fe-linha-n{color:var(--success);}
+  .fe-linha.ret .fe-linha-n{color:var(--st-ambar);}
+  .fe-linha.dev .fe-linha-n{color:var(--danger);}
+
+  .fe-obras{display:none; padding:4px 16px 14px; background:var(--bg-elev-2);}
+  .fe-card.aberto .fe-obras{display:block;}
+  .fe-grupo{font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:.07em;
+    text-transform:uppercase; color:var(--text-dim); margin:12px 0 5px;}
+  .fe-obra{display:flex; align-items:baseline; gap:10px; padding:6px 0;
+    border-bottom:1px solid var(--border); font-size:12.5px;}
+  .fe-obra:last-child{border-bottom:none;}
+  .fe-obra-c{font-family:'IBM Plex Mono',monospace; flex:0 0 auto; color:var(--text);}
+  .fe-obra-cli{flex:1; min-width:0; color:var(--text-dim); overflow:hidden;
+    text-overflow:ellipsis; white-space:nowrap;}
+  .fe-obra-v{font-family:'IBM Plex Mono',monospace; flex:0 0 auto;
+    font-variant-numeric:tabular-nums;}
+  .fe-obra-obs{font-size:11.5px; color:var(--danger); padding:0 0 7px 0; line-height:1.45;}
+  .fe-vazio{margin:0 16px; padding:30px 16px; text-align:center; font-size:13.5px;
+    color:var(--text-faint); border:1px dashed var(--border); border-radius:11px;}
+
   /* Polo: CTA, CEL, LNA, MAT. Código curto e sem tradução porque é assim que a
      equipe fala — inventar nome por extenso aqui só criaria um segundo
      vocabulário pra mesma coisa. */
@@ -2643,6 +2712,33 @@
     </div>
   </div>
 
+  <!-- ============ FECHAMENTO POR TÉCNICO ============ -->
+  <div class="users-screen" id="fechamentoScreen">
+    <div class="ph">
+      <div>
+        <div class="ph-t">Fechamento</div>
+        <div class="ph-s">Produção de cada técnico no mês. Liberado é o que já passou pela sua
+          revisão; retido é o que está esperando por ela.</div>
+      </div>
+      <button class="jobs-export" id="btnExportFechamento" type="button"
+              title="Exportar o fechamento para Excel" aria-label="Exportar para Excel">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+             stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 9v12"/></svg>
+        EXCEL
+      </button>
+    </div>
+    <div class="fe-barra">
+      <div class="mes-linha" id="fechMesLinha">
+        <button class="mes-nav" type="button" data-fmes="-1" title="Mês anterior" aria-label="Mês anterior">&#8249;</button>
+        <input type="month" class="mes-campo" id="fechMes" aria-label="Mês do fechamento">
+        <button class="mes-nav" type="button" data-fmes="1" title="Próximo mês" aria-label="Próximo mês">&#8250;</button>
+      </div>
+      <div class="polo-chips" id="fechPolo"></div>
+    </div>
+    <div id="fechResumo"></div>
+    <div id="fechLista"></div>
+  </div>
+
   <div class="users-screen" id="quadroScreen">
     <div class="ph">
       <div>
@@ -3353,7 +3449,7 @@
 (function(){
   // Marque aqui a cada build enviado ao campo. O testador informa esta
   // string ao relatar um problema, senao nao da pra saber o que ele rodou.
-  const APP_VERSION = 'Enlace Ops · alpha-10.77 · 02/09/2026';
+  const APP_VERSION = 'Enlace Ops · alpha-10.79 · 02/09/2026';
 
   // ---------- Supabase config ----------
   // Troque pelos valores reais do seu projeto (Project Settings -> API no Supabase).
@@ -8607,6 +8703,22 @@
 
   // Os itens seguem o que o app faz hoje. "Relatórios" e "Configurações"
   // ainda não têm tela própria: apontam para o que mais se aproxima.
+  // ---------- Obra aberta por endereço (?obra=123) ----------
+  // Lido antes de tudo porque a rota inicial depende dele.
+  let obraUrlPendente = null;
+  try{ obraUrlPendente = new URLSearchParams(location.search).get('obra'); } catch(e){}
+
+  // O endereço mantém o resto da query (o `demo=1`, por exemplo): um `?obra=`
+  // solto trocaria a query inteira e a guia nova cairia fora do modo em que a
+  // pessoa estava.
+  function enderecoDaObra(id){
+    try{
+      const u = new URL(location.href);
+      u.searchParams.set('obra', id);
+      return u.pathname + u.search;
+    } catch(e){ return '?obra=' + encodeURIComponent(id); }
+  }
+
   const IC = {
     dashboard:'<path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V21h13V9.5"/>',
     despacho :'<path d="M22 2 11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/>',
@@ -8619,6 +8731,7 @@
     sair     :'<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/>',
     nova     :'<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/><path d="M12 11v6"/><path d="M9 14h6"/>',
     medicao  :'<path d="M3 20h18"/><path d="M6 20V9"/><path d="M11 20V4"/><path d="M16 20v-7"/><path d="M21 20v-4"/>',
+    fechamento:'<rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10.5h18"/><path d="M7.5 15h3"/>',
   };
 
   let rotaAtual = '';
@@ -8633,6 +8746,7 @@
     if(ehTecnico()) L.push({id:'nova', t:'Nova obra', ic:'nova'});
     L.push({id:'obras',     t: ehRevisor() ? 'Obras' : 'Minhas obras', ic:'obras', badge:true});
     L.push({id:'historico', t:'Histórico', ic:'historico'});
+    if(ehRevisor()) L.push({id:'fechamento', t:'Fechamento', ic:'fechamento'});
     if(ehRevisor()) L.push({id:'medicao',    t:'Medição',    ic:'medicao'});
     if(ehRevisor()) L.push({id:'relatorios', t:'Relatórios', ic:'relatorios'});
     if(ehAdmin())   L.push({id:'config',     t:'Configurações', ic:'config'});
@@ -8691,6 +8805,7 @@
     dashboard:'Dashboard', despacho:'Despacho', tecnicos:'Técnicos',
     obras:'Obras', historico:'Histórico', relatorios:'Relatórios',
     config:'Configurações', empresas:'Empresas', nova:'Nova obra', medicao:'Medição',
+    fechamento:'Fechamento',
   };
 
   function navegarMenu(rota){
@@ -8709,6 +8824,7 @@
       case 'despacho':  despacharCard.click(); break;
       case 'nova':      abrirObraNova(); break;
       case 'medicao':   showAppView('medicao'); prepararMedicao(); break;
+      case 'fechamento': showAppView('fechamento'); prepararFechamento(); break;
       case 'tecnicos':  showAppView('usuarios'); escopoTecnicos = true; escopoEmpresas = false; filtroUsuarios = 'tecnico'; renderUsuarios(); break;
       case 'obras':
         // entrar em Obras pelo menu mostra tudo; vindo de um cartão do painel,
@@ -8735,7 +8851,12 @@
     montarMenu();
   }
 
-  function rotaInicial(){ return ehOperador() ? 'dashboard' : 'obras'; }
+  function rotaInicial(){
+    // quem entrou por um link de obra tem que cair na lista, que é onde a obra
+    // é carregada e aberta — não no painel
+    if(obraUrlPendente) return 'obras';
+    return ehOperador() ? 'dashboard' : 'obras';
+  }
   function irParaInicio(){ navegarMenu(rotaInicial()); }
 
   // abrir / fechar o menu suspenso
@@ -8773,6 +8894,7 @@
   // decide para quem vai a próxima.
   const quadroScreen = document.getElementById('quadroScreen');
   const medicaoScreen = document.getElementById('medicaoScreen');
+  const fechamentoScreen = document.getElementById('fechamentoScreen');
   const quadroCard   = document.getElementById('quadroCard');
 
   const ROTULO_STATUS = {
@@ -10970,7 +11092,7 @@
         {id:1, contrato:'9000001', status:'enviado',     polo:'CTA', empresa_id:1, tipo_obra:'convencional', tecnico_id:'d-t1',
          dados:{contract:contrato('9000001','Padaria Modelo Ltda','R DEMONSTRACAO, 100'), tecnico:'Carlos Andrade',
                 arquivos:anexos('9000001', ['asbuilt']), meta:{photos:{},projectDocs:{},docsAtt:{}},
-                materialsQty:{}, valuesQty:{},
+                materialsQty:{1:'1733', 3:'6'}, valuesQty:{'02.05':1733, '03.06':4},
                 reaberta:{em: hoje + 'T09:14:00.000Z', por:'Carlos Andrade', statusAnterior:'aprovado'}},
          __completa:true},
         {id:2, contrato:'9000002', status:'em_execucao', polo:'CTA', empresa_id:1, tipo_obra:'convencional', tecnico_id:'d-t1',
@@ -10986,7 +11108,7 @@
          revisao:{nome:'Ana Despacho', observacao:'Falta a foto da caixa fechada no poste 3.'},
          dados:{contract:contrato('9000004','Clínica Exemplo','R MODELO, 555'), tecnico:'Marcos Vieira',
                 arquivos:anexos('9000004', ['f5','asbuilt','diagrama_att']), meta:{photos:{},projectDocs:{},docsAtt:{}},
-                materialsQty:{}, valuesQty:{}}},
+                materialsQty:{4:'12'}, valuesQty:{'02.18':8, '03.04':1}}},
         // esta é a única com serviço e material lançados de propósito: sem
         // isso a Medição e o consumo de material abriam sempre zerados na
         // demonstração, e não dava pra mostrar (nem testar) a conta
@@ -11723,6 +11845,7 @@
     despachoScreen.classList.toggle('show', view === 'despacho');
     quadroScreen.classList.toggle('show', view === 'quadro');
     medicaoScreen.classList.toggle('show', view === 'medicao');
+    fechamentoScreen.classList.toggle('show', view === 'fechamento');
     wizardScreen.classList.toggle('show', view === 'wizard');
     bottomBar.style.display = (view === 'wizard' && steps[currentStep] !== 'review') ? 'flex' : 'none';
     if(view !== 'wizard') empilhar({tela: view});   // o wizard empilha por passo, no showStep
@@ -12419,10 +12542,12 @@
           </select>
         </div>` : '') + `
         <div style="display:flex;gap:8px;">
-          <button class="job-edit-btn" type="button" data-acao="editar" style="flex:1;">
+          <a class="job-edit-btn" data-acao="editar" style="flex:1;text-decoration:none;"
+             href="${job.row ? esc(enderecoDaObra(job.row.id)) : '#'}"
+             title="${ehTecnico() ? 'Executar' : 'Abrir'} — botão direito (ou toque longo) para abrir em outra guia">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
             ${ehTecnico() ? 'Executar' : 'Abrir'}
-          </button>
+          </a>
           <button class="job-edit-btn" type="button" data-acao="pdf" style="flex:1;">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 21h16"/></svg>
             Baixar PDF
@@ -12569,8 +12694,16 @@
           refreshJobsList();
         });
       }
+      // Vira <a> com URL própria pra o navegador oferecer o que ele já oferece
+      // em qualquer link: "abrir em nova guia" no botão direito, Ctrl+clique,
+      // clique do meio, copiar o endereço pra mandar pra alguém. O clique
+      // simples continua abrindo aqui mesmo, sem recarregar a página.
       details.querySelector('[data-acao="editar"]').addEventListener('click', (e)=>{
         e.stopPropagation();
+        // qualquer modificador (ou o botão do meio) é pedido explícito de nova
+        // guia: deixa o navegador cuidar em vez de sequestrar o clique
+        if(e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+        e.preventDefault();
         abrirObraDespachada(job, e.currentTarget);
       });
       details.querySelector('[data-acao="pdf"]').addEventListener('click', (e)=>{
@@ -12774,6 +12907,244 @@
         + esc(e.message || e) + '</div>';
     } finally {
       btn.disabled = false; btn.textContent = 'Gerar';
+    }
+  }
+
+  // ---------- Fechamento por técnico ----------
+  //
+  // Modelo de saldo, como o usuário descreveu: LIBERADO é o que já passou pela
+  // revisão (dinheiro certo), RETIDO é o que está na mão do escritório
+  // esperando aprovação, e DEVOLVIDO não conta — voltou pro técnico refazer.
+  // O número grande é liberado + retido: é o que o mês deve fechar se nada for
+  // reprovado. Somar o devolvido junto seria prometer o que ainda não existe.
+  let fechMesAtual = mesDeHoje();
+  let fechPoloAtual = '';
+  let fechamentoDados = null;   // {tecnicos:[...], totais:{...}} do último cálculo
+
+  function prepararFechamento(){
+    const campo = document.getElementById('fechMes');
+    if(campo) campo.value = fechMesAtual;
+    pintarChipsPolo(document.getElementById('fechPolo'), fechPoloAtual, (v)=>{
+      fechPoloAtual = v || '';
+      carregarFechamento();
+    }, true);
+    carregarFechamento();
+  }
+
+  (function ligarFechamento(){
+    const campo = document.getElementById('fechMes');
+    if(campo) campo.addEventListener('change', ()=>{
+      fechMesAtual = campo.value || mesDeHoje();
+      carregarFechamento();
+    });
+    document.querySelectorAll('#fechMesLinha .mes-nav').forEach(b=>{
+      b.addEventListener('click', ()=>{
+        fechMesAtual = somarMes(fechMesAtual || mesDeHoje(), Number(b.dataset.fmes));
+        const c = document.getElementById('fechMes');
+        if(c) c.value = fechMesAtual;
+        carregarFechamento();
+      });
+    });
+    const exp = document.getElementById('btnExportFechamento');
+    if(exp) exp.addEventListener('click', ()=> exportarFechamentoXlsx(exp));
+  })();
+
+  const BALDES = [
+    {id:'liberado',  status:'aprovado',  rot:'Liberado',  sub:'aprovado por você',        cls:'lib'},
+    {id:'retido',    status:'enviado',   rot:'Retido',    sub:'esperando sua revisão',    cls:'ret'},
+    {id:'devolvido', status:'reprovado', rot:'Devolvido', sub:'não conta — volta pro técnico', cls:'dev'},
+  ];
+
+  async function carregarFechamento(){
+    const lista = document.getElementById('fechLista');
+    const resumo = document.getElementById('fechResumo');
+    if(!lista) return;
+    resumo.innerHTML = '';
+    lista.innerHTML = '<div class="fe-vazio">Somando as obras de ' + esc(rotuloMes(fechMesAtual)) + '...</div>';
+    try{
+      await garantirCatalogoDosDois();   // sem o catálogo inteiro, o valor sai errado
+      const emp = empresaContexto ? empresaContexto.id : minhaEmpresa();
+      let q = supabaseClient.from(SUPABASE_TABLE)
+        .select('id, contrato, dados, tecnico_id, status, tipo_obra, polo, revisao')
+        .in('status', BALDES.map(b => b.status));
+      if(emp) q = q.eq('empresa_id', emp);
+      if(fechPoloAtual) q = q.eq('polo', fechPoloAtual);
+      const {data, error} = await q;
+      if(error) throw error;
+
+      // A data que vale é a do contrato — mesma regra da Medição. O escritório
+      // pode aprovar em setembro uma obra feita em agosto, e ela pertence ao
+      // fechamento de agosto, não ao do mês em que alguém clicou em aprovar.
+      const doMes = (data || []).filter(r=>{
+        const d = ((r.dados || {}).contract || {}).data;
+        return d && String(d).slice(0, 7) === fechMesAtual;
+      });
+
+      fechamentoDados = agruparFechamento(doMes);
+      renderFechamento(fechamentoDados);
+    } catch(e){
+      lista.innerHTML = '<div class="fe-vazio">Não deu pra montar o fechamento: '
+        + esc(e.message || e) + '</div>';
+    }
+  }
+
+  function agruparFechamento(linhas){
+    const porTec = new Map();
+    const zerado = ()=> ({obras:[], total:0});
+    linhas.forEach(r=>{
+      const balde = BALDES.find(b => b.status === r.status);
+      if(!balde) return;
+      const id = r.tecnico_id || '__sem__';
+      if(!porTec.has(id)){
+        porTec.set(id, {
+          id,
+          nome: nomeDoVinculo(r.tecnico_id) || ((r.dados || {}).tecnico) || 'Sem técnico atribuído',
+          liberado: zerado(), retido: zerado(), devolvido: zerado(),
+        });
+      }
+      const t = porTec.get(id);
+      const tipo = r.tipo_obra || (r.dados || {}).tipoObra || 'convencional';
+      const valor = servicosDaObra(r.dados || {}, tipo)
+        .reduce((sum, sv) => sum + (Number(sv.qtd) || 0) * (Number(sv.preco) || 0), 0);
+      t[balde.id].obras.push({
+        contrato: r.contrato,
+        cliente: ((r.dados || {}).contract || {}).empresa || 'Cliente não informado',
+        polo: poloDaObra(r),
+        motivo: ((r.dados || {}).revisao || {}).observacao || (r.revisao || {}).observacao || '',
+        valor,
+      });
+      t[balde.id].total += valor;
+    });
+
+    const tecnicos = [...porTec.values()].map(t=>{
+      t.previsto = t.liberado.total + t.retido.total;
+      return t;
+    }).sort((a,b) => b.previsto - a.previsto);
+
+    const totais = {liberado:0, retido:0, devolvido:0, obras:0};
+    tecnicos.forEach(t=>{
+      totais.liberado += t.liberado.total;
+      totais.retido += t.retido.total;
+      totais.devolvido += t.devolvido.total;
+      totais.obras += t.liberado.obras.length + t.retido.obras.length + t.devolvido.obras.length;
+    });
+    totais.previsto = totais.liberado + totais.retido;
+    return {tecnicos, totais};
+  }
+
+  function renderFechamento(d){
+    const lista = document.getElementById('fechLista');
+    const resumo = document.getElementById('fechResumo');
+    const exp = document.getElementById('btnExportFechamento');
+    if(exp) exp.disabled = !d.tecnicos.length;
+
+    if(!d.tecnicos.length){
+      resumo.innerHTML = '';
+      lista.innerHTML = '<div class="fe-vazio">Nenhuma obra em ' + esc(rotuloMes(fechMesAtual))
+        + (fechPoloAtual ? ' no polo ' + esc(fechPoloAtual) : '') + '.</div>';
+      return;
+    }
+
+    resumo.innerHTML = '<div class="fe-topo">'
+      + '<div class="fe-topo-rot">Previsto do mês · ' + esc(rotuloMes(fechMesAtual))
+      + (fechPoloAtual ? ' · ' + esc(fechPoloAtual) : '') + '</div>'
+      + '<div class="fe-topo-n">' + formatBRL(d.totais.previsto) + '</div>'
+      + '<div class="fe-topo-sub">' + formatBRL(d.totais.liberado) + ' liberado · '
+      + formatBRL(d.totais.retido) + ' retido'
+      + (d.totais.devolvido > 0 ? ' · ' + formatBRL(d.totais.devolvido) + ' devolvido, fora da conta' : '')
+      + ' · ' + d.tecnicos.length + (d.tecnicos.length === 1 ? ' técnico' : ' técnicos')
+      + ' · ' + d.totais.obras + (d.totais.obras === 1 ? ' obra' : ' obras') + '</div></div>';
+
+    lista.innerHTML = '';
+    d.tecnicos.forEach(t=>{
+      const card = document.createElement('div');
+      card.className = 'fe-card';
+      const ini = String(t.nome).trim().split(/\s+/)
+        .filter(x => /^[A-Za-zÀ-ÿ]/.test(x)).slice(0, 2).map(x => x[0]).join('').toUpperCase() || '?';
+      const nObras = t.liberado.obras.length + t.retido.obras.length + t.devolvido.obras.length;
+      // a barra só existe quando há previsto: dividir por zero pintaria nada
+      const pctLib = t.previsto > 0 ? (t.liberado.total / t.previsto * 100) : 0;
+
+      const linha = (b)=>{
+        const g = t[b.id];
+        return '<div class="fe-linha ' + b.cls + '">'
+          + '<span class="fe-ponto ' + b.cls + '"></span>'
+          + '<span class="fe-linha-rot">' + b.rot + ' <em>· ' + g.obras.length
+          + (g.obras.length === 1 ? ' obra · ' : ' obras · ') + b.sub + '</em></span>'
+          + '<span class="fe-linha-n">' + formatBRL(g.total) + '</span></div>';
+      };
+
+      const grupoObras = (b)=>{
+        const g = t[b.id];
+        if(!g.obras.length) return '';
+        return '<div class="fe-grupo">' + b.rot + '</div>'
+          + g.obras.map(o =>
+              '<div class="fe-obra"><span class="fe-obra-c">' + esc(o.contrato) + '</span>'
+              + '<span class="fe-obra-cli">' + esc(o.cliente) + '</span>'
+              + '<span class="fe-obra-v">' + formatBRL(o.valor) + '</span></div>'
+              + (b.id === 'devolvido' && o.motivo
+                   ? '<div class="fe-obra-obs">↩ ' + esc(o.motivo) + '</div>' : '')
+            ).join('');
+      };
+
+      card.innerHTML =
+          '<div class="fe-cab">'
+        +   '<div class="fe-av">' + esc(ini) + '</div>'
+        +   '<div class="fe-nome"><b>' + esc(t.nome) + '</b><span>' + nObras
+        +     (nObras === 1 ? ' obra no mês' : ' obras no mês') + '</span></div>'
+        +   '<div class="fe-total"><b>' + formatBRL(t.previsto) + '</b><span>previsto</span></div>'
+        +   '<svg class="fe-chev" width="16" height="16" viewBox="0 0 24 24" fill="none"'
+        +     ' stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>'
+        + '</div>'
+        + (t.previsto > 0
+            ? '<div class="fe-barra-prop"><div class="fe-prop-lib" style="width:' + pctLib.toFixed(1)
+              + '%"></div><div class="fe-prop-ret" style="flex:1"></div></div>'
+            : '')
+        + '<div class="fe-linhas">'
+        +   BALDES.filter(b => t[b.id].obras.length).map(linha).join('')
+        + '</div>'
+        + '<div class="fe-obras">' + BALDES.map(grupoObras).join('') + '</div>';
+
+      card.querySelector('.fe-cab').addEventListener('click', ()=> card.classList.toggle('aberto'));
+      lista.appendChild(card);
+    });
+  }
+
+  function exportarFechamentoXlsx(btn){
+    const d = fechamentoDados;
+    if(!d || !d.tecnicos.length){ showToast('Não tem fechamento na tela pra exportar'); return; }
+    if(btn) btn.disabled = true;
+    try{
+      const resumo = [[CAB('Técnico'), CAB('Liberado R$'), CAB('Retido R$'), CAB('Previsto R$'),
+                       CAB('Devolvido R$'), CAB('Obras')]];
+      // uma linha por obra: é dela que sai a conferência quando o técnico
+      // discorda do total — sem isso o Excel só repete o que a tela já mostra
+      const detalhe = [[CAB('Técnico'), CAB('Situação'), CAB('Contrato'), CAB('Polo'),
+                        CAB('Cliente'), CAB('Valor R$'), CAB('Motivo da devolução')]];
+      d.tecnicos.forEach(t=>{
+        const n = t.liberado.obras.length + t.retido.obras.length + t.devolvido.obras.length;
+        resumo.push([t.nome, DIN(t.liberado.total), DIN(t.retido.total), DIN(t.previsto),
+                     DIN(t.devolvido.total), n]);
+        BALDES.forEach(b=>{
+          t[b.id].obras.forEach(o=>{
+            detalhe.push([t.nome, b.rot, o.contrato, o.polo, o.cliente, DIN(o.valor), o.motivo || '']);
+          });
+        });
+      });
+      const linhaTotal = resumo.length + 1;
+      resumo.push([NEG('TOTAL'),
+                   {v:d.totais.liberado, t:'n', s:5}, {v:d.totais.retido, t:'n', s:5},
+                   {v:d.totais.previsto, t:'n', s:5}, {v:d.totais.devolvido, t:'n', s:5},
+                   NEG(d.totais.obras)]);
+      baixarXlsx('Fechamento-' + fechMesAtual + (fechPoloAtual ? '-' + fechPoloAtual : '') + '.xlsx', [
+        {nome:'Por técnico', larguras:[30,15,15,15,15,9], linhas: resumo, filtroAte: linhaTotal - 1},
+        {nome:'Obra a obra', larguras:[26,13,15,8,34,14,44], linhas: detalhe},
+      ]);
+      showToast('Fechamento de ' + rotuloMes(fechMesAtual) + ' exportado');
+    } catch(e){
+      showToast('Não deu pra exportar: ' + (e.message || e));
+    } finally {
+      if(btn) btn.disabled = false;
     }
   }
 
@@ -13875,7 +14246,38 @@
       const locais = reportsList.filter(j => j.snapshot && !jaTem.has(j.contrato));
       reportsList = locais.concat(doServidor);
       renderJobsList();
+      abrirObraDaUrl();
     } catch(e){ /* offline ou tabela vazia: segue com a lista local */ }
+  }
+
+  // ---------- Obra aberta por endereço (?obra=123) ----------
+  //
+  // Existe pra o link do cartão funcionar como link: abrir em outra guia,
+  // mandar o endereço de uma obra pra alguém no WhatsApp, deixar duas obras
+  // abertas lado a lado pra comparar. Sem isto o app tem um endereço só e
+  // qualquer guia nova cai na lista.
+
+  let tentativasObraUrl = 0;
+
+  function abrirObraDaUrl(){
+    if(!obraUrlPendente) return;
+    const alvo = reportsList.find(j => j.row && String(j.row.id) === String(obraUrlPendente));
+    // A lista chega em etapas (local, depois servidor). Desistir na primeira
+    // passada faria o link falhar justamente na guia nova, que é o caso.
+    if(!alvo && ++tentativasObraUrl < 4) return;
+    const id = obraUrlPendente;
+    obraUrlPendente = null;
+    // limpa o endereço: recarregar a guia depois não pode reabrir a obra por
+    // cima do que a pessoa estiver fazendo
+    // tira só o `obra=`, preserva o resto da query
+    try{
+      const u = new URL(location.href);
+      u.searchParams.delete('obra');
+      history.replaceState(null, '', u.pathname + u.search);
+    } catch(e){}
+    if(alvo) abrirObraDespachada(alvo, null);
+    // pode ser obra de outra empresa, apagada, ou fora do que este perfil vê
+    else showToast('Obra ' + id + ' não está na sua lista — mostrando todas');
   }
 
   myJobsCard.addEventListener('click', ()=>{ filtroObras = 'abertas'; refreshJobsList(); });
