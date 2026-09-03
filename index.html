@@ -1474,6 +1474,11 @@
     background:var(--bg);border-radius:7px;padding:7px 9px;margin-top:7px;
     font-family:'IBM Plex Mono',monospace;font-size:12.5px;
   }
+  .conv-credenciais .cc-rot{
+    font-family:'Inter',sans-serif;font-size:10.5px;text-transform:uppercase;
+    letter-spacing:.06em;color:var(--text-faint);flex-shrink:0;min-width:52px;
+  }
+  .conv-credenciais .cc-linha span:not(.cc-rot){flex:1;min-width:0;word-break:break-all;}
   .conv-credenciais .cc-copiar{
     background:none;border:1px solid var(--border);color:var(--text-dim);border-radius:6px;
     padding:3px 9px;font-size:11px;cursor:pointer;font-family:inherit;flex-shrink:0;
@@ -2558,10 +2563,10 @@
         <div class="login-body" id="loginFormView">
           <div class="login-error" id="loginError">Preencha usuário e senha para continuar.</div>
           <div class="login-field">
-            <label class="field-label">E-mail corporativo</label>
+            <label class="field-label">Usuário ou e-mail</label>
             <div class="login-input-wrap">
               <span class="login-ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg></span>
-              <input class="login-input" id="loginUser" autocomplete="username" placeholder="seu.nome@empresa.com.br">
+              <input class="login-input" id="loginUser" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="seu usuário ou e-mail">
             </div>
           </div>
           <div class="login-field" style="margin-bottom:0;">
@@ -3094,6 +3099,13 @@
         <button class="empresa-contexto-voltar" id="btnVoltarEmpresas" type="button">&#8592; Empresas</button>
       </div>
       <div style="padding:0 16px;">
+        <button class="job-edit-btn" id="btnGerenciarAcessos" type="button" style="width:100%;margin-bottom:12px;display:none;border-color:var(--accent);color:var(--accent);">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Gerenciar acessos da empresa
+        </button>
+        <div class="step-sub" id="ajudaGerenciarAcessos" style="display:none;padding:0 0 12px;margin-top:-6px;">
+          Entre na empresa para criar acessos, trocar papéis e liberar quem está pendente.
+        </div>
         <button class="job-edit-btn" id="btnNovoConvite" type="button" style="width:100%;margin-bottom:12px;">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
           Adicionar pessoa
@@ -3107,11 +3119,11 @@
           <div class="step-sub" id="convModoAjuda" style="padding:0 0 10px;">
           </div>
 
-          <input id="convEmail" type="email" inputmode="email" autocomplete="off" placeholder="E-mail da pessoa">
+          <input id="convNome" placeholder="Nome (opcional)">
+          <input id="convEmail" type="text" inputmode="email" autocomplete="off" placeholder="E-mail da pessoa">
           <div class="step-sub" id="convEmailAjuda" style="display:none;padding:0 0 10px;margin-top:-6px;">
             Pode deixar em branco se ainda não souber o e-mail do técnico — dá pra completar depois.
           </div>
-          <input id="convNome" placeholder="Nome (opcional)">
 
           <div class="conv-senha-wrap" id="convSenhaWrap" style="display:none;">
             <input id="convSenha" type="password" autocomplete="new-password" placeholder="Senha (mín. 6 caracteres)">
@@ -3136,8 +3148,8 @@
 
         <div class="conv-credenciais" id="convCredenciais" style="display:none;">
           <div><b>Acesso criado.</b> Anote ou copie antes de fechar — a senha não fica salva em nenhum lugar visível depois.</div>
-          <div class="cc-linha"><span id="ccEmail"></span><button type="button" class="cc-copiar" data-alvo="ccEmail">copiar</button></div>
-          <div class="cc-linha"><span id="ccSenha"></span><button type="button" class="cc-copiar" data-alvo="ccSenha">copiar</button></div>
+          <div class="cc-linha"><span class="cc-rot" id="ccEmailRot">Usuário</span><span id="ccEmail"></span><button type="button" class="cc-copiar" data-alvo="ccEmail">copiar</button></div>
+          <div class="cc-linha"><span class="cc-rot">Senha</span><span id="ccSenha"></span><button type="button" class="cc-copiar" data-alvo="ccSenha">copiar</button></div>
           <button type="button" class="cc-fechar" id="convCredenciaisFechar">Já anotei</button>
         </div>
 
@@ -3623,7 +3635,7 @@
 (function(){
   // Marque aqui a cada build enviado ao campo. O testador informa esta
   // string ao relatar um problema, senao nao da pra saber o que ele rodou.
-  const APP_VERSION = 'Enlace Ops · alpha-10.98 · 03/09/2026';
+  const APP_VERSION = 'Enlace Ops · alpha-10.99 · 03/09/2026';
 
   // ---------- Supabase config ----------
   // Troque pelos valores reais do seu projeto (Project Settings -> API no Supabase).
@@ -10211,6 +10223,46 @@
   // até alguém preencher o de verdade.
   const PLACEHOLDER_EMAIL_RE = /^sememail-[a-z0-9]+@enlaceops\.pendente$/;
   function ehEmailPendente(email){ return PLACEHOLDER_EMAIL_RE.test(email || ''); }
+
+  // ---------- Acesso por usuário, sem e-mail ----------
+  // Técnico de campo muitas vezes não tem e-mail, ou não lembra o dele. Mas o
+  // Supabase exige um endereço pra criar conta. Então o app monta um endereço
+  // interno a partir do usuário escolhido: a pessoa nunca vê esse endereço e
+  // nunca recebe nada nele — ela entra digitando só o usuário ("jackson").
+  // O login completa o resto sozinho.
+  const DOMINIO_ACESSO = 'acesso.enlaceops.app';
+  function ehLoginInterno(email){
+    return String(email || '').toLowerCase().endsWith('@' + DOMINIO_ACESSO);
+  }
+  function usuarioDoEmail(email){
+    return ehLoginInterno(email) ? String(email).split('@')[0] : '';
+  }
+  // vira minúscula, tira acento e troca o que não serve por ponto: "João
+  // Pereira" -> "joao.pereira". É isso que a pessoa vai digitar de luva.
+  function normalizarUsuario(t){
+    return String(t == null ? '' : t).trim().toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9._-]+/g, '.')
+      .replace(/\.{2,}/g, '.')
+      .replace(/^[.]+|[.]+$/g, '');
+  }
+  function emailDeAcesso(usuario){
+    return normalizarUsuario(usuario) + '@' + DOMINIO_ACESSO;
+  }
+  // sugestão a partir do nome: primeiro e último ("João da Silva Pereira"
+  // -> "joao.pereira"), pra não virar um usuário quilométrico
+  function sugerirUsuario(nome){
+    const partes = normalizarUsuario(nome).split('.').filter(Boolean);
+    if(!partes.length) return '';
+    if(partes.length === 1) return partes[0];
+    return partes[0] + '.' + partes[partes.length - 1];
+  }
+  // o que aparece na tela pra identificar a pessoa: usuário quando o acesso
+  // é interno, e-mail quando é de verdade, nada quando ainda é só um convite
+  function rotuloAcesso(email){
+    if(!email || ehEmailPendente(email)) return '';
+    return ehLoginInterno(email) ? ('usuário: ' + usuarioDoEmail(email)) : email;
+  }
   function gerarEmailPendente(){
     const base = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : ('' + Math.random() + Math.random());
     const rand = base.replace(/[^a-z0-9]/gi, '').slice(0, 12).toLowerCase();
@@ -10320,7 +10372,7 @@
         row.innerHTML = `
           <div class="user-row-body">
             <div class="user-row-nome">${esc(cv.nome || '(convite)')}</div>
-            <div class="user-row-mail">${semEmail ? 'Aguardando e-mail' : esc(cv.email)}</div>
+            <div class="user-row-mail">${semEmail ? 'Aguardando e-mail' : esc(rotuloAcesso(cv.email))}</div>
             <div class="user-row-meta">${esc(cv.papel)} · ${semEmail ? 'sem e-mail ainda' : 'aguardando cadastro'}</div>
             ${semEmail ? `
             <div class="conv-add-email" style="display:none;gap:6px;margin-top:8px;">
@@ -10395,7 +10447,7 @@
       row.innerHTML = `
         <div class="user-row-body">
           <div class="user-row-nome">${esc(u.nome || '(sem nome)')}${souEu ? ' · você' : ''}</div>
-          <div class="user-row-mail">${esc(u.email || '')}</div>
+          <div class="user-row-mail">${esc(rotuloAcesso(u.email))}</div>
           <div class="user-row-meta">${tempoRelativo(u.ultimo_acesso)} · ${nObras} ${nObras === 1 ? 'obra' : 'obras'}</div>
           ${u.papel === 'tecnico' && ehOperador() ? `
           <div class="hab-wrap">
@@ -10645,8 +10697,16 @@
     }
     // superadmin sem escolher uma empresa não tem onde encaixar quem for convidado
     const btnConv = document.getElementById('btnNovoConvite');
+    const semEmpresaEscolhida = ehSuper() && !empresaContexto;
     if(btnConv) btnConv.style.display =
-      (!ehAdmin() || (ehSuper() && !empresaContexto)) ? 'none' : '';
+      (!ehAdmin() || semEmpresaEscolhida) ? 'none' : '';
+    // ...e é exatamente aí que ele ficava sem saída: a tela abria só de
+    // leitura, sem dizer o que fazer. Este botão é o caminho de volta pra
+    // dentro da empresa, sem ter que passar por Empresas > Gerenciar.
+    const btnGer = document.getElementById('btnGerenciarAcessos');
+    const ajudaGer = document.getElementById('ajudaGerenciarAcessos');
+    if(btnGer)  btnGer.style.display  = semEmpresaEscolhida ? '' : 'none';
+    if(ajudaGer) ajudaGer.style.display = semEmpresaEscolhida ? 'block' : 'none';
 
     usersList.innerHTML = '<div class="job-service-empty" style="padding:20px 4px;">Carregando...</div>';
     try{
@@ -10672,11 +10732,23 @@
   function atualizaAjudaConvite(){
     const papel = document.getElementById('convPapel').value;
     // e-mail só é dispensável no modo convite, e só pro técnico — no modo
-    // "criar acesso agora" o e-mail é o login, então é sempre obrigatório.
+    // "criar acesso agora" o campo é o login, então tem que ter alguma
+    // coisa (usuário OU e-mail).
     const opcional = papel === 'tecnico' && modoConvite === 'convidar';
     document.getElementById('convEmailAjuda').style.display = opcional ? 'block' : 'none';
   }
   document.getElementById('convPapel').addEventListener('change', atualizaAjudaConvite);
+
+  // enquanto o admin digita o nome, o campo de login se preenche sozinho com
+  // uma sugestão ("Jackson Silva" -> "jackson.silva") — mas para de sugerir
+  // assim que ele mexe no campo na mão, pra nunca atropelar o que ele quis
+  let usuarioEditadoNaMao = false;
+  document.getElementById('convEmail').addEventListener('input', ()=>{ usuarioEditadoNaMao = true; });
+  document.getElementById('convNome').addEventListener('input', ()=>{
+    if(modoConvite !== 'criar' || usuarioEditadoNaMao) return;
+    document.getElementById('convEmail').value =
+      sugerirUsuario(document.getElementById('convNome').value);
+  });
 
   function aplicarModoConvite(){
     document.getElementById('convModoConvidar').classList.toggle('ativo', modoConvite === 'convidar');
@@ -10684,8 +10756,11 @@
     const criando = modoConvite === 'criar';
     document.getElementById('convSenhaWrap').style.display = criando ? '' : 'none';
     document.getElementById('convSenha2').style.display = criando ? '' : 'none';
+    document.getElementById('convEmail').placeholder = criando
+      ? 'Usuário (ex: joao.pereira) ou e-mail, se tiver'
+      : 'E-mail da pessoa';
     document.getElementById('convModoAjuda').textContent = criando
-      ? 'Você escolhe a senha agora e o acesso já sai pronto — sem depender da pessoa se cadastrar sozinha. Depois é só passar usuário e senha pra ela.'
+      ? 'Não precisa de e-mail: escolha um usuário e uma senha, e o acesso já sai pronto. Depois é só passar usuário e senha pra pessoa.'
       : 'A pessoa recebe o e-mail e cria a própria senha ao entrar pela primeira vez.';
     document.getElementById('convSalvar').textContent = criando ? 'Criar acesso' : 'Convidar';
     atualizaAjudaConvite();
@@ -10742,8 +10817,12 @@
   }
 
   const convCredenciais = document.getElementById('convCredenciais');
+  // mostra o que a pessoa vai realmente DIGITAR pra entrar: o usuário quando
+  // o acesso é interno, o e-mail quando ela tem um de verdade
   function mostrarCredenciais(email, senha){
-    document.getElementById('ccEmail').textContent = email;
+    const interno = ehLoginInterno(email);
+    document.getElementById('ccEmailRot').textContent = interno ? 'Usuário' : 'E-mail';
+    document.getElementById('ccEmail').textContent = interno ? usuarioDoEmail(email) : email;
     document.getElementById('ccSenha').textContent = senha;
     convCredenciais.style.display = 'block';
   }
@@ -10794,13 +10873,26 @@
     const btn   = document.getElementById('convSalvar');
     const criando = modoConvite === 'criar';
     const emailOpcional = papel === 'tecnico' && !criando;
+    // no modo "criar acesso", o campo aceita as duas coisas: se tem @, é um
+    // e-mail de verdade; se não tem, é o usuário que a pessoa vai digitar pra
+    // entrar, e o endereço interno sai daqui
+    const porUsuario = criando && !!email && !email.includes('@');
+    let usuario = '';
+    if(porUsuario){
+      usuario = normalizarUsuario(email);
+      if(usuario.length < 3){
+        showToast('O usuário precisa ter pelo menos 3 letras (ex: joao.pereira)');
+        return;
+      }
+      email = emailDeAcesso(usuario);
+    }
 
     if(email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
       showToast('Digite um e-mail válido');
       return;
     }
     if(!email && !emailOpcional){
-      showToast(criando ? 'Digite o e-mail que a pessoa vai usar pra entrar' : 'Digite um e-mail válido');
+      showToast(criando ? 'Digite um usuário (ou o e-mail, se a pessoa tiver)' : 'Digite um e-mail válido');
       return;
     }
     let semEmail = false;
@@ -10810,7 +10902,9 @@
       semEmail = true;
     }
     if(usuariosCache.some(u => (u.email || '').toLowerCase() === email)){
-      showToast('Essa pessoa já tem conta — use o seletor de papel na lista');
+      showToast(porUsuario
+        ? ('O usuário "' + usuario + '" já está em uso — escolha outro')
+        : 'Essa pessoa já tem conta — use o seletor de papel na lista');
       return;
     }
 
@@ -10871,8 +10965,13 @@
         try{ await aux.auth.signOut(); }catch(e){}
         if(signErr){
           btn.disabled = false; btn.textContent = 'Criar acesso';
-          showToast('Convite salvo, mas a conta não foi criada: ' + traduzErroAuth(signErr)
-            + ' — a pessoa ainda pode entrar com esse e-mail e criar a própria senha.');
+          const jaExiste = /already registered|already been registered/i.test(String(signErr.message || ''));
+          if(porUsuario && jaExiste){
+            showToast('O usuário "' + usuario + '" já está em uso — escolha outro');
+          } else {
+            showToast('Convite salvo, mas a conta não foi criada: ' + traduzErroAuth(signErr)
+              + (porUsuario ? '' : ' — a pessoa ainda pode entrar com esse e-mail e criar a própria senha.'));
+          }
           return;
         }
       }
@@ -10890,6 +10989,20 @@
         : 'Convite criado — peça pra ' + email + ' criar a conta no app');
     }
     limparCamposConvite();
+    renderUsuarios();
+  });
+
+  // Uma empresa só: entra direto nela, sem obrigar a passar pela lista.
+  // Mais de uma: abre a lista pra escolher qual.
+  document.getElementById('btnGerenciarAcessos').addEventListener('click', ()=>{
+    const ids = Object.keys(empresasNomeMap || {});
+    if(ids.length === 1){
+      empresaContexto = {id: isNaN(Number(ids[0])) ? ids[0] : Number(ids[0]),
+                         nome: empresasNomeMap[ids[0]]};
+      navegarMenu('config');
+      return;
+    }
+    escopoEmpresas = true; escopoTecnicos = false; empresaContexto = null;
     renderUsuarios();
   });
 
@@ -11229,6 +11342,12 @@
   // "esqueci minha senha" — não confirma se o e-mail existe, só dispara o reset
   document.getElementById('loginEsqueci').addEventListener('click', async ()=>{
     const email = (loginUser.value || '').trim();
+    // acesso por usuário não tem e-mail nenhum atrás dele: não existe link
+    // de redefinição pra mandar, e fingir que mandou seria pior
+    if(email && !email.includes('@')){
+      showToast('Seu acesso é por usuário, sem e-mail — peça a senha nova pro administrador');
+      return;
+    }
     if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
       showToast('Digite seu e-mail no campo acima primeiro');
       return;
@@ -11301,7 +11420,10 @@
     loginBtn.textContent = 'Entrando...';
     let data, error;
     try{
-      ({data, error} = await supabaseClient.auth.signInWithPassword({email: u, password: p}));
+      // quem foi cadastrado por usuário (sem e-mail) digita só "jackson" —
+      // o endereço interno é montado aqui, a pessoa nunca precisa saber dele
+      const login = u.includes('@') ? u.toLowerCase() : emailDeAcesso(u);
+      ({data, error} = await supabaseClient.auth.signInWithPassword({email: login, password: p}));
     } catch(e){
       error = e;                    // sem isto a exceção travava o botão em "Entrando..."
     } finally {
