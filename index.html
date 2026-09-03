@@ -607,12 +607,37 @@
     margin-top:auto;padding-top:11px;}
   .value-price{font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--text-faint);
     white-space:nowrap;}
-  /* o par de preços de quem opera: o de cima é o que a Ligga paga, o de baixo
-     é o que o técnico recebe. Mesma linha, pesos diferentes — o segundo é
-     conferência, não é o número que monta a medição. */
-  .preco-tec{display:block;margin-top:2px;font-family:'IBM Plex Mono',monospace;
-    font-size:10.5px;color:var(--st-verde,var(--success));white-space:nowrap;}
-  .values-total-row .preco-tec{margin-top:3px;font-size:11px;text-align:right;}
+  /* ---- modo "valores do técnico" ----
+     Uma chave só, no cabeçalho, que troca TODO dinheiro da tela pelo valor do
+     técnico. Um número por vez: tentei mostrar os dois lado a lado e a tela
+     virou um amontoado de quatro números por linha.
+     A faixa existe porque um modo que muda dinheiro e não se anuncia é jeito
+     de alguém mandar o número errado pra Ligga. */
+  .vt-chave{display:inline-flex;align-items:center;gap:7px;padding:5px 11px;border-radius:999px;
+    border:1px solid var(--border);background:var(--bg-elev-2);color:var(--text-dim);
+    font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.06em;
+    text-transform:uppercase;cursor:pointer;white-space:nowrap;transition:.15s;}
+  .vt-chave:hover{border-color:var(--st-verde,var(--success));color:var(--text);}
+  .vt-chave .bolha{width:26px;height:14px;border-radius:999px;background:var(--border);
+    position:relative;flex:0 0 auto;transition:.15s;}
+  .vt-chave .bolha::after{content:'';position:absolute;top:2px;left:2px;width:10px;height:10px;
+    border-radius:50%;background:var(--bg);transition:.15s;}
+  .vt-chave.ligada{border-color:var(--st-verde,var(--success));background:var(--st-verde,var(--success));
+    color:var(--bg);font-weight:600;}
+  .vt-chave.ligada .bolha{background:rgba(0,0,0,.28);}
+  .vt-chave.ligada .bolha::after{left:14px;}
+  .vt-faixa{display:none;align-items:center;gap:10px;padding:9px 16px;
+    background:var(--st-verde,var(--success));color:var(--bg);
+    font-family:'IBM Plex Mono',monospace;font-size:11.5px;line-height:1.4;}
+  body.ver-tecnico .vt-faixa{display:flex;}
+  .vt-faixa b{font-weight:700;}
+  .vt-faixa button{margin-left:auto;flex:0 0 auto;background:rgba(0,0,0,.18);border:0;color:inherit;
+    font:inherit;padding:4px 10px;border-radius:6px;cursor:pointer;}
+  .vt-faixa button:hover{background:rgba(0,0,0,.3);}
+  @media(max-width:640px){
+    .vt-chave span.rot{display:none;}
+    .vt-chave{padding:5px 8px;}
+  }
   .value-qty-wrap{display:flex;align-items:center;gap:10px;}
   .value-qty{width:84px;min-height:46px;background:var(--bg-elev-2);border:1px solid var(--border);
     color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:600;
@@ -2708,6 +2733,10 @@
           <span class="hd-sync"><i></i><span id="hdSync">Sincronizado</span></span>
           <span class="hd-upd" id="hdUpd"></span>
         </div>
+        <button class="vt-chave" id="hdVerTecnico" type="button" style="display:none;"
+                aria-pressed="false" title="Ver todos os valores da tela pelo que o técnico recebe">
+          <span class="bolha"></span><span class="rot">Valores do técnico</span>
+        </button>
         <button class="hd-ic" id="hdSimConn" aria-label="Simular sem sinal" title="Simular sem sinal">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 9a16 16 0 0 1 22 0"/><path d="M5 13a10.5 10.5 0 0 1 14 0"/><path d="M9 17a5 5 0 0 1 6 0"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
         </button>
@@ -2730,6 +2759,11 @@
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity:.6"><path d="M6 9l6 6 6-6"/></svg>
         </div>
       </header>
+
+      <div class="vt-faixa" id="vtFaixa">
+        <span>Você está vendo <b>o que o técnico recebe</b>, não o que a Ligga fatura.</span>
+        <button type="button" id="vtFaixaSair">Voltar ao faturamento</button>
+      </div>
 
       <div class="page" id="pageWrap">
         <div class="page-in" id="pageIn">
@@ -3536,7 +3570,7 @@
 (function(){
   // Marque aqui a cada build enviado ao campo. O testador informa esta
   // string ao relatar um problema, senao nao da pra saber o que ele rodou.
-  const APP_VERSION = 'Enlace Ops · alpha-10.85 · 03/09/2026';
+  const APP_VERSION = 'Enlace Ops · alpha-10.86 · 03/09/2026';
 
   // ---------- Supabase config ----------
   // Troque pelos valores reais do seu projeto (Project Settings -> API no Supabase).
@@ -4652,21 +4686,17 @@
   }
 
   function recomputeValuesTotal(){
-    let total = 0, totalTec = 0;
+    let total = 0;
     valuesItems.forEach(v=>{
       const qty = Number(dataState.valuesQty[v.code]) || 0;
       total += qty * precoVisivel(v);
-      totalTec += qty * precoDoTecnico(v);
     });
-    // o total do técnico só faz sentido ao lado do faturado; se der o mesmo
-    // número (catálogo sem preço próprio) htmlTotalTecnico devolve vazio
-    valuesTotalEl.innerHTML = formatBRL(total)
-      + (Math.round(total * 100) === Math.round(totalTec * 100)
-           ? '' : htmlTotalTecnico(totalTec, 'técnico recebe'));
+    valuesTotalEl.textContent = formatBRL(total);
     // o rótulo diz de quem é o dinheiro: "Total" sozinho o técnico lê como
     // "quanto eu ganhei", e não é isso que o número significa pro escritório
     const rot = document.querySelector('#valuesTotalRow span:first-child');
-    if(rot) rot.textContent = ehTecnico() ? 'Você recebe' : 'Total faturado';
+    if(rot) rot.textContent = ehTecnico() ? 'Você recebe'
+                            : (verComoTecnico ? 'Técnico recebe' : 'Total faturado');
   }
   // Qual empresa manda no catálogo.
   //
@@ -4717,7 +4747,6 @@
                              procura: m.name + ' ' + m.id,
                              ja: preenchido(dataState.materialsQty[m.id])}))
       : valuesItems.map(v => ({ch:v.code, cod:v.code, rot:v.desc, preco:precoVisivel(v),
-                               precoTec: parDePrecos(v),
                                procura: v.code + ' ' + v.desc,
                                ja: preenchido(dataState.valuesQty[v.code])}));
     const achou = busca ? lista.filter(i => chave(i.procura).includes(busca)) : lista;
@@ -4746,12 +4775,7 @@
         b.innerHTML = (qual === 'valores' ? '<span class="ba-op-cod">' + esc(i.cod) + '</span>' : '')
           + '<span class="ba-op-txt">' + esc(i.rot) + '</span>'
           + (i.ja ? '<span class="ba-op-ja">já lançado</span>' : '')
-          + (qual === 'valores'
-              ? '<span class="ba-op-preco">' + formatBRL(i.preco)
-                + (i.precoTec != null
-                     ? '<span class="preco-tec">técnico ' + formatBRL(i.precoTec) + '</span>' : '')
-                + '</span>'
-              : '');
+          + (qual === 'valores' ? '<span class="ba-op-preco">' + formatBRL(i.preco) + '</span>' : '');
         b.addEventListener('mousedown', (e)=>{ e.preventDefault(); escolherDoDrop(qual, idx); });
         drop.appendChild(b);
       });
@@ -4992,14 +5016,10 @@
           <button class="cat-del-btn" type="button" title="Tirar da obra" aria-label="Tirar ${esc(v.code)} da obra">&#10005;</button>
         </div>
         <div class="value-bottom">
-          <span class="value-price">${formatBRL(unit)} / un${
-            parDePrecos(v) != null
-              ? `<span class="preco-tec">técnico ${formatBRL(parDePrecos(v))} / un</span>`
-              : ''}</span>
+          <span class="value-price">${formatBRL(unit)} / un</span>
           <div class="value-qty-wrap">
             <input class="value-qty" type="number" inputmode="numeric" min="0" value="${dataState.valuesQty[v.code] || ''}" data-code="${v.code}">
-            <span class="value-subtotal${qty > 0 ? '' : ' zero'}" data-subtotal-for="${v.code}">${
-              qty > 0 ? formatBRL(subtotal) + subTec(v, qty) : '\u2014'}</span>
+            <span class="value-subtotal${qty > 0 ? '' : ' zero'}" data-subtotal-for="${v.code}">${qty > 0 ? formatBRL(subtotal) : '\u2014'}</span>
           </div>
         </div>
       `;
@@ -5009,7 +5029,7 @@
         dataState.valuesQty[v.code] = e.target.value;
         salvarRascunho();
         const q = Number(e.target.value) || 0;
-        subtotalEl.innerHTML = q > 0 ? formatBRL(q * unit) + subTec(v, q) : '\u2014';
+        subtotalEl.textContent = q > 0 ? formatBRL(q * unit) : '\u2014';
         subtotalEl.classList.toggle('zero', q <= 0);
         row.classList.toggle('lancado', q > 0);
         recomputeValuesTotal();
@@ -6044,7 +6064,7 @@
     const reviewValores = document.getElementById('reviewValores');
     reviewValores.innerHTML = '';
     const usedValues = servicosDaObra(dataState);
-    let valuesTotal = 0, valuesTotalTec = 0;
+    let valuesTotal = 0;
     if(usedValues.length === 0){
       reviewValores.innerHTML = '<div class="review-row"><span class="k">Nenhum serviço informado</span></div>';
     } else {
@@ -6052,17 +6072,13 @@
         const qty = v.qtd;
         const subtotal = qty * precoVisivel(v);
         valuesTotal += subtotal;
-        valuesTotalTec += qty * precoDoTecnico(v);
         const u = separarUnidade(v.desc);
         const row = document.createElement('div');
         row.className = 'lin-item';
         row.innerHTML = '<div class="lin-txt"><div class="lin-desc">' + esc(u.desc) + '</div>'
           + '<div class="lin-un">' + esc(v.code) + (u.un ? ' &middot; ' + esc(u.un) : '') + '</div></div>'
           + '<div class="lin-num"><span class="lin-qtd">&times;' + esc(qty) + '</span>'
-          + '<span class="lin-val">' + formatBRL(subtotal)
-          + (parDePrecos(v) != null
-               ? '<span class="preco-tec">técnico ' + formatBRL(qty * precoDoTecnico(v)) + '</span>' : '')
-          + '</span></div>';
+          + '<span class="lin-val">' + formatBRL(subtotal) + '</span></div>';
         reviewValores.appendChild(row);
       });
       const totalRow = document.createElement('div');
@@ -6070,11 +6086,7 @@
       totalRow.style.borderTop = '1px solid var(--accent)';
       totalRow.style.marginTop = '4px';
       totalRow.style.paddingTop = '10px';
-      totalRow.innerHTML = `<span class="k" style="color:var(--accent);font-weight:600;">Total</span>`
-        + `<span class="v" style="color:var(--accent);">${formatBRL(valuesTotal)}`
-        + (Math.round(valuesTotal * 100) === Math.round(valuesTotalTec * 100)
-             ? '' : htmlTotalTecnico(valuesTotalTec, 'técnico recebe'))
-        + `</span>`;
+      totalRow.innerHTML = `<span class="k" style="color:var(--accent);font-weight:600;">Total</span><span class="v" style="color:var(--accent);">${formatBRL(valuesTotal)}</span>`;
       reviewValores.appendChild(totalRow);
     }
   }
@@ -8334,6 +8346,11 @@
     const btnAnexo = document.getElementById('reviewPdfInternoBtn');
     if(btnAnexo) btnAnexo.style.display = ehTecnico() ? 'none' : '';
 
+    // a chave "valores do técnico" segue a mesma regra: só aparece pra quem
+    // tem os dois números, e some (desligada) se o papel mudar pra técnico
+    if(ehTecnico()) verComoTecnico = false;
+    pintarChaveVerTecnico();
+
     const badge = document.getElementById('papelBadge');
     if(badge){
       badge.textContent = papelAtual();
@@ -8921,10 +8938,49 @@
   //
   // Isto é só EXIBIÇÃO. O relatório, a planilha, a Medição e o valor gravado
   // da obra continuam no preço de faturamento, que é o que vale pra operadora.
+  // A chave do cabeçalho. Não é preferência salva: volta desligada a cada
+  // sessão de propósito. Um modo que muda dinheiro e sobrevive ao refresh é
+  // como alguém copia o número do técnico achando que é o da medição.
+  let verComoTecnico = false;
+
+  // Um lugar só decide de quem é o dinheiro na tela. Toda tela que mostra
+  // valor passa por aqui — lista de obras, passo de Valores, conferência,
+  // busca. É por isso que a chave muda tudo de uma vez.
   function precoVisivel(item){
     const cheio = Number(item.price != null ? item.price : item.preco) || 0;
-    if(!ehTecnico()) return cheio;
-    return precoDoTecnico(item);
+    if(ehTecnico() || verComoTecnico) return precoDoTecnico(item);
+    return cheio;
+  }
+
+  // Verdadeiro quando os números na tela são os do técnico — porque ele é
+  // técnico, ou porque quem opera ligou a chave.
+  function mostrandoValorDoTecnico(){ return ehTecnico() || verComoTecnico; }
+
+  function alternarVerTecnico(ligar){
+    verComoTecnico = (ligar == null) ? !verComoTecnico : !!ligar;
+    if(ehTecnico()) verComoTecnico = false;
+    pintarChaveVerTecnico();
+    // repinta só o que está na tela: os valores são calculados na renderização,
+    // não guardados, então basta redesenhar
+    try{
+      if(typeof renderJobsList === 'function') renderJobsList();
+      if(typeof renderValores === 'function' && steps[currentStep] === 'valores') renderValores();
+      if(typeof renderReview === 'function' && steps[currentStep] === 'review') renderReview();
+      if(typeof recomputeValuesTotal === 'function') recomputeValuesTotal();
+      if(typeof pintarDrop === 'function' && filtroCat && filtroCat.valores
+         && filtroCat.valores.texto) pintarDrop('valores');
+    }catch(e){ console.warn('ver como técnico: falha ao repintar', e); }
+  }
+
+  function pintarChaveVerTecnico(){
+    const b = document.getElementById('hdVerTecnico');
+    if(b){
+      // técnico não precisa da chave: ele já vê o dele e não tem o outro número
+      b.style.display = ehTecnico() ? 'none' : '';
+      b.classList.toggle('ligada', verComoTecnico);
+      b.setAttribute('aria-pressed', verComoTecnico ? 'true' : 'false');
+    }
+    document.body.classList.toggle('ver-tecnico', verComoTecnico && !ehTecnico());
   }
 
   // O que o técnico recebe, independente de quem está olhando. Sem preço
@@ -8936,32 +8992,6 @@
     return (tec == null || Number(tec) === 0) ? cheio : Number(tec);
   }
 
-  // Quem opera vê os dois números lado a lado: o que a Ligga fatura e o que o
-  // técnico recebe. Não é enfeite — sem isso, conferir a visão do técnico
-  // exigia sair da própria conta e entrar na dele, e foi assim que um preço
-  // errado passou batido por três versões. Quando os dois são iguais (serviço
-  // sem preço próprio) não mostra nada: repetir o mesmo valor só polui.
-  function parDePrecos(item){
-    if(ehTecnico()) return null;
-    const cheio = Number(item.price != null ? item.price : item.preco) || 0;
-    const tec = precoDoTecnico(item);
-    if(Math.round(cheio * 100) === Math.round(tec * 100)) return null;
-    return tec;
-  }
-
-  // O subtotal da linha na visão de quem opera: quanto essa linha fatura e,
-  // logo abaixo, quanto dela vai pro técnico.
-  function subTec(item, qtd){
-    const tec = parDePrecos(item);
-    if(tec == null || !(qtd > 0)) return '';
-    return '<span class="preco-tec">técnico ' + formatBRL(qtd * tec) + '</span>';
-  }
-
-  // Mesma ideia para um total já somado.
-  function htmlTotalTecnico(valor, rotulo){
-    if(ehTecnico() || !(valor > 0)) return '';
-    return '<span class="preco-tec">' + (rotulo || 'técnico') + ' ' + formatBRL(valor) + '</span>';
-  }
 
   function servicosDaObra(d, tipo){
     const valuesItems = catalogoDe(tipo || (d && d.tipoObra) || tipoObraAtual).servicos;
@@ -11522,6 +11552,19 @@
     });
   }
 
+  const btnVerTec = document.getElementById('hdVerTecnico');
+  if(btnVerTec){
+    btnVerTec.addEventListener('click', ()=>{
+      alternarVerTecnico();
+      showToast(verComoTecnico
+        ? 'Mostrando o que o técnico recebe'
+        : 'Mostrando o faturamento da Ligga');
+    });
+  }
+  const sairFaixa = document.getElementById('vtFaixaSair');
+  if(sairFaixa) sairFaixa.addEventListener('click', ()=> alternarVerTecnico(false));
+  pintarChaveVerTecnico();
+
   // ---------- Service worker: abre sem internet e se atualiza sozinho ----------
   //
   // Antes: depois de subir uma versão nova no GitHub, o aparelho continuava
@@ -12404,7 +12447,10 @@
     summary.style.marginBottom = '16px';
     summary.innerHTML = `<span>${filtroObras === 'historico' ? 'Aprovadas' : 'Em aberto'}`
       + `${poloObras ? ' · ' + esc(poloObras) : ''}`
-      + `${mesObras ? ' · ' + esc(rotuloMes(mesObras)) : ''} (${lista.length})</span>`
+      + `${mesObras ? ' · ' + esc(rotuloMes(mesObras)) : ''} (${lista.length})`
+      // dizer de quem é o dinheiro no próprio rótulo: o número muda com a
+      // chave, e um total sem dono é o tipo de coisa que vira fatura errada
+      + `${verComoTecnico && !ehTecnico() ? ' · técnico recebe' : ''}</span>`
       + `<span>${formatBRL(totalGeral)}</span>`;
     jobsList.appendChild(summary);
 
@@ -12503,14 +12549,11 @@
         // o analista vê o que a Ligga fatura. Este cartão ficou de fora da
         // 10.82 e era por ele que o técnico ainda via o valor de faturamento.
         const totalServ = job.servicos.reduce((a, x) => a + (Number(x.qtd) * precoVisivel(x)), 0);
-        const totalServTec = job.servicos.reduce((a, x) => a + (Number(x.qtd) * precoDoTecnico(x)), 0);
-        const parTotal = Math.round(totalServ * 100) === Math.round(totalServTec * 100)
-          ? '' : htmlTotalTecnico(totalServTec, '· técnico');
         const nServ = job.servicos.length;
         servicosHtml = '<div class="job-secao serv' + (secaoAberta('servicos') ? ' aberta' : '') + '" data-secao="servicos">'
           + '<button type="button" class="job-secao-t">' + seta + icoServ + 'Serviços'
           + '<span class="conta">' + nServ + (nServ === 1 ? ' serviço &middot; ' : ' serviços &middot; ')
-          + formatBRL(totalServ) + parTotal + '</span></button>'
+          + formatBRL(totalServ) + '</span></button>'
           + '<div class="job-secao-corpo">'
           + job.servicos.map(sv => {
             const u = separarUnidade(sv.desc);
@@ -12522,10 +12565,7 @@
             </div>
             <div class="lin-num">
               <span class="lin-qtd">&times;${esc(sv.qtd)}</span>
-              <span class="lin-val">${formatBRL(sv.qtd * precoVisivel(sv))}${
-                parDePrecos(sv) != null
-                  ? `<span class="preco-tec">técnico ${formatBRL(sv.qtd * precoDoTecnico(sv))}</span>`
-                  : ''}</span>
+              <span class="lin-val">${formatBRL(sv.qtd * precoVisivel(sv))}</span>
             </div>
           </div>`;
           }).join('') + '</div></div>';
