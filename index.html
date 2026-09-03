@@ -1455,6 +1455,34 @@
     border-radius:9px;padding:9px 10px;font-family:inherit;font-size:13px;margin-bottom:8px;
   }
   .conv-form input:focus,.conv-form select:focus{outline:none;border-color:var(--accent);}
+  .conv-modo{display:flex;gap:7px;margin-bottom:10px;}
+  .conv-modo .adm-chip{flex:1;text-align:center;justify-content:center;}
+  .conv-senha-wrap{position:relative;}
+  .conv-senha-wrap input{padding-right:76px;}
+  .conv-senha-botoes{position:absolute;right:5px;top:0;bottom:8px;display:flex;align-items:center;gap:4px;}
+  .conv-senha-botoes button{
+    background:none;border:1px solid var(--border);color:var(--text-dim);border-radius:6px;
+    padding:3px 7px;font-size:10.5px;cursor:pointer;font-family:inherit;line-height:1.4;
+  }
+  .conv-senha-botoes button:active{border-color:var(--accent);color:var(--accent);}
+  .conv-credenciais{
+    border:1px solid var(--success);background:var(--success-dim);border-radius:10px;
+    padding:12px;margin-bottom:12px;font-size:13px;line-height:1.5;
+  }
+  .conv-credenciais .cc-linha{
+    display:flex;align-items:center;justify-content:space-between;gap:8px;
+    background:var(--bg);border-radius:7px;padding:7px 9px;margin-top:7px;
+    font-family:'IBM Plex Mono',monospace;font-size:12.5px;
+  }
+  .conv-credenciais .cc-copiar{
+    background:none;border:1px solid var(--border);color:var(--text-dim);border-radius:6px;
+    padding:3px 9px;font-size:11px;cursor:pointer;font-family:inherit;flex-shrink:0;
+  }
+  .conv-credenciais .cc-copiar:active{border-color:var(--success);color:var(--success);}
+  .conv-credenciais .cc-fechar{
+    width:100%;margin-top:10px;background:none;border:1px solid var(--success);color:var(--success);
+    border-radius:8px;padding:9px;font-size:13px;cursor:pointer;font-family:inherit;
+  }
   .user-excluir{
     border:1px solid var(--border);color:var(--text-faint);background:transparent;
     border-radius:9px;padding:6px 9px;font-size:11.5px;cursor:pointer;
@@ -3072,11 +3100,28 @@
         </button>
 
         <div class="conv-form" id="conviteForm" style="display:none;">
+          <div class="conv-modo" id="convModo">
+            <div class="adm-chip" data-modo="convidar" id="convModoConvidar">Convidar por e-mail</div>
+            <div class="adm-chip" data-modo="criar" id="convModoCriar">Criar acesso agora</div>
+          </div>
+          <div class="step-sub" id="convModoAjuda" style="padding:0 0 10px;">
+          </div>
+
           <input id="convEmail" type="email" inputmode="email" autocomplete="off" placeholder="E-mail da pessoa">
           <div class="step-sub" id="convEmailAjuda" style="display:none;padding:0 0 10px;margin-top:-6px;">
             Pode deixar em branco se ainda não souber o e-mail do técnico — dá pra completar depois.
           </div>
           <input id="convNome" placeholder="Nome (opcional)">
+
+          <div class="conv-senha-wrap" id="convSenhaWrap" style="display:none;">
+            <input id="convSenha" type="password" autocomplete="new-password" placeholder="Senha (mín. 6 caracteres)">
+            <div class="conv-senha-botoes">
+              <button type="button" id="convSenhaVer">ver</button>
+              <button type="button" id="convSenhaGerar">gerar</button>
+            </div>
+          </div>
+          <input id="convSenha2" type="password" autocomplete="new-password" placeholder="Confirmar senha" style="display:none;">
+
           <select id="convPapel">
             <option value="tecnico">Técnico</option>
             <option value="monitor">Monitor</option>
@@ -3087,6 +3132,13 @@
             <button class="job-edit-btn" id="convCancelar" type="button" style="flex:1;">Cancelar</button>
             <button class="job-edit-btn" id="convSalvar" type="button" style="flex:1;border-color:var(--accent);color:var(--accent);">Convidar</button>
           </div>
+        </div>
+
+        <div class="conv-credenciais" id="convCredenciais" style="display:none;">
+          <div><b>Acesso criado.</b> Anote ou copie antes de fechar — a senha não fica salva em nenhum lugar visível depois.</div>
+          <div class="cc-linha"><span id="ccEmail"></span><button type="button" class="cc-copiar" data-alvo="ccEmail">copiar</button></div>
+          <div class="cc-linha"><span id="ccSenha"></span><button type="button" class="cc-copiar" data-alvo="ccSenha">copiar</button></div>
+          <button type="button" class="cc-fechar" id="convCredenciaisFechar">Já anotei</button>
         </div>
 
         <input class="adm-busca" id="usersBusca" placeholder="Buscar por nome ou e-mail" autocomplete="off">
@@ -3571,7 +3623,7 @@
 (function(){
   // Marque aqui a cada build enviado ao campo. O testador informa esta
   // string ao relatar um problema, senao nao da pra saber o que ele rodou.
-  const APP_VERSION = 'Enlace Ops · alpha-10.97 · 03/09/2026';
+  const APP_VERSION = 'Enlace Ops · alpha-10.98 · 03/09/2026';
 
   // ---------- Supabase config ----------
   // Troque pelos valores reais do seu projeto (Project Settings -> API no Supabase).
@@ -10607,33 +10659,132 @@
     }
   }
 
-  // ---------- Convidar alguém ----------
+  // ---------- Convidar alguém, ou criar o acesso já pronto ----------
   const conviteForm = document.getElementById('conviteForm');
 
-  // e-mail é dispensável ao cadastrar um técnico (por qualquer admin,
-  // inclusive o superadmin) — os outros papéis (monitor/analista/admin)
-  // continuam exigindo e-mail, porque são contas mais formais que já
-  // deveriam ter e-mail à mão.
+  // 'convidar': manda um convite — a PESSOA cria a própria senha depois,
+  // entrando com o e-mail dela. 'criar': o admin já define a senha aqui e
+  // entrega pronta — pensado pro técnico que não vai (ou não vai já) fazer
+  // esse cadastro sozinho. Nos dois casos o acesso final é o mesmo; muda só
+  // quem escolhe a senha e quando a conta passa a existir de verdade.
+  let modoConvite = 'convidar';
+
   function atualizaAjudaConvite(){
     const papel = document.getElementById('convPapel').value;
-    const opcional = papel === 'tecnico';
+    // e-mail só é dispensável no modo convite, e só pro técnico — no modo
+    // "criar acesso agora" o e-mail é o login, então é sempre obrigatório.
+    const opcional = papel === 'tecnico' && modoConvite === 'convidar';
     document.getElementById('convEmailAjuda').style.display = opcional ? 'block' : 'none';
   }
   document.getElementById('convPapel').addEventListener('change', atualizaAjudaConvite);
+
+  function aplicarModoConvite(){
+    document.getElementById('convModoConvidar').classList.toggle('ativo', modoConvite === 'convidar');
+    document.getElementById('convModoCriar').classList.toggle('ativo', modoConvite === 'criar');
+    const criando = modoConvite === 'criar';
+    document.getElementById('convSenhaWrap').style.display = criando ? '' : 'none';
+    document.getElementById('convSenha2').style.display = criando ? '' : 'none';
+    document.getElementById('convModoAjuda').textContent = criando
+      ? 'Você escolhe a senha agora e o acesso já sai pronto — sem depender da pessoa se cadastrar sozinha. Depois é só passar usuário e senha pra ela.'
+      : 'A pessoa recebe o e-mail e cria a própria senha ao entrar pela primeira vez.';
+    document.getElementById('convSalvar').textContent = criando ? 'Criar acesso' : 'Convidar';
+    atualizaAjudaConvite();
+  }
+  document.getElementById('convModoConvidar').addEventListener('click', ()=>{
+    modoConvite = 'convidar'; aplicarModoConvite();
+  });
+  document.getElementById('convModoCriar').addEventListener('click', ()=>{
+    modoConvite = 'criar'; aplicarModoConvite();
+  });
+
+  // alfabeto sem caracteres que se confundem (0/O, 1/l/I) — a senha às
+  // vezes é digitada por outra pessoa, no celular, olhando um papel
+  function gerarSenhaLeitura(){
+    const alfabeto = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    const tam = 10;
+    let saida = '';
+    if(window.crypto && crypto.getRandomValues){
+      const buf = new Uint32Array(tam);
+      crypto.getRandomValues(buf);
+      for(let i=0;i<tam;i++) saida += alfabeto[buf[i] % alfabeto.length];
+    } else {
+      for(let i=0;i<tam;i++) saida += alfabeto[Math.floor(Math.random()*alfabeto.length)];
+    }
+    return saida;
+  }
+  document.getElementById('convSenhaGerar').addEventListener('click', ()=>{
+    const senha = gerarSenhaLeitura();
+    document.getElementById('convSenha').value = senha;
+    document.getElementById('convSenha2').value = senha;
+    document.getElementById('convSenha').type = 'text';
+    document.getElementById('convSenhaVer').textContent = 'ocultar';
+  });
+  document.getElementById('convSenhaVer').addEventListener('click', ()=>{
+    const campo = document.getElementById('convSenha');
+    const vendo = campo.type === 'text';
+    campo.type = vendo ? 'password' : 'text';
+    document.getElementById('convSenhaVer').textContent = vendo ? 'ver' : 'ocultar';
+  });
+
+  // Cliente EXTRA, à parte do `supabaseClient` principal e sem guardar
+  // sessão (`persistSession:false`) — criar a conta de outra pessoa por
+  // `auth.signUp` desloga quem chamou, porque o cliente troca de sessão
+  // sozinho. Com um segundo cliente isolado, quem está logado (o admin)
+  // nem percebe: a sessão dele no `supabaseClient` nunca é tocada.
+  function clienteAuxiliarAuth(){
+    if(modoDemo || !window.supabase) return null;
+    try{
+      return window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+        auth: { persistSession:false, autoRefreshToken:false, detectSessionInUrl:false,
+                storageKey: 'enlace-criacao-temp-' + Date.now() }
+      });
+    } catch(e){ return null; }
+  }
+
+  const convCredenciais = document.getElementById('convCredenciais');
+  function mostrarCredenciais(email, senha){
+    document.getElementById('ccEmail').textContent = email;
+    document.getElementById('ccSenha').textContent = senha;
+    convCredenciais.style.display = 'block';
+  }
+  document.querySelectorAll('.cc-copiar').forEach(b=>{
+    b.addEventListener('click', async ()=>{
+      const texto = document.getElementById(b.dataset.alvo).textContent;
+      try{ await navigator.clipboard.writeText(texto); showToast('Copiado'); }
+      catch(e){ showToast('Não deu pra copiar — selecione o texto na mão'); }
+    });
+  });
+  document.getElementById('convCredenciaisFechar').addEventListener('click', ()=>{
+    convCredenciais.style.display = 'none';
+    document.getElementById('ccSenha').textContent = '';
+  });
+
+  function limparCamposConvite(){
+    document.getElementById('convEmail').value = '';
+    document.getElementById('convNome').value = '';
+    document.getElementById('convSenha').value = '';
+    document.getElementById('convSenha2').value = '';
+    document.getElementById('convSenha').type = 'password';
+    document.getElementById('convSenhaVer').textContent = 'ver';
+  }
 
   document.getElementById('btnNovoConvite').addEventListener('click', ()=>{
     const abrindo = conviteForm.style.display === 'none';
     conviteForm.style.display = abrindo ? 'block' : 'none';
     if(abrindo){
-      atualizaAjudaConvite();
+      convCredenciais.style.display = 'none';
+      // na tela de Técnicos, quem abre já costuma querer entregar o
+      // acesso pronto ali mesmo; nas outras (monitor/analista/admin), o
+      // padrão continua sendo convidar por e-mail
+      modoConvite = escopoTecnicos ? 'criar' : 'convidar';
+      aplicarModoConvite();
       document.getElementById('convEmail').focus();
     }
   });
 
   document.getElementById('convCancelar').addEventListener('click', ()=>{
     conviteForm.style.display = 'none';
-    document.getElementById('convEmail').value = '';
-    document.getElementById('convNome').value = '';
+    limparCamposConvite();
   });
 
   document.getElementById('convSalvar').addEventListener('click', async ()=>{
@@ -10641,14 +10792,15 @@
     const nome  = (document.getElementById('convNome').value || '').trim();
     const papel = document.getElementById('convPapel').value;
     const btn   = document.getElementById('convSalvar');
-    const emailOpcional = papel === 'tecnico';
+    const criando = modoConvite === 'criar';
+    const emailOpcional = papel === 'tecnico' && !criando;
 
     if(email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
       showToast('Digite um e-mail válido');
       return;
     }
     if(!email && !emailOpcional){
-      showToast('Digite um e-mail válido');
+      showToast(criando ? 'Digite o e-mail que a pessoa vai usar pra entrar' : 'Digite um e-mail válido');
       return;
     }
     let semEmail = false;
@@ -10662,6 +10814,15 @@
       return;
     }
 
+    let senha = '';
+    if(criando){
+      if(!nome){ showToast('Digite o nome da pessoa'); return; }
+      senha = document.getElementById('convSenha').value;
+      const senha2 = document.getElementById('convSenha2').value;
+      if(senha.length < 6){ showToast('A senha precisa ter pelo menos 6 caracteres'); return; }
+      if(senha !== senha2){ showToast('As senhas não coincidem'); return; }
+    }
+
     btn.disabled = true; btn.textContent = 'Salvando...';
     // dono do produto dentro da instância de uma empresa convida para ELA,
     // não para a empresa dele (que nem existe — ver minhaEmpresa())
@@ -10671,16 +10832,64 @@
                equipe_id: null,
                criado_por: perfilAtual.id, usado: false},
               {onConflict: 'email'});
-    btn.disabled = false; btn.textContent = 'Convidar';
 
-    if(error){ showToast('Não deu pra convidar: ' + error.message); return; }
+    if(error){
+      btn.disabled = false; btn.textContent = criando ? 'Criar acesso' : 'Convidar';
+      showToast('Não deu pra convidar: ' + error.message);
+      return;
+    }
 
+    // Até aqui é idêntico aos dois modos: o convite fica registrado, com o
+    // papel e a empresa já certos. No modo "criar acesso agora" o passo que
+    // falta é completar o cadastro que a pessoa faria sozinha — só que quem
+    // digita a senha é o admin, agora, na hora.
+    if(criando){
+      if(modoDemo){
+        // sem servidor de verdade: simula o mesmo resultado que o gatilho
+        // do banco produziria, direto no banco falso da demonstração
+        const db = window.__demoBanco.__db;
+        const novoId = 'demo-novo-' + Date.now();
+        db.perfis.push({id: novoId, nome, email, papel, aprovado:true,
+          empresa_id: empresaAlvo, equipe_id:null, habilitacoes:['convencional'],
+          criado_em: new Date().toISOString()});
+        const conv = (db.convites || []).find(c => c.email === email);
+        if(conv) conv.usado = true;
+      } else {
+        const aux = clienteAuxiliarAuth();
+        if(!aux){
+          btn.disabled = false; btn.textContent = 'Criar acesso';
+          showToast('Não deu pra criar o acesso agora — recarregue a página e tente de novo');
+          return;
+        }
+        let signErr = null;
+        try{
+          const resp = await aux.auth.signUp({email, password: senha, options:{data:{nome}}});
+          signErr = resp.error;
+        } catch(e){ signErr = e; }
+        // desloga o cliente auxiliar (não afeta a sessão do admin, que é
+        // outro cliente) — só higiene, ele nem guardava sessão
+        try{ await aux.auth.signOut(); }catch(e){}
+        if(signErr){
+          btn.disabled = false; btn.textContent = 'Criar acesso';
+          showToast('Convite salvo, mas a conta não foi criada: ' + traduzErroAuth(signErr)
+            + ' — a pessoa ainda pode entrar com esse e-mail e criar a própria senha.');
+          return;
+        }
+      }
+    }
+
+    btn.disabled = false; btn.textContent = criando ? 'Criar acesso' : 'Convidar';
     conviteForm.style.display = 'none';
-    document.getElementById('convEmail').value = '';
-    document.getElementById('convNome').value = '';
-    showToast(semEmail
-      ? (nome + ' cadastrado \u2014 adicione o e-mail dele quando souber')
-      : 'Convite criado \u2014 peça pra ' + email + ' criar a conta no app');
+
+    if(criando){
+      mostrarCredenciais(email, senha);
+      showToast('Acesso de ' + nome + ' criado');
+    } else {
+      showToast(semEmail
+        ? (nome + ' cadastrado — adicione o e-mail dele quando souber')
+        : 'Convite criado — peça pra ' + email + ' criar a conta no app');
+    }
+    limparCamposConvite();
     renderUsuarios();
   });
 
