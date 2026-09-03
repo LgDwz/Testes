@@ -3530,7 +3530,7 @@
 (function(){
   // Marque aqui a cada build enviado ao campo. O testador informa esta
   // string ao relatar um problema, senao nao da pra saber o que ele rodou.
-  const APP_VERSION = 'Enlace Ops · alpha-10.82 · 03/09/2026';
+  const APP_VERSION = 'Enlace Ops · alpha-10.83 · 03/09/2026';
 
   // ---------- Supabase config ----------
   // Troque pelos valores reais do seu projeto (Project Settings -> API no Supabase).
@@ -7844,7 +7844,12 @@
       showToast('Relatório enviado para o servidor');
       const servicosFinal = valuesItems
         .filter(v => Number(dataState.valuesQty[v.code]) > 0)
-        .map(v => ({code: v.code, desc: v.desc, qtd: Number(dataState.valuesQty[v.code]), preco: v.price}));
+        .map(v => ({code: v.code, desc: v.desc, qtd: Number(dataState.valuesQty[v.code]),
+                    preco: v.price,
+                    // sem isto a obra recém-enviada fica sem o preço do técnico
+                    // em memória e o cartão dele mostra o valor de faturamento
+                    // até a próxima sincronização
+                    precoTec: (v.precoTec != null ? v.precoTec : v.price)}));
       const materiaisFinal = materials
         .filter(m => Number(dataState.materialsQty[m.id]) > 0)
         .map(m => ({nome: m.name, qtd: Number(dataState.materialsQty[m.id]),
@@ -12430,7 +12435,10 @@
       }
       let servicosHtml = '';
       if(job.servicos && job.servicos.length){
-        const totalServ = job.servicos.reduce((a, x) => a + (Number(x.qtd) * Number(x.preco)), 0);
+        // preço conforme quem está olhando: o técnico vê o que ele recebe,
+        // o analista vê o que a Ligga fatura. Este cartão ficou de fora da
+        // 10.82 e era por ele que o técnico ainda via o valor de faturamento.
+        const totalServ = job.servicos.reduce((a, x) => a + (Number(x.qtd) * precoVisivel(x)), 0);
         const nServ = job.servicos.length;
         servicosHtml = '<div class="job-secao serv' + (secaoAberta('servicos') ? ' aberta' : '') + '" data-secao="servicos">'
           + '<button type="button" class="job-secao-t">' + seta + icoServ + 'Serviços'
@@ -12447,7 +12455,7 @@
             </div>
             <div class="lin-num">
               <span class="lin-qtd">&times;${esc(sv.qtd)}</span>
-              <span class="lin-val">${formatBRL(sv.qtd * sv.preco)}</span>
+              <span class="lin-val">${formatBRL(sv.qtd * precoVisivel(sv))}</span>
             </div>
           </div>`;
           }).join('') + '</div></div>';
