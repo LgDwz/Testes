@@ -540,6 +540,13 @@
     display:flex;align-items:center;justify-content:center;}
   .item-baixar:hover{color:var(--accent);background:var(--accent-dim,rgba(43,140,255,.10));}
   .item-baixar:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+  .par-item{display:flex;gap:6px;margin-top:6px;}
+  .par-item-cod{flex:1;min-width:0;background:var(--bg-elev);border:1px solid var(--border);
+    color:var(--text);border-radius:8px;padding:6px 8px;font-family:inherit;font-size:11.5px;}
+  .par-item-qtd{width:62px;flex-shrink:0;background:var(--bg-elev);border:1px solid var(--border);
+    color:var(--text);border-radius:8px;padding:6px 8px;font-family:'IBM Plex Mono',monospace;
+    font-size:11.5px;text-align:center;}
+  .par-item-cod:focus,.par-item-qtd:focus{outline:none;border-color:var(--accent);}
   .multi-entry-remove{background:none;border:none;color:var(--text-faint);cursor:pointer;font-size:16px;
     min-width:44px;min-height:44px;flex-shrink:0;border-radius:10px;}
   .multi-entry-remove:hover{color:var(--warning);background:var(--warning-dim);}
@@ -3300,50 +3307,65 @@
         <input class="field-input" id="fEmpresa" placeholder="Ex: CÂMARA MUNICIPAL DE PARANAGUÁ">
       </div>
 
-      <!-- Só aparece em obra de modernização: são os campos do relatório de
-           manutenção de rede que a ativação convencional não tem. -->
+      <!-- Só aparece em obra de modernização: são os campos do Relatório de
+           Execução de Notificações e Obras, que a ativação convencional não tem.
+           Os campos do relatório antigo (tipo/causa da falha, solução, elaboração)
+           saíram junto com ele. -->
       <div id="camposModernizacao" style="display:none;">
-        <div class="field-group">
-          <label class="field-label">Descrição da atividade</label>
-          <input class="field-input" id="fAtividade" placeholder="Ex: MELHORIA DE REDE – PNG - 201">
-          <div class="campo-dica">Deixe em branco que eu monto a partir da identificação da obra.</div>
-        </div>
         <div class="field-row">
           <div class="field-group">
-            <label class="field-label">Tipo de falha</label>
-            <input class="field-input" id="fTipoFalha" list="listaTipoFalha" placeholder="Ex: Atenuação">
-            <datalist id="listaTipoFalha">
-              <option value="Atenuação"></option>
-              <option value="Rompimento"></option>
-              <option value="Alta perda"></option>
-              <option value="Rede sem capacidade"></option>
-              <option value="Preventiva"></option>
-            </datalist>
+            <label class="field-label">Nº da atividade</label>
+            <input class="field-input" id="fNumAtividade" placeholder="Ex: PNG113">
+            <div class="campo-dica">Em branco, usa o número do contrato.</div>
           </div>
           <div class="field-group">
-            <label class="field-label">Causa da falha</label>
-            <input class="field-input" id="fCausaFalha" list="listaCausaFalha" placeholder="Ex: Melhoria de Rede">
-            <datalist id="listaCausaFalha">
-              <option value="Melhoria de Rede"></option>
-              <option value="Desgaste natural"></option>
-              <option value="Dano por terceiros"></option>
-              <option value="Ampliação"></option>
-            </datalist>
+            <label class="field-label">ID WFM</label>
+            <input class="field-input" id="fIdWfm" inputmode="numeric" placeholder="Ex: 4455213">
           </div>
         </div>
         <div class="field-group">
-          <label class="field-label">Solução aplicada</label>
-          <input class="field-input" id="fSolucao" placeholder="Ex: Troca da Fosc / Para Nap Conectorizada">
+          <label class="field-label">Cidade / Local</label>
+          <input class="field-input" id="fCidadeLocal" placeholder="Ex: Paranaguá - Rua Jorge Lacerda, 7 (Porto dos Padres) - Caixa PNG113">
+          <div class="campo-dica">Em branco, monto com a cidade e o endereço da obra.</div>
         </div>
         <div class="field-row">
           <div class="field-group">
-            <label class="field-label">Elaboração (quem montou o relatório)</label>
-            <input class="field-input" id="fElaborador" placeholder="Nome de quem elabora">
+            <label class="field-label">Acionado por</label>
+            <input class="field-input" id="fAcionadoPor" list="listaAcionadoPor" placeholder="Ex: COPEL">
+            <datalist id="listaAcionadoPor">
+              <option value="COPEL"></option>
+              <option value="LIGGA"></option>
+            </datalist>
           </div>
           <div class="field-group">
-            <label class="field-label">Aprovação Ligga</label>
-            <input class="field-input" id="fAprovadorLigga" value="Dionatan Pedro da Silva">
+            <label class="field-label">Equipe</label>
+            <input class="field-input" id="fEquipe" placeholder="Equipe que executou">
           </div>
+        </div>
+        <div class="field-row">
+          <div class="field-group">
+            <label class="field-label">Fiscalizado por</label>
+            <input class="field-input" id="fFiscalizadoPor" placeholder="Quem fiscalizou">
+          </div>
+          <div class="field-group">
+            <label class="field-label">Validado por</label>
+            <input class="field-input" id="fValidadoPor" placeholder="Deixe em branco para assinar no papel">
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field-group">
+            <label class="field-label">Responsável técnico</label>
+            <input class="field-input" id="fRespTecnico" placeholder="Nome do responsável">
+          </div>
+          <div class="field-group">
+            <label class="field-label">Supervisão técnica</label>
+            <input class="field-input" id="fSupervisaoTecnica" placeholder="Nome de quem supervisiona">
+          </div>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Descrição do serviço</label>
+          <textarea class="field-input" id="fDescricaoServico" rows="3" style="resize:vertical;font-family:inherit;"></textarea>
+          <div class="campo-dica">Já vem com o texto padrão do contrato COPEL/LIGGA — mude só se esta obra pedir outro.</div>
         </div>
       </div>
     </section>
@@ -3635,7 +3657,7 @@
 (function(){
   // Marque aqui a cada build enviado ao campo. O testador informa esta
   // string ao relatar um problema, senao nao da pra saber o que ele rodou.
-  const APP_VERSION = 'Enlace Ops · alpha-10.99 · 03/09/2026';
+  const APP_VERSION = 'Enlace Ops · alpha-11.04 · 04/09/2026';
 
   // ---------- Supabase config ----------
   // Troque pelos valores reais do seu projeto (Project Settings -> API no Supabase).
@@ -3875,13 +3897,51 @@
     {id:2, name:"PROTETOR EMENDA FIBRA OPT 60MMX1MM"},
     {id:3, name:"CAIXA NAP CONEC 16 ASS FINAL"},
   ];
-  const SERV_MODERNIZACAO = [
-    {code:'03.08', desc:"Substituição de caixa terminal óptica ou NAP externa, exceto caixa pré-conectorizada (Unidade)", price:0},
-    {code:'03.06', desc:"Conexão/terminação de fibras ópticas, utilizando conector mecânico ou fusão (Unidade)", price:16.32},
-    {code:'03.04', desc:"Injeção de cabo em conjunto de emenda óptica (subterrânea/aérea) (Unidade)", price:41.50},
-    {code:'03.24', desc:"Identificação de CEO/TFO (Unidade)", price:0},
-    {code:'03.19', desc:"Programação e Acompanhamento de RDM — Impacto até 50 circuitos ativos (Unidade)", price:0},
+  // ---------- MAREXT: as atividades do Relatório de Execução de Notificações e Obras ----------
+  // Vem do "Manual de Atividades de Redes Externas" da Ligga/COPEL. O preço não
+  // é em reais: cada atividade vale um tanto de UR, e o real sai de UR × LPU.
+  // A LPU é UM número que vale pro contrato inteiro — mudou a LPU, mudou o
+  // relatório inteiro. Por isso ela fica separada aqui, não espalhada por item.
+  const LPU_MAREXT = 19;
+  const MAREXT_ATIVIDADES = [
+    {code:'02.03', un:'UR/m',         ur:0.29, desc:'Instalação de cabo óptico aéreo espinado, qualquer tipo e capacidade com cordoalha dielétrica nova, inclusive retensionamento da cordoalha.'},
+    {code:'02.04', un:'UR/m',         ur:0.16, desc:'Instalação de cabo óptico aéreo espinado, qualquer tipo e capacidade com cordoalha dielétrica existente, inclusive retensionamento da cordoalha.'},
+    {code:'02.05', un:'UR/m',         ur:0.16, desc:'Instalação de cabo óptico aéreo auto-sustentável de qualquer tipo e capacidade, exceto cabo tipo drop para ativação de cliente final.'},
+    {code:'02.08', un:'UR/m',         ur:0.06, desc:'Retirada de todos os cabos ópticos aéreo espinados, com/ou a cordoalha.'},
+    {code:'02.09', un:'UR/m',         ur:0.07, desc:'Retirada de todos os cabos ópticos aéreo espinados, com a permanência da cordoalha.'},
+    {code:'02.17', un:'UR/plaqueta',  ur:0.20, desc:'Substituição de plaquetas de identificação, quando executado isoladamente.'},
+    {code:'02.19', un:'UR/m',         ur:0.15, desc:'Instalação de cordoalha de qualquer tipo e diâmetro, quando instalada isoladamente'},
+    {code:'02.20', un:'UR/un',        ur:0.09, desc:'Instalação de abraçadeiras metálicas/fita anti-furto'},
+    {code:'02.21', un:'UR/poste',     ur:15.14, desc:'Adequação de Rede – Sem Fornecimento de Material'},
+    {code:'02.22', un:'UR/poste',     ur:18.19, desc:'Adequação de Rede – Com Fornecimento de Material'},
+    {code:'02.23', un:'UR/PDE',       ur:2.50, desc:'Acompanhamento de notificações e manutenções programadas da rede elétrica.'},
+    {code:'02.24', un:'UR/m',         ur:0.08, desc:'Repuxamento de cabo óptico aéreo de qualquer tipo e capacidade.'},
+    {code:'02.26', un:'UR/lance',     ur:5.50, desc:'Retensionamento de Cordoalha'},
+    {code:'02.27', un:'UR/poste',     ur:5.50, desc:'Adequação de reserva técnica, quando executado isoladamente.'},
+    {code:'02.28', un:'UR/poste',     ur:6.00, desc:'Adequação de reserva técnica e acomodação de Caixa de emenda, quando executado isoladamente.'},
+    {code:'02.29', un:'UR/poste',     ur:5.50, desc:'Equipagem de poste, com fornecimento de material, quando executado isoladamente.'},
+    {code:'02.30', un:'UR/lance',     ur:5.50, desc:'Reespinamento de cabos em cordoalha existente, quando aplicado isoladamente'},
   ];
+  function lpuDaObra(st){
+    const n = Number((st && st.contract && st.contract.lpu) || LPU_MAREXT);
+    return isFinite(n) && n > 0 ? n : LPU_MAREXT;
+  }
+
+  const TEXTO_DESCRICAO_PADRAO =
+    'Conforme contratualizado entre a COPEL e a LIGGA, foram regularizadas as instalações '
+    + 'compartilhadas nos locais identificados, cumprindo as normas e resoluções de '
+    + 'compartilhamento de estruturas.\nAbaixo os pontos regularizados.';
+
+  // O catálogo da modernização É o MAREXT: mesma lista, mesma ordem, mesmos
+  // códigos que saem no relatório. Montada a partir da tabela pra nunca
+  // desencontrar dela — mexeu na UR lá em cima, mexeu aqui junto.
+  const SERV_MODERNIZACAO = MAREXT_ATIVIDADES.map(a => ({
+    code: a.code,
+    desc: a.desc + ' (' + a.un.replace('UR/', '') + ')',
+    price: Number((a.ur * LPU_MAREXT).toFixed(2)),
+    ur: a.ur,
+    unidade: a.un,
+  }));
 
   // Duas listas separadas, como você pediu: o que é de um tipo nunca aparece na
   // tela do outro. `materials` e `valuesItems` continuam sendo "a lista do tipo
@@ -3903,6 +3963,9 @@
     materialsQty: {},
     materialsExtra: {},   // por material: {serie, retirado} — ver ehEquipamento()
     valuesQty: {},
+    // modernização: qual serviço cada par de fotos (antes/depois) comprova.
+    // {0:{code:'02.21', qtd:1}} — vira a linha "Item e Quantidade" do relatório
+    itensPorFoto: {},
   };
 
   // Escapa dados de usuario antes de ir para innerHTML. Legendas, observacoes
@@ -4117,13 +4180,17 @@
         cep: document.getElementById('fCep').value,
         coordenadas: document.getElementById('fCoord').value,
         empresa: document.getElementById('fEmpresa').value,
-        // campos que só existem no relatório de manutenção de rede
-        atividade: valorCampo('fAtividade'),
-        tipoFalha: valorCampo('fTipoFalha'),
-        causaFalha: valorCampo('fCausaFalha'),
-        solucao: valorCampo('fSolucao'),
-        elaborador: valorCampo('fElaborador'),
-        aprovadorLigga: valorCampo('fAprovadorLigga'),
+        // campos que só existem no Relatório de Execução de Notificações e Obras
+        numeroAtividade: valorCampo('fNumAtividade'),
+        idWfm: valorCampo('fIdWfm'),
+        cidadeLocal: valorCampo('fCidadeLocal'),
+        acionadoPor: valorCampo('fAcionadoPor'),
+        equipe: valorCampo('fEquipe'),
+        fiscalizadoPor: valorCampo('fFiscalizadoPor'),
+        validadoPor: valorCampo('fValidadoPor'),
+        responsavelTecnico: valorCampo('fRespTecnico'),
+        supervisaoTecnica: valorCampo('fSupervisaoTecnica'),
+        descricaoServico: valorCampo('fDescricaoServico'),
       };
     }
     // Passo Fotos: em vez de descobrir lá na conferência que faltou foto, o
@@ -4649,6 +4716,38 @@
     return card;
   }
 
+  // "Item e Quantidade": qual serviço aquele par antes/depois comprova. Fica
+  // só nas evidências ANTES porque é o par inteiro que conta — marcar dos dois
+  // lados seria a mesma informação digitada duas vezes.
+  function ehItemDeParFoto(item){
+    return ehModernizacao() && item && item.id === 101;
+  }
+  function marcadorItemHtml(item, idx){
+    if(!ehItemDeParFoto(item)) return '';
+    const marca = (dataState.itensPorFoto || {})[idx] || {};
+    const opcoes = MAREXT_ATIVIDADES.map(a =>
+      '<option value="' + a.code + '"' + (marca.code === a.code ? ' selected' : '') + '>'
+      + a.code + ' — ' + esc(a.desc.slice(0, 44)) + (a.desc.length > 44 ? '…' : '')
+      + '</option>').join('');
+    return '<div class="par-item">'
+      + '<select class="par-item-cod" data-idx="' + idx + '">'
+      +   '<option value="">Item cobrado (opcional)</option>' + opcoes
+      + '</select>'
+      + '<input class="par-item-qtd" type="number" min="0" step="1" inputmode="numeric" '
+      +   'placeholder="qtd" value="' + (marca.qtd != null ? esc(marca.qtd) : '') + '" data-idx="' + idx + '">'
+      + '</div>';
+  }
+  function guardarItemDoPar(idx, campo, valor){
+    if(!dataState.itensPorFoto) dataState.itensPorFoto = {};
+    const atual = dataState.itensPorFoto[idx] || {};
+    atual[campo] = valor;
+    // sem código não há o que cobrar: limpa a marca inteira em vez de deixar
+    // uma quantidade órfã que sairia no relatório sem item
+    if(!atual.code) delete dataState.itensPorFoto[idx];
+    else dataState.itensPorFoto[idx] = atual;
+    salvarRascunho();
+  }
+
   function buildMultiPhotoGroup(item){
     const entries = dataState.photos[item.id] || [];
     const group = document.createElement('div');
@@ -4671,6 +4770,7 @@
               ? ' &middot; <span class="metragem">' + esc(entry.meter) + ' m</span>'
               : ''} &middot; ${entry.time}</div>
           <input class="multi-entry-legend" placeholder="${uni.dica}" value="${esc(entry.legend||'')}" data-item-id="${item.id}" data-idx="${idx}">
+          ${marcadorItemHtml(item, idx)}
         </div>
         <button class="multi-entry-remove" data-item-id="${item.id}" data-idx="${idx}" aria-label="Remover">&#10005;</button>
       </div>
@@ -4707,6 +4807,17 @@
         const id = inp.dataset.itemId, idx = Number(inp.dataset.idx);
         dataState.photos[id][idx].legend = e.target.value;
       });
+    });
+    group.querySelectorAll('.par-item-cod').forEach(sel=>{
+      sel.addEventListener('change', ()=> guardarItemDoPar(Number(sel.dataset.idx), 'code', sel.value));
+      sel.addEventListener('click', e => e.stopPropagation());
+    });
+    group.querySelectorAll('.par-item-qtd').forEach(inp=>{
+      inp.addEventListener('input', ()=>{
+        const n = Number(inp.value);
+        guardarItemDoPar(Number(inp.dataset.idx), 'qtd', inp.value === '' ? null : (isFinite(n) ? n : null));
+      });
+      inp.addEventListener('click', e => e.stopPropagation());
     });
     group.querySelectorAll('.multi-entry').forEach(row=>{
       row.addEventListener('click', (e)=>{
@@ -5837,16 +5948,35 @@
   }
 
   // Reduz uma imagem escolhida na galeria antes de guardar.
+  // SEMPRE passa pelo canvas, mesmo quando a foto já cabe no tamanho.
+  //
+  // Antes havia um atalho: se a imagem já era pequena, ela voltava com os bytes
+  // ORIGINAIS. Parecia economia, mas era a origem do "Não foi possível exibir a
+  // imagem" no PDF: o navegador exibe qualquer coisa (JPEG progressivo, CMYK,
+  // PNG de 16 bits, WEBP), o gerador de PDF não. A foto aparecia na tela e
+  // sumia do relatório que ia pra Ligga — o pior tipo de falha, porque só
+  // aparece no fim.
+  //
+  // Redesenhar no canvas normaliza tudo pra JPEG comum: é o mesmo caminho que a
+  // foto tirada pela câmera já fazia, e essa nunca deu problema.
   function reduzirImagem(dataUrl){
     return new Promise((res)=>{
       const img = new Image();
       img.onload = ()=>{
-        const dim = medidaReduzida(img.naturalWidth, img.naturalHeight);
-        if(dim.w === img.naturalWidth && dim.h === img.naturalHeight) return res(dataUrl);
-        const cv = document.createElement('canvas');
-        cv.width = dim.w; cv.height = dim.h;
-        cv.getContext('2d').drawImage(img, 0, 0, dim.w, dim.h);
-        res(cv.toDataURL('image/jpeg', FOTO_QUALIDADE));
+        try{
+          const dim = medidaReduzida(img.naturalWidth, img.naturalHeight);
+          const cv = document.createElement('canvas');
+          cv.width = dim.w; cv.height = dim.h;
+          const cx = cv.getContext('2d');
+          // fundo branco: PNG com transparência vira preto no JPEG sem isto
+          cx.fillStyle = '#FFFFFF';
+          cx.fillRect(0, 0, dim.w, dim.h);
+          cx.drawImage(img, 0, 0, dim.w, dim.h);
+          res(cv.toDataURL('image/jpeg', FOTO_QUALIDADE));
+        } catch(e){
+          // canvas "sujo" ou memória curta: melhor a foto original que nenhuma
+          res(dataUrl);
+        }
       };
       img.onerror = ()=> res(dataUrl);
       img.src = dataUrl;
@@ -5992,6 +6122,9 @@
     }
     const record = {
       time: now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}),
+      // data+hora inteira: o relatório de notificações pede "Data/Hora" por
+      // foto, e a data da obra não é a da foto quando o serviço vira o dia
+      quandoISO: now.toISOString(),
       meter: meterInput.value || null,
       imgSrc: attachedImg.src,
       fileMeta: stagedFileMeta,
@@ -6169,247 +6302,250 @@
   const VERDE_MOLDURA = [0, 128, 55];
   const AMARELO_MARCA = [255, 242, 0];
 
+  // ---------- Relatório de Execução de Notificações e Obras (modernização) ----------
+  // Formato novo da Ligga/COPEL, substituiu o antigo "Relatório de Manutenção de
+  // Rede". Diferenças que importam: o preço é em UR (real = UR × LPU), a tabela
+  // de atividades é FIXA (as 17 do MAREXT, mesmo as não usadas — é o formulário
+  // que a Ligga confere), e o anexo fotográfico é aos pares: cada "antes" tem o
+  // "depois" correspondente ao lado, com data/hora, endereço, GPS e o item
+  // cobrado embaixo.
   function pdfModernizacao(ctx){
-    const {doc, st, c, opts, header, CONTENT_TOP, PW, PH, M, CW,
-           contrato, dataRel, tecnico, cfgTipo} = ctx;
+    const {doc, st, c, opts, PW, PH, M, CW, contrato, dataRel, tecnico, cfgTipo} = ctx;
 
-    const verde = ()=> doc.setDrawColor(VERDE_MOLDURA[0], VERDE_MOLDURA[1], VERDE_MOLDURA[2]);
-    const preto = ()=> doc.setDrawColor(0,0,0);
+    const CINZA = [217,217,217];
+    const linhaFina = ()=> { doc.setDrawColor(0,0,0); doc.setLineWidth(0.25); };
+    const linhaGrossa = ()=> { doc.setDrawColor(0,0,0); doc.setLineWidth(0.5); };
 
-    // rótulo com tarja amarela atrás, como no modelo
-    function marcado(txt, x, y, tam){
-      doc.setFont('helvetica','bold'); doc.setFontSize(tam || 10);
-      const w = doc.getTextWidth(txt);
-      doc.setFillColor(AMARELO_MARCA[0], AMARELO_MARCA[1], AMARELO_MARCA[2]);
-      doc.rect(x - 0.6, y - (tam || 10) * 0.36, w + 1.2, (tam || 10) * 0.48, 'F');
+    function faixa(txt, y, alturaFaixa){
+      const h = alturaFaixa || 6.5;
+      linhaGrossa();
+      doc.setFillColor(CINZA[0], CINZA[1], CINZA[2]);
+      doc.rect(M, y, CW, h, 'FD');
+      doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(0,0,0);
+      doc.text(txt, PW/2, y + h - 2.2, {align:'center'});
+      return y + h;
+    }
+
+    // Endereço e cidade/local sao longos e antes saiam cortados no meio da
+    // palavra. Encolhe a fonte ate caber (com piso, pra nao virar formiga) e so
+    // corta se ainda assim nao couber.
+    function textoQueCabe(txt, largura, tamMax, tamMin){
+      const t = String(txt == null ? '' : txt);
+      if(!t) return {txt:'', tam: tamMax};
+      let tam = tamMax;
+      while(tam > tamMin){
+        doc.setFontSize(tam);
+        if(doc.getTextWidth(t) <= largura) return {txt:t, tam:tam};
+        tam -= 0.3;
+      }
+      doc.setFontSize(tamMin);
+      let corte = t;
+      while(corte.length > 4 && doc.getTextWidth(corte + '…') > largura) corte = corte.slice(0, -1);
+      return {txt: corte.length < t.length ? corte + '…' : corte, tam: tamMin};
+    }
+
+    // rótulo em negrito + valor normal dentro de uma célula com borda
+    function campo(x, y, w, h, rot, val, larguraRot){
+      linhaFina();
+      doc.rect(x, y, w, h);
+      doc.setFont('helvetica','bold'); doc.setFontSize(8);
       doc.setTextColor(0,0,0);
-      doc.text(txt, x, y);
-      return w;
+      doc.text(rot, x + 1.8, y + h/2 + 1);
+      const wr = larguraRot || doc.getTextWidth(rot) + 3;
+      doc.setFont('helvetica','normal');
+      const texto = String(val == null ? '' : val);
+      if(texto){
+        doc.setFontSize(8);
+        const linhas = doc.splitTextToSize(texto, w - wr - 3);
+        if(linhas.length <= 1){
+          doc.text(linhas[0] || texto, x + wr, y + h/2 + 1);
+        } else {
+          // endereço longo: duas linhas em corpo cheio é melhor que uma linha
+          // em corpo 5, que ninguém lê impresso
+          const usa = linhas.slice(0, 2);
+          const y0 = y + h/2 - (usa.length - 1) * 1.8 + 1;
+          doc.setFontSize(7.2);
+          doc.text(doc.splitTextToSize(texto, w - wr - 3).slice(0,2), x + wr, y0);
+          doc.setFontSize(8);
+        }
+      }
     }
 
-    // ================= PÁGINA 1 — CAPA =================
-    header();
-    let y = CONTENT_TOP;
+    // ================= CABEÇALHO =================
+    // logo da empreiteira à esquerda, título no meio, logo da Ligga à direita —
+    // é a primeira coisa que a Ligga olha pra saber de quem é o relatório
+    function cabecalhoNotificacoes(){
+      const y = 12, h = 18;
+      linhaGrossa();
+      doc.rect(M, y, CW, h);
+      const wLado = 38;
+      doc.line(M + wLado, y, M + wLado, y + h);
+      doc.line(M + CW - wLado, y, M + CW - wLado, y + h);
 
-    verde(); doc.setLineWidth(0.8);
-    const topoMoldura = y;
+      const cipW = 32, cipH = cipW * PDF_LOGO_CIP_RATIO;
+      try{ doc.addImage(PDF_LOGO_CIP, 'PNG', M + (wLado - cipW)/2, y + (h - cipH)/2, cipW, cipH); }catch(e){}
+      const ligW = 26, ligH = ligW * PDF_LOGO_LIGGA_RATIO;
+      try{ doc.addImage(PDF_LOGO_LIGGA, 'PNG', M + CW - wLado + (wLado - ligW)/2, y + (h - ligH)/2, ligW, ligH); }catch(e){}
 
-    // título
-    doc.setFillColor(217,217,217);
-    doc.rect(M, y, CW, 12, 'FD');
-    doc.setFont('helvetica','bold'); doc.setFontSize(17); doc.setTextColor(0,0,0);
-    doc.text('RELATÓRIO DE MANUTENÇÃO DE REDE', PW/2, y + 8.2, {align:'center'});
-    y += 12;
+      doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.setTextColor(0,0,0);
+      const meio = M + wLado + (CW - 2*wLado)/2;
+      doc.text(doc.splitTextToSize('RELATÓRIO DE EXECUÇÃO DE NOTIFICAÇÕES E OBRAS', CW - 2*wLado - 6),
+               meio, y + h/2 - 1, {align:'center'});
+      return y + h;
+    }
 
-    doc.setLineWidth(0.6);
+    // O PDF é SÓ o anexo fotográfico. A folha 1 (campos + tabela das 17
+    // atividades) é formulário que o escritório preenche no Excel; o que só o
+    // app sabe fazer é o anexo — cada par antes/depois com data, hora,
+    // endereço, GPS e o item que aquele par comprova.
+    let y = cabecalhoNotificacoes() + 4;
 
-    // empresa contratada
-    const H_EMP = 17;
-    doc.rect(M, y, CW, H_EMP);
-    const wEmp = marcado('EMPRESA CONTRATADA', M + 3, y + 6, 10);
-    doc.setFont('helvetica','bold'); doc.setFontSize(10);
-    doc.text(': ' + (c.empresa || 'Cip Telecom'), M + 3 + wEmp, y + 6);
-    y += H_EMP;
-
-    // descrição da atividade
-    const H_ATIV = 42;
-    doc.rect(M, y, CW, H_ATIV);
-    const wAtiv = marcado('DESCRIÇÃO DA ATIVIDADE', M + 3, y + 6, 10);
-    doc.setFont('helvetica','bold'); doc.text(':', M + 3 + wAtiv, y + 6);
-    doc.setFont('helvetica','normal'); doc.setFontSize(10);
-    const atividade = (c.atividade || ('MELHORIA DE REDE – ' + contrato)).toUpperCase();
-    doc.text(doc.splitTextToSize(atividade, CW - 8), M + 3, y + 15);
-    y += H_ATIV;
-
-    // descrição da falha
-    const H_FALHA = 48;
-    doc.rect(M, y, CW, H_FALHA);
-    const wFal = marcado('DESCRIÇÃO DA FALHA', M + 3, y + 6, 10);
-    doc.setFont('helvetica','bold'); doc.text(':', M + 3 + wFal, y + 6);
-    let yf = y + 15;
-    [['Tipo de Falha: ', c.tipoFalha || '—'],
-     ['Causa Falha: ',  c.causaFalha || '—'],
-     ['Solução Aplicada: ', c.solucao || '—']].forEach(([rot, val])=>{
-      doc.setFont('helvetica','bold'); doc.setFontSize(10);
-      doc.text(rot, M + 3, yf);
-      const wr = doc.getTextWidth(rot);
-      doc.setFont('helvetica','bold');
-      const linhas = doc.splitTextToSize(String(val), CW - 8 - wr);
-      doc.text(linhas, M + 3 + wr, yf);
-      yf += 6 * Math.max(1, linhas.length);
+    // identificação mínima, pra folha solta não virar foto sem dono
+    const HC = 7, colEsq = CW * 0.58, xDir = M + colEsq;
+    [['Nº DA ATIVIDADE:', c.numeroAtividade || contrato, 'DATA:', dataRel],
+     ['CIDADE/LOCAL:', c.cidadeLocal || [c.cidade, c.endereco].filter(Boolean).join(' - '),
+      'EQUIPE:', c.equipe || tecnico || '']].forEach(([r1, v1, r2, v2])=>{
+      doc.setFont('helvetica','normal'); doc.setFontSize(8);
+      const precisa = doc.splitTextToSize(String(v1 == null ? '' : v1), colEsq - 33).length > 1;
+      const h = precisa ? HC + 3.5 : HC;
+      campo(M, y, colEsq, h, r1, v1, 30);
+      campo(xDir, y, CW - colEsq, h, r2, v2, 30);
+      y += h;
     });
-    y += H_FALHA;
+    y += 4;
 
-    // controle de revisão
-    const H_REV = 30;
-    doc.rect(M, y, CW, H_REV);
-    const wRev = marcado('CONTROLE DE REVISÃO', M + 3, y + 6, 10);
-    doc.setFont('helvetica','bold'); doc.text(':', M + 3 + wRev, y + 6);
-    doc.setFont('helvetica','bold'); doc.setFontSize(10);
-    doc.text('Rev. 01 (' + dataRel + ') ', M + 3, y + 16);
-    const wR2 = doc.getTextWidth('Rev. 01 (' + dataRel + ') ');
-    doc.setFont('helvetica','normal');
-    doc.text('– Elaboração Inicial', M + 3 + wR2, y + 16);
-    y += H_REV;
+    // ================= ANEXO FOTOGRÁFICO =================
+    // Pares: a foto N do ANTES casa com a foto N do DEPOIS. É assim que o
+    // técnico já tira hoje (mesma legenda dos dois lados), e é assim que a
+    // Ligga lê — sem o par, "depois" sozinho não prova nada.
+    const antes  = (st.photos || {})[101] || [];
+    const depois = (st.photos || {})[102] || [];
+    const nPares = Math.max(antes.length, depois.length);
 
-    // responsáveis
-    const H_RESP = 62;
-    doc.rect(M, y, CW, H_RESP);
-    const meio = M + CW/2;
-    const wResp = doc.getTextWidth('Responsáveis:');
-    marcado('Responsáveis:', meio - wResp/2, y + 7, 10);
+    if(nPares){
+      let py = faixa('ANEXO FOTOGRÁFICO', y) + 3;
 
-    const colW = CW/3;
-    const assinantes = [
-      ['ELABORAÇÃO', c.elaborador || '', ''],
-      ['EXECUÇÃO',   tecnico || '',      dataRel],
-      ['APROVAÇÃO LIGGA', c.aprovadorLigga || 'Dionatan Pedro da Silva', '00/00/0000'],
-    ];
-    assinantes.forEach(([papel, nome, quando], i)=>{
-      const cx = M + colW*i + colW/2;
-      doc.setLineWidth(0.5); doc.setLineDashPattern([1.4, 1.2], 0); preto();
-      doc.line(cx - 24, y + 26, cx + 24, y + 26);
-      doc.setLineDashPattern([], 0); verde(); doc.setLineWidth(0.6);
-      doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(0,0,0);
-      doc.text(papel, cx, y + 32, {align:'center'});
-      doc.setFontSize(8.5);
-      // o campo fica marcado quando está vazio (é o que a pessoa preenche à mão)
-      const xr = M + colW*i + 6;
-      if(nome){
-        doc.text('NOME: ' + nome, xr, y + 44);
-      } else {
-        marcado('NOME:', xr, y + 44, 8.5);
-      }
-      if(quando){
-        doc.text('DATA: ' + quando, xr, y + 50);
-      } else {
-        marcado('DATA:', xr, y + 50);
-      }
-    });
-    y += H_RESP;
+      const COL_W = (CW - 6) / 2, IMG_H = 60, H_META = 4.4;
+      // rótulo + foto + 3 linhas de metadado + a linha do item
+      const H_BLOCO = 6 + IMG_H + H_META*3 + 6;
 
-    // a moldura verde por fora de tudo
-    verde(); doc.setLineWidth(0.9);
-    doc.rect(M, topoMoldura, CW, y - topoMoldura);
-    preto(); doc.setLineWidth(0.35);
+      for(let i = 0; i < nPares; i++){
+        if(py + H_BLOCO > PH - M){
+          doc.addPage();
+          py = M + 3;
+        }
+        const par = [
+          {lado: 'Antes',  f: antes[i]  || null, x: M},
+          {lado: 'Depois', f: depois[i] || null, x: M + COL_W + 6},
+        ];
 
-    // ================= PÁGINAS DE EVIDÊNCIA =================
-    // duas colunas, título amarelo em cima de cada foto — igual ao modelo
-    const itens = itensDoTipo('modernizacao');
-    const evid = [];
-    itens.filter(it => it.momento).forEach(it=>{
-      const guardadas = (st.photos || {})[it.id];
-      const lista = it.multiple ? (guardadas || []) : (guardadas ? [guardadas] : []);
-      lista.forEach(f=>{
-        // a legenda da foto múltipla é gravada em `legend`; a da foto única, em
-        // `obs`. As duas viram o nome do elemento no título da evidência.
-        const elemento = (f.legend || f.obs || '').trim();
-        evid.push({
-          rot: 'Evidências ' + (elemento ? 'da ' + elemento + ' ' : '') + it.momento,
-          src: f.dataUrl || f.imgSrc || null,
-        });
-      });
-    });
+        par.forEach(({lado, f, x})=>{
+          // título do lado
+          doc.setFillColor(CINZA[0], CINZA[1], CINZA[2]);
+          linhaFina();
+          doc.rect(x, py, COL_W, 6, 'FD');
+          doc.setFont('helvetica','bold'); doc.setFontSize(8.5); doc.setTextColor(0,0,0);
+          const elemento = f ? (f.legend || f.obs || '').trim() : '';
+          doc.text('Foto ' + (i+1) + ' - ' + lado + (elemento ? ' · ' + elemento : ''),
+                   x + COL_W/2, py + 4.2, {align:'center'});
 
-    if(evid.length){
-      const COL_W = (CW - 10) / 2, IMG_H = 62;
-      let i = 0;
-      while(i < evid.length){
-        doc.addPage(); header();
-        let ey = CONTENT_TOP + 2;
-        for(let linha = 0; linha < 2 && i < evid.length; linha++){
-          for(let col = 0; col < 2 && i < evid.length; col++, i++){
-            const ex = M + col*(COL_W + 10);
-            const e = evid[i];
-            doc.setFont('helvetica','bold'); doc.setFontSize(9.5);
-            const wt = doc.getTextWidth(e.rot);
-            marcado(e.rot, ex + COL_W/2 - wt/2, ey + 4, 9.5);
-            if(e.src){
-              try{ doc.addImage(e.src, 'JPEG', ex, ey + 7, COL_W, IMG_H); }
-              catch(err){
-                doc.setFont('helvetica','normal'); doc.setFontSize(9);
-                doc.text('(imagem não pôde ser incluída)', ex + 2, ey + 20);
-              }
+          // a foto
+          const src = f && (f.dataUrl || f.imgSrc);
+          linhaFina();
+          doc.rect(x, py + 6, COL_W, IMG_H);
+          if(src){
+            try{ doc.addImage(src, 'JPEG', x + 0.4, py + 6.4, COL_W - 0.8, IMG_H - 0.8); }
+            catch(e){
+              doc.setFont('helvetica','normal'); doc.setFontSize(8);
+              doc.text('(imagem não pôde ser incluída)', x + 3, py + 6 + IMG_H/2);
             }
-            doc.setLineWidth(0.3); preto();
-            doc.rect(ex, ey + 7, COL_W, IMG_H);
+          } else {
+            doc.setFont('helvetica','italic'); doc.setFontSize(8);
+            doc.setTextColor(120,120,120);
+            doc.text('sem foto', x + COL_W/2, py + 6 + IMG_H/2, {align:'center'});
+            doc.setTextColor(0,0,0);
           }
-          ey += IMG_H + 22;
-        }
+
+          // metadados: o app já sabe a hora e o GPS de cada foto — o que na
+          // planilha estava como "(preencher)" sai preenchido daqui
+          let my = py + 6 + IMG_H + 3.4;
+          doc.setFont('helvetica','normal'); doc.setFontSize(6.8);
+          const quando = f ? (dataHoraDaFoto(f, c) || '') : '';
+          const ondeGps = f && f.coords ? String(f.coords) : '';
+          const endereco = (f && f.endereco) || c.enderecoFoto || c.endereco || '';
+          [['Data/Hora: ', quando],
+           ['Endereço Completo: ', endereco],
+           ['Localização (Longitude - Latitude): ', ondeGps]].forEach(([rot, val])=>{
+            doc.setFont('helvetica','bold');
+            doc.text(rot, x + 1, my);
+            const wr = doc.getTextWidth(rot);
+            doc.setFont('helvetica','normal');
+            const cabe = textoQueCabe(val, COL_W - wr - 2, 6.8, 4.6);
+            doc.setFontSize(cabe.tam);
+            doc.text(cabe.txt, x + 1 + wr, my);
+            doc.setFontSize(6.8);
+            my += H_META;
+          });
+        });
+
+        // "Item e Quantidade" vale pro par inteiro — é o serviço que aquele
+        // antes/depois comprova. Fica do lado direito, como no modelo.
+        const itemPar = itemDoPar(st, i);
+        const yItem = py + 6 + IMG_H + 3.4 + H_META*3;
+        doc.setFont('helvetica','bold'); doc.setFontSize(7.2);
+        doc.text('Item e Quantidade: ', M + COL_W + 6 + 1, yItem);
+        const wi = doc.getTextWidth('Item e Quantidade: ');
+        doc.setFont('helvetica','normal');
+        doc.text(itemPar || '', M + COL_W + 6 + 1 + wi, yItem);
+
+        py += H_BLOCO;
       }
     }
 
-    // ================= ÚLTIMA PÁGINA — SERVIÇOS E MATERIAIS =================
-    doc.addPage(); header();
-    let ty = CONTENT_TOP + 2;
-
-    doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(0,0,0);
-    doc.text('5.', M, ty + 5);
-    marcado('Descrição dos Serviços Executados e Material Utilizados', M + 6, ty + 5, 11);
-    doc.setFont('helvetica','bold');
-    doc.text(':', M + 6 + doc.getTextWidth('Descrição dos Serviços Executados e Material Utilizados'), ty + 5);
-    ty += 16;
-
-    const TAB_X = M + 12, TAB_W = CW - 24, COL_QTD = TAB_W * 0.42;
-
-    function tabela(titulo, linhas, ty0){
-      let yy = ty0;
-      verde(); doc.setLineWidth(0.5);
-      // cabeçalho
-      doc.rect(TAB_X, yy, COL_QTD, 8);
-      doc.rect(TAB_X + COL_QTD, yy, TAB_W - COL_QTD, 8);
-      doc.setFontSize(10);
-      const w1 = doc.getTextWidth('QUANTIDADE');
-      marcado('QUANTIDADE', TAB_X + COL_QTD/2 - w1/2, yy + 5.6, 10);
-      const w2 = doc.getTextWidth(titulo);
-      marcado(titulo, TAB_X + COL_QTD + (TAB_W - COL_QTD)/2 - w2/2, yy + 5.6, 10);
-      yy += 8;
-
-      doc.setFont('helvetica','normal'); doc.setFontSize(9.5);
-      linhas.forEach((l, idx)=>{
-        const texto = doc.splitTextToSize(l.texto, TAB_W - COL_QTD - 6);
-        const h = Math.max(9, 4.6 * texto.length + 4);
-        if(idx % 2 === 0){
-          doc.setFillColor(217,217,217);
-          doc.rect(TAB_X, yy, COL_QTD, h, 'F');
-          doc.rect(TAB_X + COL_QTD, yy, TAB_W - COL_QTD, h, 'F');
-        }
-        verde();
-        doc.rect(TAB_X, yy, COL_QTD, h);
-        doc.rect(TAB_X + COL_QTD, yy, TAB_W - COL_QTD, h);
-        doc.setTextColor(0,0,0);
-        doc.text(String(l.qtd), TAB_X + COL_QTD/2, yy + 6, {align:'center'});
-        doc.text(texto, TAB_X + COL_QTD + 3, yy + 6);
-        yy += h;
-      });
-      // linhas em branco, como no formulário original
-      for(let k = 0; k < 3; k++){
-        if(k % 2 === 0){
-          doc.setFillColor(217,217,217);
-          doc.rect(TAB_X, yy, COL_QTD, 7, 'F');
-          doc.rect(TAB_X + COL_QTD, yy, TAB_W - COL_QTD, 7, 'F');
-        }
-        verde();
-        doc.rect(TAB_X, yy, COL_QTD, 7);
-        doc.rect(TAB_X + COL_QTD, yy, TAB_W - COL_QTD, 7);
-        yy += 7;
-      }
-      return yy;
+    if(!nPares){
+      doc.setFont('helvetica','italic'); doc.setFontSize(10); doc.setTextColor(90,90,90);
+      doc.text('Nenhuma evidência fotográfica anexada a esta obra.', PW/2, y + 14, {align:'center'});
+      doc.setTextColor(0,0,0); doc.setFont('helvetica','normal');
     }
-
-    const servs = servicosDaObra(st, 'modernizacao')
-      .map(v => ({qtd: v.qtd, texto: v.code + '- ' + v.desc}));
-    const mats = materiaisDaObra(st, 'modernizacao')
-      .map(m => ({qtd: m.qtd, texto: m.nome}));
-
-    ty = tabela('SERVIÇO EXECUTADO', servs, ty) + 10;
-    tabela('MATERIAL', mats, ty);
-    preto(); doc.setLineWidth(0.35);
 
     const sufixo = opts.anexoInterno ? '-com-anexo' : '';
-    const nomePdf = cfgTipo.nomePdf + '-' + String(contrato).replace(/[^\w.-]+/g, '-') + sufixo + '.pdf';
+    const nomePdf = 'Anexo-fotografico-' + String(contrato).replace(/[^\w.-]+/g, '-') + sufixo + '.pdf';
+    avisarFotosRejeitadas();
     if(opts.comoBlob) return {nome: nomePdf, blob: doc.output('blob')};
     doc.save(nomePdf);
+  }
+
+  // Data/hora completa da foto. O registro guarda só a hora (`time`), então a
+  // data vem da obra — quando a foto tiver carimbo próprio, ele ganha.
+  function dataHoraDaFoto(f, c){
+    if(!f) return '';
+    if(f.quandoISO){
+      const d = new Date(f.quandoISO);
+      if(!isNaN(d)) return d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR');
+    }
+    const dia = toDateBR((c || {}).data) || new Date().toLocaleDateString('pt-BR');
+    return f.time ? (dia + ' ' + f.time) : dia;
+  }
+
+  // "02.21 - 1 UND" do par N. Fica gravado por par; se ninguém marcou, o
+  // relatório sai com o campo vazio pra preencher à mão, como era antes.
+  function itemDoPar(st, i){
+    const marcados = (st && st.itensPorFoto) || {};
+    const v = marcados[i];
+    if(!v) return '';
+    if(typeof v === 'string') return v;
+    return [v.code, v.qtd ? v.qtd + ' UND' : ''].filter(Boolean).join(' - ');
+  }
+
+  // Fotos que o gerador de PDF recusou nesta rodada. Zerada a cada relatório;
+  // se sobrar alguma, quem gerou é avisado em vez de descobrir na Ligga.
+  let fotosComFalhaNoPdf = [];
+  function avisarFotosRejeitadas(){
+    if(!fotosComFalhaNoPdf.length) return;
+    const n = fotosComFalhaNoPdf.length;
+    showToast(n === 1
+      ? 'Atenção: 1 foto não entrou no PDF — reanexe ela e gere de novo'
+      : 'Atenção: ' + n + ' fotos não entraram no PDF — reanexe e gere de novo');
   }
 
   // ---------- Geração real do PDF (formato Relatório Ativação Convencional) ----------
@@ -6500,6 +6636,7 @@
     }
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({unit:'mm', format:'a4'});
+    fotosComFalhaNoPdf = [];
 
     const PW = 210, PH = 297, M = 15, CW = PW - 2*M;
     // o tipo vem da obra impressa (a lista manda opts.tipo), não do que está
@@ -6784,9 +6921,22 @@
           imgX = colX + (colW - imgW) / 2;
           doc.addImage(s.imgSrc, 'JPEG', imgX, topoY, imgW, imgH);
         } catch(e){
-          doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(0,0,0);
-          doc.text('Não foi possível exibir a imagem.', colX, topoY + 6);
-          imgH = 6;
+          // Falha silenciosa aqui já custou caro: o relatório saiu pra Ligga
+          // com um buraco no lugar da foto e ninguém soube por quê. Agora o
+          // aviso fica em vermelho no PDF, registra o motivo no console e
+          // avisa quem está gerando — pra ninguém mandar assim sem ver.
+          doc.setFont('helvetica','bold'); doc.setFontSize(8.5);
+          doc.setTextColor(200,0,0);
+          doc.text('FOTO NÃO PÔDE SER INCLUÍDA', colX, topoY + 6);
+          doc.setFont('helvetica','normal'); doc.setFontSize(7.5);
+          doc.text('Reanexe esta foto pelo app e gere o relatório de novo.', colX, topoY + 11);
+          doc.setTextColor(0,0,0);
+          imgH = 13;
+          try{
+            console.error('[pdf] foto rejeitada pelo gerador:',
+              (s.imgSrc || '').slice(0, 32), e && (e.message || e));
+            fotosComFalhaNoPdf.push(s.fileMeta || 'foto sem nome');
+          }catch(_){}
         }
       } else if(s && s.fileMeta){
         doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(0,0,0);
@@ -6993,6 +7143,7 @@
     const nomePdf = cfgTipo.nomePdf + '-' + String(contrato).replace(/[^\w.-]+/g,'-') + sufixo + '.pdf';
     // opts.comoBlob: em vez de baixar, devolve o arquivo pra quem chamou —
     // é assim que o pacote .zip consegue incluir o relatório junto dos anexos
+    avisarFotosRejeitadas();
     if(opts.comoBlob) return {nome: nomePdf, blob: doc.output('blob')};
     doc.save(nomePdf);
   }
@@ -7153,8 +7304,13 @@
 
   function buildMetaSnapshot(){
     const meta = {photos:{}, projectDocs:{}, docsAtt:{}};
+    // coords e quandoISO ficavam só na memória: o relatório de notificações
+    // pede Localização e Data/Hora por foto, e sem gravar aqui a informação
+    // morria no primeiro salvamento — a obra voltava do servidor sem GPS
     const daFoto = e => ({meter:e.meter||null, legend:e.legend||'', time:e.time||'',
                           dbm:(e.dbm != null && e.dbm !== '' ? e.dbm : null),
+                          coords: e.coords || null,
+                          quandoISO: e.quandoISO || null,
                           fp: marcaArquivo(e.imgSrc)});
     photoItems.forEach(item=>{
       const s = dataState.photos[item.id];
@@ -7181,9 +7337,11 @@
   const ROTULO_CONTRATO = {
     numero:'Número do contrato', data:'Data da obra', codtcomp:'COTCOMP',
     empresa:'Cliente', endereco:'Endereço', cidade:'Cidade', cep:'CEP',
-    coordenadas:'Coordenadas', atividade:'Descrição da atividade',
-    tipoFalha:'Tipo da falha', causaFalha:'Causa da falha', solucao:'Solução',
-    elaborador:'Elaborador', aprovadorLigga:'Aprovador Ligga',
+    coordenadas:'Coordenadas',
+    numeroAtividade:'Nº da atividade', idWfm:'ID WFM', cidadeLocal:'Cidade/Local',
+    acionadoPor:'Acionado por', equipe:'Equipe', fiscalizadoPor:'Fiscalizado por',
+    validadoPor:'Validado por', responsavelTecnico:'Responsável técnico',
+    supervisaoTecnica:'Supervisão técnica', descricaoServico:'Descrição do serviço',
   };
 
   function diffObra(antes, depois, tipo){
@@ -7377,6 +7535,7 @@
       docsAtt: {},
       materialsQty: d.materialsQty || {},
       valuesQty: d.valuesQty || {},
+      itensPorFoto: d.itensPorFoto || {},
     };
 
     // Um anexo que sumiu do Storage (path certo no banco, arquivo perdido —
@@ -7402,23 +7561,31 @@
         st.photos[item.id] = [];
         for(let k = 0; k < v.length; k++){
           const mk = Array.isArray(m) ? (m[k] || {}) : {};
-          const imgSrc = await baixar(v[k], (item.title || item.id) + ' (' + (k+1) + ')');
-          if(imgSrc == null) continue;
+          const bruto = await baixar(v[k], (item.title || item.id) + ' (' + (k+1) + ')');
+          if(bruto == null) continue;
+          // foto que já estava guardada num formato que o gerador de PDF não
+          // lê (JPEG progressivo, CMYK, PNG exótico) chegava aqui intacta e só
+          // quebrava lá no fim, dentro do relatório. Passar pelo canvas aqui
+          // conserta as que já estão no servidor, não só as novas.
+          const imgSrc = await reduzirImagem(bruto);
           st.photos[item.id].push({
             imgSrc,
             fileMeta: String(v[k]).split('/').pop(),
-            meter: mk.meter || null, legend: mk.legend || '', time: mk.time || ''
+            meter: mk.meter || null, legend: mk.legend || '', time: mk.time || '',
+            coords: mk.coords || null, quandoISO: mk.quandoISO || null
           });
         }
       } else {
         const mk = m || {};
-        const imgSrc = await baixar(v, item.title || item.id);
+        const bruto1 = await baixar(v, item.title || item.id);
+        const imgSrc = bruto1 == null ? null : await reduzirImagem(bruto1);
         if(imgSrc != null){
           st.photos[item.id] = {
             imgSrc,
             fileMeta: String(v).split('/').pop(),
             meter: mk.meter || null, legend: mk.legend || '', time: mk.time || '',
-            dbm: (mk.dbm != null ? mk.dbm : null)
+            dbm: (mk.dbm != null ? mk.dbm : null),
+            coords: mk.coords || null, quandoISO: mk.quandoISO || null
           };
         }
       }
@@ -7963,6 +8130,7 @@
           materialsQty: dataState.materialsQty,
           materialsExtra: dataState.materialsExtra,
           valuesQty: dataState.valuesQty,
+          itensPorFoto: dataState.itensPorFoto,
           arquivos: uploaded,
           meta: buildMetaSnapshot(),
           tecnico: nomeTecnicoObra(),
@@ -8139,6 +8307,7 @@
           materialsQty: dataState.materialsQty,
           materialsExtra: dataState.materialsExtra,
           valuesQty: dataState.valuesQty,
+          itensPorFoto: dataState.itensPorFoto,
           arquivos: uploaded,
           meta: buildMetaSnapshot(),
           tecnico: nomeTecnicoObra(),
@@ -8210,6 +8379,7 @@
           materialsQty: dataState.materialsQty,
           materialsExtra: dataState.materialsExtra,
           valuesQty: dataState.valuesQty,
+          itensPorFoto: dataState.itensPorFoto,
           arquivos: uploaded,
           meta: buildMetaSnapshot(),
           tecnico: nomeTecnicoObra(),
@@ -11689,10 +11859,10 @@
         {id:8, contrato:'PNG - 201', status:'despachada', polo:'CTA', empresa_id:1, tecnico_id:'d-t1',
          tipo_obra:'modernizacao',
          dados:{contract:Object.assign(contrato('PNG - 201','Cip Telecom','R EUGENIO J DE SOUZA, 66'), {
-                  atividade:'MELHORIA DE REDE – PNG - 201',
-                  tipoFalha:'Atenuação', causaFalha:'Melhoria de Rede',
-                  solucao:'Troca da Fosc / Para Nap Conectorizada',
-                  aprovadorLigga:'Dionatan Pedro da Silva'}),
+                  numeroAtividade:'PNG - 201', idWfm:'4455213', acionadoPor:'COPEL',
+                  cidadeLocal:'Paranaguá - R EUGENIO J DE SOUZA, 66 - Caixa PNG - 201',
+                  equipe:'Equipe Norte', fiscalizadoPor:'Dionatan Pedro da Silva',
+                  responsavelTecnico:'Carlos Andrade'}),
                 tipoObra:'modernizacao', tecnico:'Carlos Andrade',
                 arquivos:{photos:{},projectDocs:{},docsAtt:{}}, meta:{photos:{},projectDocs:{},docsAtt:{}},
                 materialsQty:{1:6, 2:12, 3:1},
@@ -12459,6 +12629,7 @@
     dataState.materialsQty = {};
     dataState.materialsExtra = {};
     dataState.valuesQty = {};
+    dataState.itensPorFoto = {};
     dataState.reabertaMarca = null;
     ['fDuplicada','dDuplicada'].forEach(id=>{
       const c = document.getElementById(id);
@@ -12481,16 +12652,18 @@
     const c = dataState.contract || {};
     const map = {fNumero:'numero', fData:'data', fEndereco:'endereco', fCodtcomp:'codtcomp',
                  fCidade:'cidade', fCep:'cep', fCoord:'coordenadas', fEmpresa:'empresa',
-                 // os do relatório de manutenção de rede
-                 fAtividade:'atividade', fTipoFalha:'tipoFalha', fCausaFalha:'causaFalha',
-                 fSolucao:'solucao', fElaborador:'elaborador', fAprovadorLigga:'aprovadorLigga'};
+                 // os do Relatório de Execução de Notificações e Obras
+                 fNumAtividade:'numeroAtividade', fIdWfm:'idWfm', fCidadeLocal:'cidadeLocal',
+                 fAcionadoPor:'acionadoPor', fEquipe:'equipe', fFiscalizadoPor:'fiscalizadoPor',
+                 fValidadoPor:'validadoPor', fRespTecnico:'responsavelTecnico',
+                 fSupervisaoTecnica:'supervisaoTecnica', fDescricaoServico:'descricaoServico'};
     Object.keys(map).forEach(id=>{
       const el = document.getElementById(id);
       if(!el) return;
       const v = c[map[id]];
-      // a aprovação da Ligga tem um valor padrão no HTML: não apagar quando a
-      // obra ainda não guardou nada nesse campo
-      if(id === 'fAprovadorLigga' && !v) return;
+      // a descrição do serviço nasce com o texto padrão do contrato: obra que
+      // ainda não guardou nada nesse campo recebe ele, não um campo vazio
+      if(id === 'fDescricaoServico' && !v){ el.value = TEXTO_DESCRICAO_PADRAO; return; }
       el.value = v || '';
     });
     pintarPoloAssistente();
