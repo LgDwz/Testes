@@ -3237,6 +3237,20 @@
                stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 9v12"/></svg>
           EXCEL
         </button>
+        <button class="jobs-export" id="btnExportDocs" type="button"
+                title="Baixar os documentos de todas as obras desta lista"
+                aria-label="Baixar os documentos de todas as obras desta lista">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+               stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 21h16"/></svg>
+          DOCS
+        </button>
+        <button class="jobs-export" id="btnExportFaltas" type="button" style="display:none;"
+                title="Relatório do que está faltando nas obras desta lista"
+                aria-label="Relatório do que está faltando nas obras desta lista">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+               stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>
+          FALTAS
+        </button>
       </div>
     </div>
     <!-- dono do produto de fora de qualquer empresa não pode cair direto na
@@ -3657,7 +3671,7 @@
 (function(){
   // Marque aqui a cada build enviado ao campo. O testador informa esta
   // string ao relatar um problema, senao nao da pra saber o que ele rodou.
-  const APP_VERSION = 'Enlace Ops · alpha-11.04 · 04/09/2026';
+  const APP_VERSION = 'Enlace Ops · alpha-11.06 · 04/09/2026';
 
   // ---------- Supabase config ----------
   // Troque pelos valores reais do seu projeto (Project Settings -> API no Supabase).
@@ -5445,7 +5459,7 @@
   const captureObsInput = document.getElementById('captureObsInput');
 
   let activeItem = null, activeMultiIdx = null, photoStaged = false, stagedFileMeta = null;
-  let stagedMime = null, stagedCoords = null;
+  let stagedMime = null, stagedCoords = null, stagedQuandoISO = null;
   // De onde veio a foto. A marca d'agua com GPS/endereco/hora so e aplicada
   // na foto tirada dentro do app; quem fotografa pelo app da camera e anexa
   // da galeria escapa do carimbo. Registrar a origem deixa isso visivel pro
@@ -5814,6 +5828,9 @@
     stagedFileMeta = 'foto_' + Date.now() + '.jpg';
     stagedMime = 'image/jpeg';
     stagedCoords = carimbo.coordsText;
+    // foto da câmera do app é tirada agora: nada de herdar a data de um anexo
+    // que ficou pendurado na variável de uma captura anterior
+    stagedQuandoISO = null;
     stagedOrigem = 'camera';
     photoStaged = true;
     showResultState();
@@ -5948,6 +5965,106 @@
   }
 
   // Reduz uma imagem escolhida na galeria antes de guardar.
+  // ---------- EXIF: data, hora e GPS que a câmera gravou na foto ----------
+  //
+  // Por que isto existe: o técnico tira a foto num app de câmera com GPS e
+  // depois anexa da galeria, às vezes horas depois. O app só sabia a hora do
+  // ANEXO — então o relatório saía dizendo 07:26 em dez fotos, enquanto a
+  // marca d'água dentro da imagem dizia 08:13, 08:18, 09:29... Duas horas
+  // diferentes na mesma página, indo pra Ligga.
+  //
+  // A data e as coordenadas de verdade estão no EXIF do arquivo original. Lê
+  // aqui, ANTES de reprocessar a imagem (o canvas apaga o EXIF).
+  // Leitor mínimo, só o que o relatório usa: DateTimeOriginal e GPS.
+  function lerExif(buffer){
+    try{
+      const d = new DataView(buffer);
+      if(d.byteLength < 4 || d.getUint16(0) !== 0xFFD8) return null;   // não é JPEG
+      let off = 2;
+      // procura o segmento APP1 (onde mora o EXIF)
+      while(off < d.byteLength - 4){
+        if(d.getUint8(off) !== 0xFF) break;
+        const marca = d.getUint8(off + 1);
+        const tam = d.getUint16(off + 2);
+        if(marca === 0xE1){
+          if(d.getUint32(off + 4) !== 0x45786966) return null;         // "Exif"
+          return lerTiff(d, off + 10);
+        }
+        if(marca === 0xDA) break;                                      // começou a imagem
+        off += 2 + tam;
+      }
+      return null;
+    } catch(e){ return null; }
+  }
+
+  function lerTiff(d, base){
+    const ordem = d.getUint16(base);
+    const le = (ordem === 0x4949);                                     // little-endian
+    const u16 = p => d.getUint16(p, le);
+    const u32 = p => d.getUint32(p, le);
+    if(u16(base + 2) !== 0x002A) return null;
+
+    function racional(p){ const a = u32(p), b = u32(p + 4); return b ? a / b : 0; }
+
+    function lerIfd(inicio){
+      const achados = {};
+      const n = u16(inicio);
+      for(let i = 0; i < n; i++){
+        const e = inicio + 2 + i * 12;
+        const tag = u16(e), tipo = u16(e + 2), cont = u32(e + 4);
+        const tamTipo = {1:1, 2:1, 3:2, 4:4, 5:8, 7:1, 9:4, 10:8}[tipo] || 1;
+        const bytes = tamTipo * cont;
+        const dados = bytes > 4 ? base + u32(e + 8) : e + 8;
+        achados[tag] = {tipo, cont, dados};
+      }
+      return achados;
+    }
+
+    function texto(x){
+      if(!x) return '';
+      let s = '';
+      for(let i = 0; i < x.cont; i++){
+        const ch = d.getUint8(x.dados + i);
+        if(!ch) break;
+        s += String.fromCharCode(ch);
+      }
+      return s.trim();
+    }
+
+    const ifd0 = lerIfd(base + u32(base + 4));
+    let quando = '', lat = null, lon = null;
+
+    // sub-IFD do EXIF: é lá que fica a DateTimeOriginal
+    if(ifd0[0x8769]){
+      const exif = lerIfd(base + u32(ifd0[0x8769].dados));
+      quando = texto(exif[0x9003]) || texto(exif[0x9004]) || '';
+    }
+    if(!quando) quando = texto(ifd0[0x0132]);                          // DateTime, na falta
+
+    // GPS
+    if(ifd0[0x8825]){
+      const gps = lerIfd(base + u32(ifd0[0x8825].dados));
+      const grau = x => x ? racional(x.dados) + racional(x.dados + 8)/60 + racional(x.dados + 16)/3600 : null;
+      const refLat = texto(gps[0x0001]), refLon = texto(gps[0x0003]);
+      const vLat = grau(gps[0x0002]), vLon = grau(gps[0x0004]);
+      if(vLat != null && isFinite(vLat)) lat = (refLat === 'S' ? -vLat : vLat);
+      if(vLon != null && isFinite(vLon)) lon = (refLon === 'W' ? -vLon : vLon);
+    }
+
+    // "2026:08:18 08:13:07" -> ISO. O EXIF não guarda fuso, então vale como
+    // hora local do aparelho que tirou — que é o que interessa no relatório.
+    let iso = null;
+    const m = /^(\d{4}):(\d{2}):(\d{2})[ T](\d{2}):(\d{2}):(\d{2})/.exec(quando || '');
+    if(m){
+      const dt = new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6]);
+      if(!isNaN(dt)) iso = dt.toISOString();
+    }
+
+    const coords = (lat != null && lon != null)
+      ? (lat.toFixed(6) + ', ' + lon.toFixed(6)) : null;
+    return (iso || coords) ? {quandoISO: iso, coords} : null;
+  }
+
   // SEMPRE passa pelo canvas, mesmo quando a foto já cabe no tamanho.
   //
   // Antes havia um atalho: se a imagem já era pequena, ela voltava com os bytes
@@ -5990,6 +6107,7 @@
     stagedFileMeta = file.name;
     stagedMime = file.type || '';
     stagedCoords = null;
+    stagedQuandoISO = null;
     stagedOrigem = 'galeria';
     const reader = new FileReader();
     reader.onload = async (e)=>{
@@ -6002,6 +6120,17 @@
         attachedImg.src = e.target.result;
         attachedImg.style.display = 'none';
       } else if(ehImagem){
+        // ANTES de reprocessar: o canvas apaga o EXIF, e é dele que sai a hora
+        // real da foto e as coordenadas. Sem isto, foto tirada às 8h e anexada
+        // às 10h aparecia no relatório como 10h.
+        try{
+          const bruto = await file.arrayBuffer();
+          const meta = lerExif(bruto);
+          if(meta){
+            if(meta.quandoISO) stagedQuandoISO = meta.quandoISO;
+            if(meta.coords)    stagedCoords    = meta.coords;
+          }
+        }catch(err){ /* sem EXIF legível: segue com o que o app souber */ }
         attachedImg.src = await reduzirImagem(e.target.result);
         attachedImg.style.display = '';
         stagedMime = 'image/jpeg';
@@ -6120,11 +6249,16 @@
       existingLegend = dataState[activeItem.storeKey][activeItem.id].legend || '';
       existingObs = dataState[activeItem.storeKey][activeItem.id].obs || '';
     }
+    // Quando a foto FOI TIRADA ganha de quando ela foi anexada. O EXIF sabe a
+    // hora certa; `now` é só o momento em que a pessoa mexeu no app — e num
+    // lote anexado de uma vez, `now` põe o mesmo horário em todas.
+    const quandoDaFoto = stagedQuandoISO || now.toISOString();
+    const horaDaFoto = stagedQuandoISO
+      ? new Date(stagedQuandoISO).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'})
+      : now.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
     const record = {
-      time: now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}),
-      // data+hora inteira: o relatório de notificações pede "Data/Hora" por
-      // foto, e a data da obra não é a da foto quando o serviço vira o dia
-      quandoISO: now.toISOString(),
+      time: horaDaFoto,
+      quandoISO: quandoDaFoto,
       meter: meterInput.value || null,
       imgSrc: attachedImg.src,
       fileMeta: stagedFileMeta,
@@ -6394,17 +6528,25 @@
       return y + h;
     }
 
-    // O PDF é SÓ o anexo fotográfico. A folha 1 (campos + tabela das 17
-    // atividades) é formulário que o escritório preenche no Excel; o que só o
-    // app sabe fazer é o anexo — cada par antes/depois com data, hora,
-    // endereço, GPS e o item que aquele par comprova.
-    let y = cabecalhoNotificacoes() + 4;
+    // O relatório é o modelo inteiro da Ligga: cabeçalho, os 8 campos,
+    // descrição do serviço, responsáveis, a tabela das 17 atividades (sempre
+    // em branco na quantidade — cobrança não vai no relatório) e, por último,
+    // o anexo fotográfico.
+    let y = cabecalhoNotificacoes() + 3.5;
 
-    // identificação mínima, pra folha solta não virar foto sem dono
+    // ================= CAMPOS DO CABEÇALHO =================
+    // duas colunas, como na planilha: identificação à esquerda, quem acionou e
+    // quem confere à direita
     const HC = 7, colEsq = CW * 0.58, xDir = M + colEsq;
-    [['Nº DA ATIVIDADE:', c.numeroAtividade || contrato, 'DATA:', dataRel],
-     ['CIDADE/LOCAL:', c.cidadeLocal || [c.cidade, c.endereco].filter(Boolean).join(' - '),
-      'EQUIPE:', c.equipe || tecnico || '']].forEach(([r1, v1, r2, v2])=>{
+    const pares = [
+      ['Nº DA ATIVIDADE:', c.numeroAtividade || contrato, 'DATA:', dataRel],
+      ['ACIONADO POR:', c.acionadoPor || '', 'ID WFM:', c.idWfm || ''],
+      ['CIDADE/LOCAL:', c.cidadeLocal || [c.cidade, c.endereco].filter(Boolean).join(' - '), 'FISCALIZADO POR:', c.fiscalizadoPor || ''],
+      ['EQUIPE:', c.equipe || tecnico || '', 'VALIDADO POR:', c.validadoPor || ''],
+    ];
+    pares.forEach(([r1, v1, r2, v2])=>{
+      // a linha cresce quando o valor da esquerda precisa de duas linhas —
+      // é sempre o CIDADE/LOCAL, que traz cidade, rua, bairro e a caixa
       doc.setFont('helvetica','normal'); doc.setFontSize(8);
       const precisa = doc.splitTextToSize(String(v1 == null ? '' : v1), colEsq - 33).length > 1;
       const h = precisa ? HC + 3.5 : HC;
@@ -6412,7 +6554,116 @@
       campo(xDir, y, CW - colEsq, h, r2, v2, 30);
       y += h;
     });
-    y += 4;
+    y += 3.5;
+
+    // ================= DESCRIÇÃO DO SERVIÇO =================
+    y = faixa('DESCRIÇÃO DO SERVIÇO', y);
+    const textoDesc = (c.descricaoServico || TEXTO_DESCRICAO_PADRAO);
+    const linhasDesc = [];
+    String(textoDesc).split('\n').forEach(par =>
+      doc.splitTextToSize(par, CW - 6).forEach(l => linhasDesc.push(l)));
+    const hDesc = Math.max(16, linhasDesc.length * 4.3 + 5);
+    linhaFina(); doc.rect(M, y, CW, hDesc);
+    doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(0,0,0);
+    doc.text(linhasDesc, M + 3, y + 5.5);
+    y += hDesc;
+
+    // responsáveis: campos que a Ligga preenche/assina, ficam abertos
+    campo(M, y, CW/2, HC, 'Responsável Técnico:', c.responsavelTecnico || '', 34);
+    campo(M + CW/2, y, CW/2, HC, 'Supervisão Técnica:', c.supervisaoTecnica || '', 34);
+    y += HC + 3.5;
+
+    // ================= ATIVIDADES =================
+    // A tabela sai INTEIRA, com as 17 linhas, mesmo as zeradas: é assim que a
+    // Ligga confere ("Efetuar o apontamento do total de itens cobrados").
+
+    const COL_ITEM = 14, COL_UN = 20, COL_UR = 18, COL_QTD = 16, COL_TOT = 24;
+    const COL_ATIV = CW - COL_ITEM - COL_UN - COL_UR - COL_QTD - COL_TOT;
+
+    function cabecalhoAtividades(yy){
+      const h = 8;
+      linhaGrossa();
+      let x = M;
+      [['Item', COL_ITEM], ['Atividades', COL_ATIV], ['Unidade', COL_UN],
+       ['Valor - UR', COL_UR], ['Qtde', COL_QTD], ['Valor - Total', COL_TOT]].forEach(([rot, w])=>{
+        // o cinza tem que ser reafirmado a cada célula: escrever texto no meio
+        // do laço zerava o preenchimento e a faixa saía preta
+        doc.setFillColor(CINZA[0], CINZA[1], CINZA[2]);
+        doc.rect(x, yy, w, h, 'FD');
+        doc.setFont('helvetica','bold'); doc.setFontSize(7.5); doc.setTextColor(0,0,0);
+        doc.text(rot, x + w/2, yy + 5.4, {align:'center'});
+        x += w;
+      });
+      return yy + h;
+    }
+
+    y = faixa('ATIVIDADES', y);
+    y = cabecalhoAtividades(y);
+
+    // A tabela sai EM BRANCO na coluna de quantidade e de valor: o relatório
+    // que vai pra Ligga não leva cobrança nenhuma — é o formulário das 17
+    // atividades com a UR de cada uma. O que foi executado aparece embaixo de
+    // cada par de fotos ("Item e Quantidade"), e a conta em dinheiro fica só
+    // dentro da ferramenta, no passo Valores e na Medição.
+    doc.setFont('helvetica','normal'); doc.setFontSize(7);
+    MAREXT_ATIVIDADES.forEach(at=>{
+      const linhas = doc.splitTextToSize(at.desc, COL_ATIV - 4);
+      const h = Math.max(6.2, linhas.length * 3.0 + 2.6);
+
+      // quebra de página no meio da tabela: repete o cabeçalho, senão a
+      // segunda parte vira um monte de número sem coluna
+      if(y + h > PH - M - 10){
+        doc.addPage();
+        y = M + 5;
+        y = cabecalhoAtividades(y);
+        doc.setFont('helvetica','normal'); doc.setFontSize(7);
+      }
+
+      let x = M;
+      linhaFina();
+      [COL_ITEM, COL_ATIV, COL_UN, COL_UR, COL_QTD, COL_TOT].forEach(w=>{
+        doc.rect(x, y, w, h); x += w;
+      });
+      doc.setTextColor(0,0,0);
+      doc.setFont('helvetica','bold'); doc.setFontSize(7.5);
+      doc.text(at.code, M + COL_ITEM/2, y + h/2 + 1, {align:'center'});
+      doc.setFont('helvetica','normal'); doc.setFontSize(7);
+      doc.text(linhas, M + COL_ITEM + 2, y + 4);
+      let xc = M + COL_ITEM + COL_ATIV;
+      doc.setFontSize(7);
+      doc.text(at.un, xc + COL_UN/2, y + h/2 + 1, {align:'center'});
+      xc += COL_UN;
+      doc.text(at.ur.toFixed(2).replace('.', ','), xc + COL_UR/2, y + h/2 + 1, {align:'center'});
+      xc += COL_UR + COL_QTD;
+      // "R$ -" como na planilha: a coluna existe no formulário, mas sai sem
+      // valor. Quem preenche é a Ligga, se preencher
+      doc.setTextColor(90,90,90);
+      doc.text('R$    -', xc + COL_TOT/2, y + h/2 + 1, {align:'center'});
+      doc.setTextColor(0,0,0);
+      y += h;
+    });
+
+    // linha do total
+    linhaGrossa();
+    const xTot = M + COL_ITEM + COL_ATIV + COL_UN;
+    doc.setFillColor(CINZA[0], CINZA[1], CINZA[2]);
+    doc.rect(M, y, COL_ITEM + COL_ATIV + COL_UN, 8, 'FD');
+    doc.setFillColor(CINZA[0], CINZA[1], CINZA[2]);
+    doc.rect(xTot, y, COL_UR, 8, 'FD');
+    doc.rect(xTot + COL_UR, y, COL_QTD, 8);
+    doc.rect(xTot + COL_UR + COL_QTD, y, COL_TOT, 8);
+    doc.setFont('helvetica','bold'); doc.setFontSize(8.5); doc.setTextColor(0,0,0);
+    doc.text('Total', xTot + COL_UR/2, y + 5.4, {align:'center'});
+    doc.setTextColor(90,90,90);
+    doc.text('R$    -', xTot + COL_UR + COL_QTD + COL_TOT/2, y + 5.4, {align:'center'});
+    doc.setTextColor(0,0,0);
+    y += 8;
+
+    doc.setFont('helvetica','italic'); doc.setFontSize(7.5);
+    doc.text('Obs.: Efetuar o apontamento do total de itens cobrados no relatório.', M, y + 4);
+    doc.setFont('helvetica','normal');
+    y += 8;
+
 
     // ================= ANEXO FOTOGRÁFICO =================
     // Pares: a foto N do ANTES casa com a foto N do DEPOIS. É assim que o
@@ -6423,7 +6674,10 @@
     const nPares = Math.max(antes.length, depois.length);
 
     if(nPares){
-      let py = faixa('ANEXO FOTOGRÁFICO', y) + 3;
+      // o anexo começa em folha própria: a tabela de atividades já ocupa a
+      // primeira inteira, e par de fotos cortado no meio da página não presta
+      doc.addPage();
+      let py = faixa('ANEXO FOTOGRÁFICO', M + 3) + 3;
 
       const COL_W = (CW - 6) / 2, IMG_H = 60, H_META = 4.4;
       // rótulo + foto + 3 linhas de metadado + a linha do item
@@ -6509,7 +6763,7 @@
     }
 
     const sufixo = opts.anexoInterno ? '-com-anexo' : '';
-    const nomePdf = 'Anexo-fotografico-' + String(contrato).replace(/[^\w.-]+/g, '-') + sufixo + '.pdf';
+    const nomePdf = 'Relatorio-notificacoes-' + String(contrato).replace(/[^\w.-]+/g, '-') + sufixo + '.pdf';
     avisarFotosRejeitadas();
     if(opts.comoBlob) return {nome: nomePdf, blob: doc.output('blob')};
     doc.save(nomePdf);
@@ -8672,6 +8926,12 @@
     // administração, não some só do técnico: some de quem não pode vê-los
     const btnAnexo = document.getElementById('reviewPdfInternoBtn');
     if(btnAnexo) btnAnexo.style.display = podeVerFaturamento() ? '' : 'none';
+
+    // o relatório de pendências é a mesma conta do selo "falta N" do cartão,
+    // e esse selo só existe pra quem revisa — pro técnico seria cobrança de
+    // documento que ele nem tem passo pra anexar
+    const btnFaltas = document.getElementById('btnExportFaltas');
+    if(btnFaltas) btnFaltas.style.display = ehRevisor() ? '' : 'none';
 
     // a chave "valores do técnico" segue a mesma regra: só aparece pra quem
     // tem os dois números, e some (desligada) se o papel mudar pra técnico
@@ -13127,8 +13387,250 @@
     }
   }
 
+
+  // ---------- Baixar os documentos de TODAS as obras da lista ----------
+  //
+  // Mesmo conteúdo do botão de baixar de uma obra (o relatório em PDF mais os
+  // documentos anexados), só que de todas as obras que estão na tela — os
+  // mesmos filtros de mês, polo e status que a exportação pro Excel usa. Cada
+  // obra vira uma pasta dentro do zip.
+  //
+  // O cuidado que este código tem, e que o de uma obra só não precisa ter: a
+  // memória. Montar 40 obras significa baixar as fotos de cada uma pra gerar o
+  // PDF. Por isso as obras são processadas UMA POR VEZ e o estado de cada uma
+  // é solto logo depois — o que fica guardado é só o PDF pronto, que é pequeno
+  // perto das fotos que o geraram.
+  let exportandoDocs = false;
+
+  function nomeDePasta(job){
+    const base = normalizarContrato(job.contrato) || 'sem-contrato';
+    return String(base).replace(/[^\w.-]+/g, '-');
+  }
+
+  async function exportarDocsDeTodas(btn){
+    if(exportandoDocs) return;
+    const lista = obrasNaTela();
+    if(!lista.length){ showToast('Não tem obra nessa lista pra exportar'); return; }
+    if(!online){ showToast('Sem conexão — os arquivos precisam vir do servidor'); return; }
+
+    // Dizer o tamanho ANTES: são minutos de espera e dezenas de megabytes, e
+    // quem toca sem querer num filtro largo merece poder desistir.
+    const recorte = (filtroObras === 'historico' ? 'aprovadas' : 'em aberto')
+      + (poloObras ? ', polo ' + poloObras : '')
+      + (mesObras ? ', ' + rotuloMes(mesObras) : '');
+    if(!confirm('Baixar os documentos de ' + lista.length + ' obra(s) (' + recorte + ')?\n\n'
+        + 'Cada obra vira uma pasta no zip, com o relatório em PDF e os documentos anexados.\n'
+        + 'Isso baixa as fotos de todas elas pra montar os relatórios: pode levar '
+        + 'alguns minutos e ocupar bastante espaço.')) return;
+
+    exportandoDocs = true;
+    const rotulo = btn ? btn.textContent : '';
+    if(btn) btn.disabled = true;
+
+    const arquivos = [];
+    const semNada = [];
+    let feitas = 0;
+
+    try{
+      for(const job of lista){
+        feitas++;
+        if(btn) btn.textContent = feitas + '/' + lista.length;
+        showToast('Montando ' + feitas + ' de ' + lista.length + ' — contrato ' + job.contrato);
+        // deixa a tela respirar: sem isto o navegador congela e parece travado
+        await new Promise(r => setTimeout(r, 0));
+
+        const pasta = nomeDePasta(job) + '/';
+        let entrou = 0;
+
+        try{
+          // 1) o relatório em PDF
+          let estado = job.state || job.snapshot || null;
+          let soltarDepois = false;
+          if(!estado && job.row){
+            estado = await buildStateFromRow(job.row);
+            soltarDepois = true;          // não guarda: são as fotos inteiras na memória
+          }
+          if(estado){
+            const r = generatePDF({state: estado, tecnico: job.tecnico, tipo: job.tipo, comoBlob: true});
+            if(r){
+              arquivos.push({nome: pasta + r.nome, dados: new Uint8Array(await r.blob.arrayBuffer())});
+              entrou++;
+            }
+          }
+          if(soltarDepois) estado = null;
+
+          // 2) os documentos anexados
+          const arq = (job.row && job.row.dados && job.row.dados.arquivos) || {};
+          const caminhos = Object.assign({}, arq.projectDocs || {}, arq.docsAtt || {});
+          const tipoDaObra = (job.row && job.row.tipo_obra) || job.tipo || 'convencional';
+          const anexos = [
+            {id:'os_doc',       rot:'Ordem-de-Servico'},
+            {id:'projeto_doc',  rot:'Documento-de-rota'},
+            {id:'diagrama_doc', rot:'Diagrama-unifilar'},
+            {id:'asbuilt',      rot:'Asbuilt-atualizado',           soConvencional:true},
+            {id:'diagrama_att', rot:'Diagrama-unifilar-atualizado', soConvencional:true},
+          ].filter(a => !a.soConvencional || tipoDaObra !== 'modernizacao');
+
+          for(const a of anexos){
+            const caminho = caminhos[a.id];
+            if(!caminho) continue;
+            try{
+              const {data, error} = await supabaseClient.storage.from(SUPABASE_BUCKET).download(caminho);
+              if(error) throw error;
+              const ext = (caminho.split('.').pop() || 'pdf').toLowerCase();
+              arquivos.push({nome: pasta + a.rot + '-' + nomeDePasta(job) + '.' + ext,
+                             dados: new Uint8Array(await data.arrayBuffer())});
+              entrou++;
+            } catch(e){ /* um anexo que falhou não derruba a obra inteira */ }
+          }
+        } catch(e){
+          // uma obra problemática não pode levar as outras 39 junto
+          console.warn('[export] obra ' + job.contrato + ' falhou:', e && (e.message || e));
+        }
+
+        if(!entrou) semNada.push(job.contrato);
+      }
+
+      if(!arquivos.length){
+        showToast('Nenhuma das ' + lista.length + ' obras tinha documento pra baixar');
+        return;
+      }
+
+      // uma lista do que veio e do que não veio, dentro do próprio zip: sem
+      // isso ninguém confere 40 pastas na mão pra descobrir o que faltou
+      const resumo = ['Documentos exportados em ' + new Date().toLocaleString('pt-BR'),
+                      'Recorte: ' + recorte,
+                      'Obras na lista: ' + lista.length,
+                      'Arquivos no pacote: ' + arquivos.length, ''];
+      if(semNada.length){
+        resumo.push('Obras sem nenhum documento (' + semNada.length + '):');
+        semNada.forEach(c => resumo.push('  - ' + c));
+      } else {
+        resumo.push('Todas as obras da lista trouxeram pelo menos um documento.');
+      }
+      arquivos.push({nome:'_resumo.txt', dados: new TextEncoder().encode(resumo.join('\n'))});
+
+      const url = URL.createObjectURL(montarZip(arquivos));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'Documentos-' + lista.length + '-obras-'
+                 + new Date().toISOString().slice(0,10) + '.zip';
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(()=> URL.revokeObjectURL(url), 8000);
+
+      showToast(semNada.length
+        ? (arquivos.length - 1) + ' arquivo(s) baixados — ' + semNada.length + ' obra(s) sem documento (veja _resumo.txt)'
+        : (arquivos.length - 1) + ' arquivo(s) de ' + lista.length + ' obra(s) baixados');
+    } catch(err){
+      showToast('Não deu pra montar o pacote: ' + (err.message || err));
+    } finally {
+      exportandoDocs = false;
+      if(btn){ btn.disabled = false; btn.textContent = rotulo; }
+    }
+  }
+
+  // ---------- Relatório do que está faltando ----------
+  //
+  // A tela já diz "31 obras com documentação faltando" e cada cartão mostra
+  // "falta 2" — mas pra saber O QUE falta era preciso abrir obra por obra. Esta
+  // exportação responde a mesma pergunta de uma vez: quais obras, o que falta
+  // em cada uma, e qual item é o que mais falta no conjunto.
+  //
+  // Usa exatamente a mesma conta do selo do cartão (pendenciasDaObra), então o
+  // relatório nunca discorda do que está na tela.
+  function exportarFaltasXlsx(btn){
+    const lista = obrasNaTela();
+    if(!lista.length){ showToast('Não tem obra nessa lista pra conferir'); return; }
+
+    const comFalta = lista
+      .map(job => ({job, pend: pendenciasDaObra(job)}))
+      .filter(x => x.pend);
+
+    if(!comFalta.length){
+      showToast('Nenhuma obra dessa lista está com documentação faltando');
+      return;
+    }
+
+    if(btn) btn.disabled = true;
+    try{
+      const recorte = (filtroObras === 'historico' ? 'Aprovadas' : 'Em aberto')
+        + (filtroPainel ? ' - ' + filtroPainel.rot : '')
+        + (poloObras ? ' - ' + poloObras : '')
+        + (mesObras ? ' - ' + rotuloMes(mesObras) : '');
+
+      const dadosDaObra = (job)=>{
+        const d = (job.row && job.row.dados && job.row.dados.contract) || {};
+        return [normalizarContrato(job.contrato), poloDaObra(job), rotuloTipo(job.tipo),
+                d.empresa || job.cliente || '', dataIsoObra(job) ? {v: dataIsoObra(job), t:'d'} : '',
+                job.tecnico || '', ROTULO_STATUS_LISTA[job.status] || job.status];
+      };
+
+      // --- aba 1: uma linha por obra, com o resumo do que falta
+      const abaObras = [[CAB('Contrato'), CAB('Polo'), CAB('Tipo'), CAB('Cliente'), CAB('Data'),
+                         CAB('Técnico'), CAB('Status'), CAB('Faltam'), CAB('O que falta')]];
+      // --- aba 2: uma linha por item faltando, pra filtrar e distribuir
+      const abaItens = [[CAB('Contrato'), CAB('Polo'), CAB('Tipo'), CAB('Cliente'), CAB('Data'),
+                         CAB('Técnico'), CAB('Status'), CAB('Grupo'), CAB('Item que falta')]];
+
+      const porItem = {};      // quantas obras estão devendo cada item
+      const porTecnico = {};   // e quantas de cada técnico
+
+      comFalta.forEach(({job, pend})=>{
+        const base = dadosDaObra(job);
+        const resumo = pend.grupos.map(g => g.rot + ': ' + g.itens.join('; ')).join(' | ');
+        abaObras.push(base.concat([pend.total, resumo]));
+
+        pend.grupos.forEach(g=>{
+          g.itens.forEach(item=>{
+            abaItens.push(base.concat([g.rot, item]));
+            const chave = g.rot + ' — ' + item;
+            porItem[chave] = (porItem[chave] || 0) + 1;
+          });
+        });
+
+        const tec = job.tecnico || '(sem técnico)';
+        if(!porTecnico[tec]) porTecnico[tec] = {obras:0, itens:0};
+        porTecnico[tec].obras++;
+        porTecnico[tec].itens += pend.total;
+      });
+
+      // --- aba 3: qual item mais falta. É por onde se ataca o problema:
+      // se 28 das 31 obras estão devendo o mesmo asbuilt, o problema não é
+      // obra por obra, é o passo do asbuilt.
+      const resItens = [[CAB('Item que falta'), CAB('Em quantas obras')]];
+      Object.keys(porItem)
+        .sort((a,b) => porItem[b] - porItem[a] || a.localeCompare(b))
+        .forEach(k => resItens.push([k, porItem[k]]));
+
+      // --- aba 4: por técnico, pra saber de quem cobrar
+      const resTec = [[CAB('Técnico'), CAB('Obras com pendência'), CAB('Itens faltando')]];
+      Object.keys(porTecnico)
+        .sort((a,b) => porTecnico[b].itens - porTecnico[a].itens || a.localeCompare(b))
+        .forEach(t => resTec.push([t, porTecnico[t].obras, porTecnico[t].itens]));
+
+      const hoje = new Date().toISOString().slice(0, 10);
+      baixarXlsx('Pendencias-' + recorte.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')
+                 + '-' + hoje + '.xlsx', [
+        {nome:'Obras',            larguras:[15,8,15,30,12,22,14,9,70], linhas: abaObras},
+        {nome:'Item a item',      larguras:[15,8,15,30,12,22,14,22,46], linhas: abaItens},
+        {nome:'O que mais falta', larguras:[62,18],                    linhas: resItens},
+        {nome:'Por técnico',      larguras:[26,20,16],                 linhas: resTec},
+      ]);
+      showToast(comFalta.length + ' obra(s) com pendência, '
+                + (abaItens.length - 1) + ' item(ns) faltando');
+    } catch(e){
+      showToast('Não deu pra montar a planilha: ' + (e.message || e));
+    } finally {
+      if(btn) btn.disabled = false;
+    }
+  }
+
   const btnExpObras = document.getElementById('btnExportObras');
   if(btnExpObras) btnExpObras.addEventListener('click', (e)=> exportarObrasXlsx(e.currentTarget));
+  const btnExpDocs = document.getElementById('btnExportDocs');
+  if(btnExpDocs) btnExpDocs.addEventListener('click', (e)=> exportarDocsDeTodas(e.currentTarget));
+  const btnExpFaltas = document.getElementById('btnExportFaltas');
+  if(btnExpFaltas) btnExpFaltas.addEventListener('click', (e)=> exportarFaltasXlsx(e.currentTarget));
 
   function renderJobsList(){
     jobsList.innerHTML = '';
