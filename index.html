@@ -1495,6 +1495,42 @@
     width:100%;margin-top:10px;background:none;border:1px solid var(--success);color:var(--success);
     border-radius:8px;padding:9px;font-size:13px;cursor:pointer;font-family:inherit;
   }
+  .api-url-caixa{
+    border:1px solid var(--border);border-radius:10px;padding:11px 12px;margin-bottom:12px;
+  }
+  .api-url-rot{
+    font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;
+    color:var(--text-faint);margin-bottom:6px;
+  }
+  .api-url-linha{display:flex;align-items:center;gap:8px;}
+  .api-url-linha code{
+    flex:1;min-width:0;word-break:break-all;font-family:'IBM Plex Mono',monospace;
+    font-size:11.5px;color:var(--text-dim);
+  }
+  .api-url-linha .cc-copiar{
+    background:none;border:1px solid var(--border);color:var(--text-dim);border-radius:6px;
+    padding:3px 9px;font-size:11px;cursor:pointer;font-family:inherit;flex-shrink:0;
+  }
+  .api-url-linha .cc-copiar:active{border-color:var(--success);color:var(--success);}
+  .api-url-dica{font-size:11px;color:var(--text-faint);margin-top:7px;line-height:1.5;}
+  .api-url-dica code{font-family:'IBM Plex Mono',monospace;color:var(--text-dim);}
+  .chave-row{
+    display:flex;align-items:center;gap:10px;justify-content:space-between;
+    border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:8px;
+  }
+  .chave-row.revogada{opacity:.55;border-style:dashed;}
+  .chave-info{min-width:0;flex:1;}
+  .chave-nome{font-size:13px;margin-bottom:2px;}
+  .chave-sub{
+    font-size:11px;color:var(--text-faint);line-height:1.5;
+    font-family:'IBM Plex Mono',monospace;word-break:break-all;
+  }
+  .chave-revogar{
+    border:1px solid var(--border);color:var(--text-faint);background:transparent;
+    border-radius:9px;padding:6px 10px;font-size:11.5px;cursor:pointer;
+    white-space:nowrap;flex-shrink:0;
+  }
+  .chave-revogar:active{border-color:var(--danger);color:var(--danger);}
   .user-excluir{
     border:1px solid var(--border);color:var(--text-faint);background:transparent;
     border-radius:9px;padding:6px 9px;font-size:11.5px;cursor:pointer;
@@ -3098,6 +3134,7 @@
     <div class="adm-abas" id="painelAbas">
       <div class="adm-aba ativo" data-aba="acessos" id="abaAcessos">Acessos</div>
       <div class="adm-aba" data-aba="manutencao">Manutenção</div>
+      <div class="adm-aba" data-aba="api" id="abaApi" style="display:none;">API</div>
     </div>
 
     <div id="tabAcessos">
@@ -3205,6 +3242,46 @@
         Procurar arquivos órfãos no servidor
       </button>
       <div id="faxinaResultado" style="font-size:11.5px;color:var(--text-dim);margin-top:8px;line-height:1.6;"></div>
+    </div>
+
+    <div id="tabApi" style="display:none;padding:0 16px 24px;">
+      <div class="step-sub" style="padding:0 0 10px;">
+        Uma chave para cada sistema que vai puxar os dados — CRM, Power BI, n8n.
+        Cada chave só enxerga as obras desta empresa, e você pode cancelar uma
+        sem mexer nas outras.
+      </div>
+
+      <div class="api-url-caixa">
+        <div class="api-url-rot">Endereço da API</div>
+        <div class="api-url-linha">
+          <code id="apiUrlTexto"></code>
+          <button type="button" class="cc-copiar" id="apiUrlCopiar" data-alvo="apiUrlTexto">copiar</button>
+        </div>
+        <div class="api-url-dica">
+          A chave vai no cabeçalho <code>x-api-key</code>, nunca no endereço.
+        </div>
+      </div>
+
+      <button class="job-edit-btn" id="btnNovaChave" type="button" style="width:100%;margin-bottom:12px;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+        Criar chave
+      </button>
+
+      <div class="conv-form" id="chaveForm" style="display:none;">
+        <input id="chaveNome" placeholder="Para quem é esta chave? (ex.: Power BI da Ligga)">
+        <div style="display:flex;gap:8px;">
+          <button class="job-edit-btn" id="chaveCancelar" type="button" style="flex:1;">Cancelar</button>
+          <button class="job-edit-btn" id="chaveSalvar" type="button" style="flex:1;border-color:var(--accent);color:var(--accent);">Criar</button>
+        </div>
+      </div>
+
+      <div class="conv-credenciais" id="chaveCriada" style="display:none;">
+        <div><b>Chave criada.</b> Copie agora — ela não aparece de novo. Se perder, é só criar outra e cancelar esta.</div>
+        <div class="cc-linha"><span class="cc-rot">Chave</span><span id="ccChave" style="word-break:break-all;"></span><button type="button" class="cc-copiar" data-alvo="ccChave">copiar</button></div>
+        <button type="button" class="cc-fechar" id="chaveCriadaFechar">Já copiei</button>
+      </div>
+
+      <div id="listaChaves"></div>
     </div>
   </div>
 
@@ -3671,7 +3748,7 @@
 (function(){
   // Marque aqui a cada build enviado ao campo. O testador informa esta
   // string ao relatar um problema, senao nao da pra saber o que ele rodou.
-  const APP_VERSION = 'Enlace Ops · alpha-11.06 · 04/09/2026';
+  const APP_VERSION = 'Enlace Ops · alpha-11.07 · 09/09/2026';
 
   // ---------- Supabase config ----------
   // Troque pelos valores reais do seu projeto (Project Settings -> API no Supabase).
@@ -9412,6 +9489,7 @@
         document.querySelectorAll('.adm-aba').forEach(a => a.classList.toggle('ativo', a.dataset.aba === 'acessos'));
         document.getElementById('tabAcessos').style.display = 'block';
         document.getElementById('tabManutencao').style.display = 'none';
+        document.getElementById('tabApi').style.display = 'none';
         renderUsuarios();
         break;
       case 'empresas':  showAppView('usuarios'); escopoEmpresas = true; escopoTecnicos = false; empresaContexto = null; renderUsuarios(); break;
@@ -11092,6 +11170,7 @@
       if(subAdm) subAdm.textContent = 'Cada empreiteira que usa a ferramenta.';
       document.getElementById('tabAcessos').style.display = 'none';
       document.getElementById('tabManutencao').style.display = 'none';
+      document.getElementById('tabApi').style.display = 'none';
       document.getElementById('tabEmpresas').style.display = 'block';
       const bannerEmp = document.getElementById('empresaContextoBanner');
       if(bannerEmp) bannerEmp.style.display = 'none';
@@ -11114,7 +11193,12 @@
       document.querySelectorAll('.adm-aba').forEach(a => a.classList.toggle('ativo', a.dataset.aba === 'acessos'));
       document.getElementById('tabAcessos').style.display = 'block';
       document.getElementById('tabManutencao').style.display = 'none';
+      document.getElementById('tabApi').style.display = 'none';
     }
+    // A aba API só existe pra admin, e não faz sentido pro superadmin que
+    // ainda não escolheu empresa: a chave nasce presa a uma empresa.
+    const abaApi = document.getElementById('abaApi');
+    if(abaApi) abaApi.style.display = (ehAdmin() && !escopoTecnicos && !(ehSuper() && !empresaContexto)) ? '' : 'none';
     document.getElementById('convPapel').value = escopoTecnicos ? 'tecnico' : document.getElementById('convPapel').value;
     document.getElementById('convPapel').style.display = escopoTecnicos ? 'none' : '';
 
@@ -11703,6 +11787,7 @@
     obras:      'Todas as obras do servidor. Selecione para excluir em lote.',
     manutencao: 'Limpeza de arquivos que ficaram para trás.',
     empresas:   'Cada empreiteira que usa a ferramenta.',
+    api:        'Chaves para outros sistemas puxarem as obras em JSON.',
   };
 
   document.querySelectorAll('.adm-aba').forEach(aba=>{
@@ -11713,6 +11798,7 @@
       document.getElementById('tabObras').style.display      = alvo === 'obras' ? 'block' : 'none';
       document.getElementById('tabManutencao').style.display = alvo === 'manutencao' ? 'block' : 'none';
       document.getElementById('tabEmpresas').style.display   = alvo === 'empresas' ? 'block' : 'none';
+      document.getElementById('tabApi').style.display        = alvo === 'api' ? 'block' : 'none';
       // "Empresas" é a visão de fora; sair da instância de uma empresa
       if(alvo === 'empresas'){
         empresaContexto = null;
@@ -11729,6 +11815,7 @@
       // convite/banner mostrando o estado de uma empresa que a pessoa já saiu.
       if(alvo === 'acessos') renderUsuarios();
       if(alvo === 'obras') renderObrasAdmin();
+      if(alvo === 'api') renderChavesApi();
     });
   });
 
@@ -11737,6 +11824,140 @@
   });
 
   document.getElementById('btnFaxina').addEventListener('click', procurarOrfaos);
+
+  // ---------- Chaves de API ----------
+  //
+  // Não dá pra criar essa chave pelo SQL Editor do Supabase: lá não existe
+  // usuário logado, e a função do banco confere quem está pedindo antes de
+  // gerar. Por isso a criação mora aqui, na tela, onde a sessão é real.
+  //
+  // A chave em texto existe por um instante só: o banco devolve, a tela
+  // mostra, e depois só sobra o hash. Não tem "ver de novo" de propósito —
+  // uma chave que pode ser reexibida é uma chave que vaza no dia em que
+  // alguém abre o painel na frente da pessoa errada.
+
+  const API_ENDPOINT = SUPABASE_URL + '/functions/v1/obras';
+
+  function ehChaveAtiva(c){ return c.ativo !== false; }
+
+  function dataCurtaChave(iso){
+    if(!iso) return null;
+    try{ return new Date(iso).toLocaleDateString('pt-BR'); } catch(e){ return null; }
+  }
+
+  async function renderChavesApi(){
+    const lista = document.getElementById('listaChaves');
+    const url = document.getElementById('apiUrlTexto');
+    if(!lista) return;
+    if(url) url.textContent = API_ENDPOINT;
+
+    if(modoDemo){
+      lista.innerHTML = '<div class="job-service-empty" style="padding:18px 4px;">'
+        + 'No modo demonstração as chaves não são criadas de verdade.</div>';
+      return;
+    }
+    lista.innerHTML = '<div class="job-service-empty" style="padding:18px 4px;">Carregando...</div>';
+    try{
+      const {data, error} = await supabaseClient.rpc('api_token_lista');
+      if(error) throw error;
+      const chaves = data || [];
+      if(!chaves.length){
+        lista.innerHTML = '<div class="job-service-empty" style="padding:18px 4px;">'
+          + 'Nenhuma chave criada ainda.</div>';
+        return;
+      }
+      lista.innerHTML = '';
+      chaves.forEach(c=>{
+        const ativa = ehChaveAtiva(c);
+        const criada = dataCurtaChave(c.criado_em);
+        const usada = dataCurtaChave(c.ultimo_uso);
+        const partes = [];
+        partes.push(esc(c.prefixo || '') + '…');
+        if(criada) partes.push('criada em ' + criada);
+        // "nunca usada" numa chave que devia estar em produção é o sinal de
+        // que o outro lado não configurou — vale mais que a contagem.
+        partes.push(usada ? ('último acesso ' + usada + ' · ' + (c.usos || 0) + ' chamadas')
+                          : 'nunca usada');
+        const row = document.createElement('div');
+        row.className = 'chave-row' + (ativa ? '' : ' revogada');
+        row.innerHTML = '<div class="chave-info">'
+          + '<div class="chave-nome">' + esc(c.nome || 'Sem nome')
+          + (ativa ? '' : ' <span style="color:var(--text-faint);font-size:11px;">(cancelada)</span>')
+          + '</div><div class="chave-sub">' + partes.join(' · ') + '</div></div>';
+        if(ativa){
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'chave-revogar';
+          btn.textContent = 'Cancelar';
+          btn.addEventListener('click', async ()=>{
+            if(!confirm('Cancelar a chave "' + (c.nome || 'sem nome') + '"?\n\n'
+              + 'O sistema que usa ela para de receber os dados na hora.')) return;
+            btn.disabled = true; btn.textContent = 'Cancelando...';
+            try{
+              const {data: ok, error: err} = await supabaseClient.rpc('api_token_revogar', {p_id: c.id});
+              if(err) throw err;
+              if(!ok) throw new Error('essa chave não é desta empresa');
+              showToast('Chave cancelada');
+              renderChavesApi();
+            } catch(e){
+              btn.disabled = false; btn.textContent = 'Cancelar';
+              showToast('Não deu pra cancelar: ' + (e.message || e));
+            }
+          });
+          row.appendChild(btn);
+        }
+        lista.appendChild(row);
+      });
+    } catch(e){
+      lista.innerHTML = '<div class="job-service-empty" style="padding:18px 4px;">'
+        + 'Não deu pra ler as chaves: ' + esc(e.message || String(e))
+        + '<br><br>Se a mensagem falar em função que não existe, falta rodar o '
+        + '<code>sql-api-json.sql</code> no Supabase.</div>';
+    }
+  }
+
+  (function ligarChavesApi(){
+    const form = document.getElementById('chaveForm');
+    const campo = document.getElementById('chaveNome');
+    const caixa = document.getElementById('chaveCriada');
+    const btnNova = document.getElementById('btnNovaChave');
+    const btnSalvar = document.getElementById('chaveSalvar');
+    if(!form || !btnNova) return;
+
+    btnNova.addEventListener('click', ()=>{
+      caixa.style.display = 'none';
+      form.style.display = form.style.display === 'none' ? 'block' : 'none';
+      if(form.style.display === 'block'){ campo.value = ''; campo.focus(); }
+    });
+    document.getElementById('chaveCancelar').addEventListener('click', ()=>{
+      form.style.display = 'none';
+    });
+    document.getElementById('chaveCriadaFechar').addEventListener('click', ()=>{
+      caixa.style.display = 'none';
+      document.getElementById('ccChave').textContent = '';
+    });
+
+    btnSalvar.addEventListener('click', async ()=>{
+      const nome = (campo.value || '').trim();
+      if(!nome){ showToast('Diga para quem é a chave — é como você vai reconhecer depois'); campo.focus(); return; }
+      if(modoDemo){ showToast('No modo demonstração a chave não é criada de verdade'); return; }
+      btnSalvar.disabled = true; btnSalvar.textContent = 'Criando...';
+      try{
+        const {data, error} = await supabaseClient.rpc('api_token_criar', {p_nome: nome});
+        if(error) throw error;
+        if(!data) throw new Error('o servidor não devolveu a chave');
+        document.getElementById('ccChave').textContent = data;
+        caixa.style.display = 'block';
+        form.style.display = 'none';
+        campo.value = '';
+        renderChavesApi();
+      } catch(e){
+        showToast('Não deu pra criar a chave: ' + (e.message || e));
+      } finally {
+        btnSalvar.disabled = false; btnSalvar.textContent = 'Criar';
+      }
+    });
+  })();
 
   usersCard.addEventListener('click', ()=>{
     if(!ehAdmin()){ showToast('Só o administrador acessa o controle de acessos'); return; }
