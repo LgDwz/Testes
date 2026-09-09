@@ -3748,7 +3748,7 @@
 (function(){
   // Marque aqui a cada build enviado ao campo. O testador informa esta
   // string ao relatar um problema, senao nao da pra saber o que ele rodou.
-  const APP_VERSION = 'Enlace Ops · alpha-11.07 · 09/09/2026';
+  const APP_VERSION = 'Enlace Ops · alpha-11.08 · 09/09/2026';
 
   // ---------- Supabase config ----------
   // Troque pelos valores reais do seu projeto (Project Settings -> API no Supabase).
@@ -11195,10 +11195,13 @@
       document.getElementById('tabManutencao').style.display = 'none';
       document.getElementById('tabApi').style.display = 'none';
     }
-    // A aba API só existe pra admin, e não faz sentido pro superadmin que
-    // ainda não escolheu empresa: a chave nasce presa a uma empresa.
+    // A aba API é de admin. O superadmin que ainda não entrou numa empresa vê
+    // a aba do mesmo jeito — a chave precisa de uma empresa, mas esconder a
+    // aba nesse caso fazia ela simplesmente não existir pra quem tem MAIS
+    // permissão que todo mundo, sem uma linha explicando. A explicação agora
+    // está dentro da aba, junto com o caminho pra resolver.
     const abaApi = document.getElementById('abaApi');
-    if(abaApi) abaApi.style.display = (ehAdmin() && !escopoTecnicos && !(ehSuper() && !empresaContexto)) ? '' : 'none';
+    if(abaApi) abaApi.style.display = (ehAdmin() && !escopoTecnicos) ? '' : 'none';
     document.getElementById('convPapel').value = escopoTecnicos ? 'tecnico' : document.getElementById('convPapel').value;
     document.getElementById('convPapel').style.display = escopoTecnicos ? 'none' : '';
 
@@ -11851,9 +11854,29 @@
     if(!lista) return;
     if(url) url.textContent = API_ENDPOINT;
 
-    if(modoDemo){
+    // Superadmin olhando "de fora": não dá pra criar chave sem saber de qual
+    // empresa ela é. Em vez de sumir com a aba, diz o que falta e leva lá.
+    //
+    // Esta checagem vem ANTES da do modo demonstração porque "falta escolher a
+    // empresa" é verdade nos dois modos, e é a informação mais útil das duas.
+    const btnNova = document.getElementById('btnNovaChave');
+    const semEmpresa = ehSuper() && !empresaContexto;
+    if(btnNova) btnNova.style.display = semEmpresa ? 'none' : '';
+    if(!semEmpresa && modoDemo){
       lista.innerHTML = '<div class="job-service-empty" style="padding:18px 4px;">'
         + 'No modo demonstração as chaves não são criadas de verdade.</div>';
+      return;
+    }
+    if(semEmpresa){
+      document.getElementById('chaveForm').style.display = 'none';
+      document.getElementById('chaveCriada').style.display = 'none';
+      lista.innerHTML = '<div class="job-service-empty" style="padding:18px 4px;line-height:1.7;">'
+        + 'Toda chave pertence a uma empresa — ela só entrega as obras daquela empreiteira.<br>'
+        + 'Entre numa empresa para ver e criar as chaves dela.'
+        + '<div style="margin-top:12px;"><button class="job-edit-btn" type="button" id="btnApiEscolherEmpresa" '
+        + 'style="border-color:var(--accent);color:var(--accent);">Escolher empresa</button></div></div>';
+      const b = document.getElementById('btnApiEscolherEmpresa');
+      if(b) b.addEventListener('click', ()=> navegarMenu('empresas'));
       return;
     }
     lista.innerHTML = '<div class="job-service-empty" style="padding:18px 4px;">Carregando...</div>';
