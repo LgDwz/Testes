@@ -3780,7 +3780,7 @@
 (function(){
   // Marque aqui a cada build enviado ao campo. O testador informa esta
   // string ao relatar um problema, senao nao da pra saber o que ele rodou.
-  const APP_VERSION = 'Enlace Ops · alpha-11.19 · 10/09/2026';
+  const APP_VERSION = 'Enlace Ops · alpha-11.20 · 10/09/2026';
 
   // ---------- Supabase config ----------
   // Troque pelos valores reais do seu projeto (Project Settings -> API no Supabase).
@@ -7327,16 +7327,21 @@
     // demais seções com múltiplas fotos ganham 2 fotos por página, lado a
     // lado, em vez de 1 por página — e a observação/legenda digitada pelo
     // técnico em cada foto é impressa embaixo dela.
-    const itemIni = photoItems.find(i => i.id === 1);
-    const itemFim = photoItems.find(i => i.id === 2);
-    const itemAberta = photoItems.find(i => i.id === 3);
-    const itemIdent = photoItems.find(i => i.id === 4);
-    const itemFechada = photoItems.find(i => i.id === 5);
-    const itemPto = photoItems.find(i => i.id === 6);
-    const itemSinal = photoItems.find(i => i.id === 7);
-    const itemPoste = photoItems.find(i => i.id === 8);
-    const outrosItems = photoItems.filter(i => ![1,2,3,4,5,6,7,8,9].includes(i.id));
-    const itemAssinatura = photoItems.find(i => i.assinatura);
+    // A lista de fotos vem do tipo DESTE relatório, pelo mesmo motivo do
+    // `tipoRelatorio` lá em cima: reimprimir uma obra pela lista, ou exportar
+    // em lote, roda com a tela em outro tipo. Usar a lista global aqui fazia o
+    // anexo fotográfico sair vazio quando os dois não coincidiam.
+    const itensFotoRel = itensDoTipo(tipoRelatorio);
+    const itemIni = itensFotoRel.find(i => i.id === 1);
+    const itemFim = itensFotoRel.find(i => i.id === 2);
+    const itemAberta = itensFotoRel.find(i => i.id === 3);
+    const itemIdent = itensFotoRel.find(i => i.id === 4);
+    const itemFechada = itensFotoRel.find(i => i.id === 5);
+    const itemPto = itensFotoRel.find(i => i.id === 6);
+    const itemSinal = itensFotoRel.find(i => i.id === 7);
+    const itemPoste = itensFotoRel.find(i => i.id === 8);
+    const outrosItems = itensFotoRel.filter(i => ![1,2,3,4,5,6,7,8,9].includes(i.id));
+    const itemAssinatura = itensFotoRel.find(i => i.assinatura);
 
     // Seção em grade: 1 foto = página inteira, 2 fotos = lado a lado
     // (usada pra identificação do cliente, sinal e PTO).
@@ -8092,6 +8097,20 @@
     const d = row.dados || {};
     const arq = d.arquivos || {};
     const meta = d.meta || {};
+
+    // A lista de fotos é a DO TIPO DESTA OBRA, não a que está aberta na tela.
+    //
+    // Este era um bug de perder relatório. `photoItems` é global e vale pro
+    // tipo que a tela está mostrando; o app abre em convencional. Carregar uma
+    // obra de modernização por fora da tela dela — que é o que o botão DOCS
+    // faz, obra atrás de obra — percorria os slots do convencional, e os
+    // slots 101/102 (antes/depois da modernização) nunca eram lidos.
+    //
+    // Resultado: as fotos estavam salvas e íntegras no servidor, mas o
+    // relatório saía com "Nenhuma evidência fotográfica anexada a esta obra".
+    // Nada foi apagado — foi o carregador que procurou no lugar errado.
+    const tipoDaLinha = row.tipo_obra || d.tipoObra || 'convencional';
+    const itensFoto = itensDoTipo(tipoDaLinha);
     const st = {
       contract: d.contract || {},
       projectDocs: {},
@@ -8117,7 +8136,7 @@
       catch(e){ st.arquivosPerdidos.push(rotulo); return null; }
     }
 
-    for(const item of photoItems){
+    for(const item of itensFoto){
       const v = (arq.photos || {})[item.id];
       if(!v) continue;
       const m = (meta.photos || {})[item.id];
