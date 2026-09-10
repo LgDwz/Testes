@@ -1505,7 +1505,7 @@
   .api-url-linha{display:flex;align-items:center;gap:8px;}
   .api-url-linha code{
     flex:1;min-width:0;word-break:break-all;font-family:'IBM Plex Mono',monospace;
-    font-size:11.5px;color:var(--text-dim);
+    font-size:11.5px;color:var(--text-dim);white-space:pre-wrap;line-height:1.6;
   }
   .api-url-linha .cc-copiar{
     background:none;border:1px solid var(--border);color:var(--text-dim);border-radius:6px;
@@ -3262,6 +3262,20 @@
         </div>
       </div>
 
+      <div class="api-url-caixa">
+        <div class="api-url-rot">Cabeçalhos — os dois são obrigatórios</div>
+        <div class="api-url-linha">
+          <code id="apiHeadersTexto"></code>
+          <button type="button" class="cc-copiar" id="apiHeadersCopiar" data-alvo="apiHeadersTexto">copiar</button>
+        </div>
+        <div class="api-url-dica">
+          O <code>Authorization</code> é só pra destravar o portão do Supabase — é a
+          mesma chave pública que já está dentro deste site, e sozinha ela não abre
+          nada (todas as tabelas voltam vazias). Quem libera os dados é o
+          <code>x-api-key</code>. Troque o <code>eop_…</code> pela chave que você criar abaixo.
+        </div>
+      </div>
+
       <div class="step-sub" id="apiEmpresaRot" style="display:none;padding:0 0 10px;"></div>
 
       <button class="job-edit-btn" id="btnNovaChave" type="button" style="width:100%;margin-bottom:12px;">
@@ -3278,7 +3292,9 @@
       </div>
 
       <div class="conv-credenciais" id="chaveCriada" style="display:none;">
-        <div><b>Chave criada.</b> Copie agora — ela não aparece de novo. Se perder, é só criar outra e cancelar esta.</div>
+        <div><b>Chave criada.</b> Esta é a única vez que ela aparece inteira — na lista
+        abaixo só fica o começo dela, que não serve para acessar a API.
+        Copie agora. Se perder, crie outra e cancele esta.</div>
         <div class="cc-linha"><span class="cc-rot">Chave</span><span id="ccChave" style="word-break:break-all;"></span><button type="button" class="cc-copiar" data-alvo="ccChave">copiar</button></div>
         <button type="button" class="cc-fechar" id="chaveCriadaFechar">Já copiei</button>
       </div>
@@ -3750,7 +3766,7 @@
 (function(){
   // Marque aqui a cada build enviado ao campo. O testador informa esta
   // string ao relatar um problema, senao nao da pra saber o que ele rodou.
-  const APP_VERSION = 'Enlace Ops · alpha-11.09 · 09/09/2026';
+  const APP_VERSION = 'Enlace Ops · alpha-11.11 · 10/09/2026';
 
   // ---------- Supabase config ----------
   // Troque pelos valores reais do seu projeto (Project Settings -> API no Supabase).
@@ -11872,6 +11888,21 @@
     if(!lista) return;
     if(url) url.textContent = API_ENDPOINT;
 
+    // Os DOIS cabeçalhos, prontos pra copiar.
+    //
+    // O `Authorization` não é opcional e não é detalhe: o Supabase põe um
+    // portão na frente de toda Edge Function e recusa a chamada sem ele,
+    // antes de o nosso código rodar — a mensagem que aparece é
+    // "UNAUTHORIZED_NO_AUTH_HEADER", que não tem nada a ver com a chave da
+    // API e manda qualquer um procurar no lugar errado. A chave usada aqui é
+    // a pública do app, que já está visível no código deste site; sozinha ela
+    // não lê nada, porque as políticas do banco barram tudo pra ela.
+    const hdr = document.getElementById('apiHeadersTexto');
+    if(hdr){
+      hdr.textContent = 'Authorization: Bearer ' + SUPABASE_ANON_KEY
+                      + '\nx-api-key: eop_…';
+    }
+
     // De qual empresa são estas chaves. Fica ANTES de qualquer saída
     // antecipada de propósito: o superadmin transita entre empresas, e numa
     // versão anterior o nome da empresa anterior continuava no topo depois de
@@ -11925,7 +11956,11 @@
         const criada = dataCurtaChave(c.criado_em);
         const usada = dataCurtaChave(c.ultimo_uso);
         const partes = [];
-        partes.push(esc(c.prefixo || '') + '…');
+        // "começa com" e não o prefixo solto: mostrado como `eop_58ce6bf0…`,
+        // isso PARECE a chave, e parece copiável. Alguém copia esse pedaço,
+        // usa na API, leva "chave inválida" e não tem como desconfiar — a
+        // chave de verdade tem 52 caracteres e não volta a aparecer.
+        partes.push('começa com ' + esc(c.prefixo || ''));
         if(criada) partes.push('criada em ' + criada);
         // "nunca usada" numa chave que devia estar em produção é o sinal de
         // que o outro lado não configurou — vale mais que a contagem.
