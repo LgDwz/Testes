@@ -3262,6 +3262,8 @@
         </div>
       </div>
 
+      <div class="step-sub" id="apiEmpresaRot" style="display:none;padding:0 0 10px;"></div>
+
       <button class="job-edit-btn" id="btnNovaChave" type="button" style="width:100%;margin-bottom:12px;">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
         Criar chave
@@ -3748,7 +3750,7 @@
 (function(){
   // Marque aqui a cada build enviado ao campo. O testador informa esta
   // string ao relatar um problema, senao nao da pra saber o que ele rodou.
-  const APP_VERSION = 'Enlace Ops · alpha-11.08 · 09/09/2026';
+  const APP_VERSION = 'Enlace Ops · alpha-11.09 · 09/09/2026';
 
   // ---------- Supabase config ----------
   // Troque pelos valores reais do seu projeto (Project Settings -> API no Supabase).
@@ -11843,6 +11845,22 @@
 
   function ehChaveAtiva(c){ return c.ativo !== false; }
 
+  // De qual empresa é a chave.
+  //
+  // Este era o buraco: o superadmin ENTRA numa empresa, o botão de criar
+  // aparece, ele clica — e o app mandava só o nome, sem dizer de qual
+  // empresa. O banco recusava com "informe a empresa da chave", e da tela
+  // não dava pra saber o que faltava, porque a empresa já tinha sido
+  // escolhida. Faltava mandar, não faltava escolher.
+  function empresaDaChave(){
+    if(empresaContexto) return empresaContexto.id;
+    return minhaEmpresa();
+  }
+  function nomeEmpresaDaChave(){
+    if(empresaContexto) return empresaContexto.nome || '';
+    return (perfilAtual && perfilAtual.empresa_nome) || '';
+  }
+
   function dataCurtaChave(iso){
     if(!iso) return null;
     try{ return new Date(iso).toLocaleDateString('pt-BR'); } catch(e){ return null; }
@@ -11853,6 +11871,17 @@
     const url = document.getElementById('apiUrlTexto');
     if(!lista) return;
     if(url) url.textContent = API_ENDPOINT;
+
+    // De qual empresa são estas chaves. Fica ANTES de qualquer saída
+    // antecipada de propósito: o superadmin transita entre empresas, e numa
+    // versão anterior o nome da empresa anterior continuava no topo depois de
+    // sair dela — dizendo "Chaves de CiP" numa tela que não era mais da CiP.
+    const rotEmp = document.getElementById('apiEmpresaRot');
+    if(rotEmp){
+      const nomeEmp = empresaDaChave() ? nomeEmpresaDaChave() : '';
+      rotEmp.style.display = nomeEmp ? '' : 'none';
+      rotEmp.innerHTML = nomeEmp ? ('Chaves de <b>' + esc(nomeEmp) + '</b>') : '';
+    }
 
     // Superadmin olhando "de fora": não dá pra criar chave sem saber de qual
     // empresa ela é. Em vez de sumir com a aba, diz o que falta e leva lá.
@@ -11881,7 +11910,8 @@
     }
     lista.innerHTML = '<div class="job-service-empty" style="padding:18px 4px;">Carregando...</div>';
     try{
-      const {data, error} = await supabaseClient.rpc('api_token_lista');
+      const {data, error} = await supabaseClient.rpc('api_token_lista',
+        {p_empresa: empresaDaChave()});
       if(error) throw error;
       const chaves = data || [];
       if(!chaves.length){
@@ -11964,9 +11994,15 @@
       const nome = (campo.value || '').trim();
       if(!nome){ showToast('Diga para quem é a chave — é como você vai reconhecer depois'); campo.focus(); return; }
       if(modoDemo){ showToast('No modo demonstração a chave não é criada de verdade'); return; }
+      const emp = empresaDaChave();
+      if(!emp){
+        showToast('Entre numa empresa antes de criar a chave — ela pertence a uma empresa');
+        return;
+      }
       btnSalvar.disabled = true; btnSalvar.textContent = 'Criando...';
       try{
-        const {data, error} = await supabaseClient.rpc('api_token_criar', {p_nome: nome});
+        const {data, error} = await supabaseClient.rpc('api_token_criar',
+          {p_nome: nome, p_empresa: emp});
         if(error) throw error;
         if(!data) throw new Error('o servidor não devolveu a chave');
         document.getElementById('ccChave').textContent = data;
