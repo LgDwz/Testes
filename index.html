@@ -3780,7 +3780,7 @@
 (function(){
   // Marque aqui a cada build enviado ao campo. O testador informa esta
   // string ao relatar um problema, senao nao da pra saber o que ele rodou.
-  const APP_VERSION = 'Enlace Ops · alpha-11.12 · 10/09/2026';
+  const APP_VERSION = 'Enlace Ops · alpha-11.19 · 10/09/2026';
 
   // ---------- Supabase config ----------
   // Troque pelos valores reais do seu projeto (Project Settings -> API no Supabase).
@@ -4025,26 +4025,45 @@
   // é em reais: cada atividade vale um tanto de UR, e o real sai de UR × LPU.
   // A LPU é UM número que vale pro contrato inteiro — mudou a LPU, mudou o
   // relatório inteiro. Por isso ela fica separada aqui, não espalhada por item.
+  //
+  // São as 17 linhas do FORMULÁRIO, na ordem exata dele — não a lista inteira
+  // do MAREXT, que tem bem mais. O relatório reproduz o formulário porque é
+  // esse o documento que a Ligga recebe e confere.
+  //
+  // As 17 não são todas da mesma classe: doze são classe L (cabos, 02.xx) e
+  // cinco são classe F (emendas ópticas, 03.xx). É por isso que os 03.xx não
+  // aparecem na aba MAREXT da planilha — aquela aba só traz a classe L.
+  //
+  // Valores conferidos um a um contra o MAREXT V7 (21/12/2023). Uma diferença
+  // conhecida e mantida de propósito: no 02.20 o manual diz UR/abraçadeira e o
+  // formulário diz UR/un. Vale o formulário, que é o documento que sai daqui.
+  //
+  // Consequência conhecida e ainda em aberto: serviço executado fora destas 17
+  // não tem linha aqui, então a quantidade dele não aparece no relatório. Ele
+  // continua contando na medição e no fechamento — some só deste documento.
   const LPU_MAREXT = 19;
   const MAREXT_ATIVIDADES = [
-    {code:'02.03', un:'UR/m',         ur:0.29, desc:'Instalação de cabo óptico aéreo espinado, qualquer tipo e capacidade com cordoalha dielétrica nova, inclusive retensionamento da cordoalha.'},
-    {code:'02.04', un:'UR/m',         ur:0.16, desc:'Instalação de cabo óptico aéreo espinado, qualquer tipo e capacidade com cordoalha dielétrica existente, inclusive retensionamento da cordoalha.'},
-    {code:'02.05', un:'UR/m',         ur:0.16, desc:'Instalação de cabo óptico aéreo auto-sustentável de qualquer tipo e capacidade, exceto cabo tipo drop para ativação de cliente final.'},
-    {code:'02.08', un:'UR/m',         ur:0.06, desc:'Retirada de todos os cabos ópticos aéreo espinados, com/ou a cordoalha.'},
-    {code:'02.09', un:'UR/m',         ur:0.07, desc:'Retirada de todos os cabos ópticos aéreo espinados, com a permanência da cordoalha.'},
-    {code:'02.17', un:'UR/plaqueta',  ur:0.20, desc:'Substituição de plaquetas de identificação, quando executado isoladamente.'},
-    {code:'02.19', un:'UR/m',         ur:0.15, desc:'Instalação de cordoalha de qualquer tipo e diâmetro, quando instalada isoladamente'},
-    {code:'02.20', un:'UR/un',        ur:0.09, desc:'Instalação de abraçadeiras metálicas/fita anti-furto'},
-    {code:'02.21', un:'UR/poste',     ur:15.14, desc:'Adequação de Rede – Sem Fornecimento de Material'},
-    {code:'02.22', un:'UR/poste',     ur:18.19, desc:'Adequação de Rede – Com Fornecimento de Material'},
-    {code:'02.23', un:'UR/PDE',       ur:2.50, desc:'Acompanhamento de notificações e manutenções programadas da rede elétrica.'},
-    {code:'02.24', un:'UR/m',         ur:0.08, desc:'Repuxamento de cabo óptico aéreo de qualquer tipo e capacidade.'},
-    {code:'02.26', un:'UR/lance',     ur:5.50, desc:'Retensionamento de Cordoalha'},
-    {code:'02.27', un:'UR/poste',     ur:5.50, desc:'Adequação de reserva técnica, quando executado isoladamente.'},
-    {code:'02.28', un:'UR/poste',     ur:6.00, desc:'Adequação de reserva técnica e acomodação de Caixa de emenda, quando executado isoladamente.'},
-    {code:'02.29', un:'UR/poste',     ur:5.50, desc:'Equipagem de poste, com fornecimento de material, quando executado isoladamente.'},
-    {code:'02.30', un:'UR/lance',     ur:5.50, desc:'Reespinamento de cabos em cordoalha existente, quando aplicado isoladamente'},
+    {code:'02.03', un:'UR/m',          ur:0.29,  desc:'Instalação de cabo óptico aéreo espinado, qualquer tipo e capacidade com cordoalha dielétrica nova, inclusive retensionamento da cordoalha.'},
+    {code:'02.04', un:'UR/m',          ur:0.16,  desc:'Instalação de cabo óptico aéreo espinado, qualquer tipo e capacidade com cordoalha dielétrica existente, inclusive retensionamento da cordoalha.'},
+    {code:'02.05', un:'UR/m',          ur:0.16,  desc:'Instalação de cabo óptico aéreo auto-sustentável de qualquer tipo e capacidade, exceto cabo tipo drop para ativação de cliente final.'},
+    {code:'02.08', un:'UR/m',          ur:0.06,  desc:'Retirada de todos os cabos ópticos aéreo espinados, com/ou a cordoalha.'},
+    {code:'02.09', un:'UR/m',          ur:0.07,  desc:'Retirada de todos os cabos ópticos aéreo espinados, com a permanência da cordoalha.'},
+    {code:'02.17', un:'UR/plaqueta',   ur:0.20,  desc:'Substituição de plaquetas de identificação, quando executado isoladamente.'},
+    {code:'02.19', un:'UR/m',          ur:0.15,  desc:'Instalação de cordoalha de qualquer tipo e diâmetro, quando instalada isoladamente'},
+    {code:'02.20', un:'UR/un',         ur:0.09,  desc:'Instalação de abraçadeiras metálicas/fita anti-furto'},
+    {code:'02.21', un:'UR/poste',      ur:15.14, desc:'Adequação de Rede – Sem Fornecimento de Material'},
+    {code:'02.22', un:'UR/poste',      ur:18.19, desc:'Adequação de Rede – Com Fornecimento de Material'},
+    {code:'03.08', un:'UR/caixa',      ur:18.00, desc:'Substituição de caixa terminal óptica ou NAP externa, exceto caixa pré-conectorizada'},
+    {code:'03.06', un:'UR/conexão',    ur:1.50,  desc:'Conexão/terminação de fibras ópticas, utilizando conector mecânico ou fusão'},
+    {code:'03.24', un:'UR/CEO ou TFO', ur:1.00,  desc:'Identificação de CEO/TFO'},
+    {code:'03.04', un:'UR/cabo',       ur:5.50,  desc:'Injeção de cabo em conjunto de emenda óptica (subterrânea/aérea)'},
+    {code:'03.19', un:'UR/RDM',        ur:2.50,  desc:'Programação e Acompanhamento de RDM – Impacto até 50 circuitos ativos'},
+    {code:'02.29', un:'UR/poste',      ur:5.50,  desc:'Equipagem de poste, com fornecimento de material, quando executado isoladamente.'},
+    {code:'02.30', un:'UR/lance',      ur:5.50,  desc:'Reespinamento de cabos em cordoalha existente, quando aplicado isoladamente'},
   ];
+
+
+
   function lpuDaObra(st){
     const n = Number((st && st.contract && st.contract.lpu) || LPU_MAREXT);
     return isFinite(n) && n > 0 ? n : LPU_MAREXT;
@@ -4966,6 +4985,16 @@
   function formatBRL(n){
     return 'R$ ' + n.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
   }
+  // Quantidade do jeito que se escreve à mão numa planilha: 3 e não "3,00";
+  // 120,5 e não "120,50". Metragem sai com vírgula, contagem sai inteira.
+  // Sem isso a coluna Qtde do relatório vira uma parede de ",00".
+  function formatarQtd(n){
+    const v = Number(n);
+    if(!isFinite(v)) return '';
+    return Number.isInteger(v)
+      ? String(v)
+      : v.toLocaleString('pt-BR', {minimumFractionDigits:0, maximumFractionDigits:2});
+  }
   // Quantos itens e quantas unidades foram lançados. O passo de Valores tem o
   // total em dinheiro; o de Materiais não tinha número nenhum, e a pessoa
   // terminava sem saber se lançou 3 itens ou 30.
@@ -5038,6 +5067,28 @@
   const marcadoCat = {materiais:-1, valores:-1};       // navegação pelo teclado
   let opcoesCat = {materiais:[], valores:[]};
 
+  // Em modernização, só se lança o que o relatório sabe imprimir.
+  //
+  // O formulário da Ligga tem 17 linhas. O catálogo do banco tem mais — sobrou
+  // código de antes da mudança do modelo. Lançar um serviço fora das 17 dava um
+  // resultado torto e silencioso: o valor entrava na medição e no fechamento,
+  // mas a quantidade não tinha linha no relatório e sumia do documento que vai
+  // pra Ligga. Ninguém via, porque nada dava erro.
+  //
+  // O corte é só aqui, na ESCOLHA. O catálogo continua inteiro, e é de
+  // propósito: obra antiga que já tem um desses lançados precisa do preço pra
+  // fechar o mês. Se apagássemos do catálogo, essas obras virariam R$ 0 na
+  // medição — o remédio seria pior.
+  //
+  // Pelo mesmo motivo, serviço JÁ lançado na obra continua aparecendo na busca
+  // mesmo estando fora das 17: quem abre uma obra antiga precisa enxergar o que
+  // está lá pra poder corrigir ou tirar.
+  const CODIGOS_DO_FORMULARIO = new Set(MAREXT_ATIVIDADES.map(a => a.code));
+  function servicoOfertavel(v){
+    if(tipoObraAtual !== 'modernizacao') return true;
+    return CODIGOS_DO_FORMULARIO.has(v.code) || preenchido(dataState.valuesQty[v.code]);
+  }
+
   // O catálogo do tipo, já com a marca de quem entrou na obra.
   function opcoesDoCatalogo(qual, texto){
     const busca = chave(texto);
@@ -5045,7 +5096,8 @@
       ? materials.map(m => ({ch:String(m.id), cod:String(m.id), rot:m.name,
                              procura: m.name + ' ' + m.id,
                              ja: preenchido(dataState.materialsQty[m.id])}))
-      : valuesItems.map(v => ({ch:v.code, cod:v.code, rot:v.desc, preco:precoVisivel(v),
+      : valuesItems.filter(servicoOfertavel)
+                   .map(v => ({ch:v.code, cod:v.code, rot:v.desc, preco:precoVisivel(v),
                                procura: v.code + ' ' + v.desc,
                                ja: preenchido(dataState.valuesQty[v.code])}));
     const achou = busca ? lista.filter(i => chave(i.procura).includes(busca)) : lista;
@@ -6709,11 +6761,24 @@
     y = faixa('ATIVIDADES', y);
     y = cabecalhoAtividades(y);
 
-    // A tabela sai EM BRANCO na coluna de quantidade e de valor: o relatório
-    // que vai pra Ligga não leva cobrança nenhuma — é o formulário das 17
-    // atividades com a UR de cada uma. O que foi executado aparece embaixo de
-    // cada par de fotos ("Item e Quantidade"), e a conta em dinheiro fica só
-    // dentro da ferramenta, no passo Valores e na Medição.
+    // QUANTIDADE sim, DINHEIRO não.
+    //
+    // A coluna Qtde agora sai preenchida com o que o técnico lançou no passo
+    // Valores — é o "apontamento do total de itens" que a própria observação
+    // do formulário pede logo abaixo da tabela. Quantidade é o que foi
+    // executado; não é cobrança.
+    //
+    // A coluna "Valor - Total" continua saindo "R$ -", e isso é de propósito:
+    // o relatório que vai pra Ligga não leva conta nenhuma. Preço fica dentro
+    // da ferramenta, no passo Valores e na Medição. Quem preenche valor é a
+    // Ligga, se preencher.
+    //
+    // Linha sem quantidade sai vazia em vez de "0": zero é uma afirmação
+    // ("executei nada disso"), vazio é o formulário em branco — que é o que
+    // aquela linha realmente é.
+    const qtdPorCodigo = (st && st.valuesQty) || {};
+    let totalItens = 0;
+
     doc.setFont('helvetica','normal'); doc.setFontSize(7);
     MAREXT_ATIVIDADES.forEach(at=>{
       const linhas = doc.splitTextToSize(at.desc, COL_ATIV - 4);
@@ -6743,7 +6808,17 @@
       doc.text(at.un, xc + COL_UN/2, y + h/2 + 1, {align:'center'});
       xc += COL_UN;
       doc.text(at.ur.toFixed(2).replace('.', ','), xc + COL_UR/2, y + h/2 + 1, {align:'center'});
-      xc += COL_UR + COL_QTD;
+      xc += COL_UR;
+
+      const q = Number(qtdPorCodigo[at.code]) || 0;
+      if(q > 0){
+        totalItens += q;
+        doc.setFont('helvetica','bold'); doc.setFontSize(7.5);
+        doc.text(formatarQtd(q), xc + COL_QTD/2, y + h/2 + 1, {align:'center'});
+        doc.setFont('helvetica','normal'); doc.setFontSize(7);
+      }
+      xc += COL_QTD;
+
       // "R$ -" como na planilha: a coluna existe no formulário, mas sai sem
       // valor. Quem preenche é a Ligga, se preencher
       doc.setTextColor(90,90,90);
@@ -6763,6 +6838,8 @@
     doc.rect(xTot + COL_UR + COL_QTD, y, COL_TOT, 8);
     doc.setFont('helvetica','bold'); doc.setFontSize(8.5); doc.setTextColor(0,0,0);
     doc.text('Total', xTot + COL_UR/2, y + 5.4, {align:'center'});
+    doc.text(totalItens > 0 ? formatarQtd(totalItens) : '',
+             xTot + COL_UR + COL_QTD/2, y + 5.4, {align:'center'});
     doc.setTextColor(90,90,90);
     doc.text('R$    -', xTot + COL_UR + COL_QTD + COL_TOT/2, y + 5.4, {align:'center'});
     doc.setTextColor(0,0,0);
@@ -6788,9 +6865,21 @@
       doc.addPage();
       let py = faixa('ANEXO FOTOGRÁFICO', M + 3) + 3;
 
-      const COL_W = (CW - 6) / 2, IMG_H = 60, H_META = 4.4;
-      // rótulo + foto + 3 linhas de metadado + a linha do item
-      const H_BLOCO = 6 + IMG_H + H_META*3 + 6;
+      // A caixa da foto é mais alta do que era (60 mm) por causa da foto em pé.
+      //
+      // Como agora a imagem entra inteira e não esticada, uma foto de celular
+      // — que é vertical — fica limitada pela ALTURA da caixa, não pela
+      // largura: numa caixa de 60 mm ela saía com uns 34 mm de largura, e a
+      // tarja de data/GPS gravada na imagem virava um borrão. Com 78 mm ela
+      // sai com ~44 mm e dá pra ler.
+      //
+      // O custo é real e é este: cabem 2 pares por página em vez de 3. Num
+      // relatório cujo motivo de existir é a foto, foto ilegível é pior que
+      // uma página a mais.
+      const COL_W = (CW - 6) / 2, IMG_H = 78, H_META = 4.4;
+      // rótulo + foto + 3 linhas de metadado + a linha do item + a descrição
+      // (a descrição pode ocupar 2 linhas, então reserva o pior caso)
+      const H_BLOCO = 6 + IMG_H + H_META*3 + 6 + H_META*2;
 
       for(let i = 0; i < nPares; i++){
         if(py + H_BLOCO > PH - M){
@@ -6808,16 +6897,55 @@
           linhaFina();
           doc.rect(x, py, COL_W, 6, 'FD');
           doc.setFont('helvetica','bold'); doc.setFontSize(8.5); doc.setTextColor(0,0,0);
-          const elemento = f ? (f.legend || f.obs || '').trim() : '';
-          doc.text('Foto ' + (i+1) + ' - ' + lado + (elemento ? ' · ' + elemento : ''),
-                   x + COL_W/2, py + 4.2, {align:'center'});
+          // No DEPOIS a legenda não entra aqui: ela agora é a "Descrição" lá
+          // embaixo, e virou frase inteira. Repetida no título, ela estourava a
+          // faixa e invadia a coluna do lado — dava pra ler "…com reaperto das
+          // presilha" escrito por cima da outra foto.
+          //
+          // No ANTES continua, porque ali ainda é rótulo curto ("Poste", "Vão")
+          // e ajuda a achar o par. Mesmo assim vai encurtado à força: legenda
+          // longa é decisão de quem digita, e o layout não pode depender disso.
+          const elemento = (lado === 'Depois' || !f) ? ''
+                           : (f.legend || f.obs || '').trim();
+          const tituloBase = 'Foto ' + (i+1) + ' - ' + lado;
+          let titulo = tituloBase;
+          if(elemento){
+            const sobra = COL_W - 4 - doc.getTextWidth(tituloBase + ' · ');
+            const cabe = textoQueCabe(elemento, sobra, 8.5, 6);
+            doc.setFontSize(8.5);
+            titulo = tituloBase + ' · ' + cabe.txt;
+          }
+          doc.text(titulo, x + COL_W/2, py + 4.2, {align:'center'});
 
           // a foto
+          //
+          // Antes isto esticava a imagem pra preencher a caixa inteira
+          // (`COL_W` por `IMG_H`, sem olhar o formato original). Foto de
+          // celular é em pé; forçada numa caixa deitada, ela saía achatada e
+          // a tarja de data/GPS gravada na imagem ficava ilegível nas bordas.
+          //
+          // Agora a foto entra inteira e no formato certo: calcula o tamanho
+          // que cabe na caixa mantendo a proporção, e centraliza. Sobra
+          // branco dos lados numa foto em pé — e é o certo, porque o que a
+          // Ligga precisa ver é a foto, não a caixa preenchida.
           const src = f && (f.dataUrl || f.imgSrc);
           linhaFina();
           doc.rect(x, py + 6, COL_W, IMG_H);
           if(src){
-            try{ doc.addImage(src, 'JPEG', x + 0.4, py + 6.4, COL_W - 0.8, IMG_H - 0.8); }
+            try{
+              const cx = x + 0.4, cy = py + 6.4;
+              const cw = COL_W - 0.8, ch = IMG_H - 0.8;
+              let iw = cw, ih = ch;
+              try{
+                const props = doc.getImageProperties(src);
+                if(props && props.width && props.height){
+                  const escala = Math.min(cw / props.width, ch / props.height);
+                  iw = props.width * escala;
+                  ih = props.height * escala;
+                }
+              } catch(e2){ /* sem as medidas, preenche a caixa como antes */ }
+              doc.addImage(src, 'JPEG', cx + (cw - iw)/2, cy + (ch - ih)/2, iw, ih);
+            }
             catch(e){
               doc.setFont('helvetica','normal'); doc.setFontSize(8);
               doc.text('(imagem não pôde ser incluída)', x + 3, py + 6 + IMG_H/2);
@@ -6853,13 +6981,47 @@
 
         // "Item e Quantidade" vale pro par inteiro — é o serviço que aquele
         // antes/depois comprova. Fica do lado direito, como no modelo.
+        const xDir = M + COL_W + 6 + 1;
         const itemPar = itemDoPar(st, i);
         const yItem = py + 6 + IMG_H + 3.4 + H_META*3;
         doc.setFont('helvetica','bold'); doc.setFontSize(7.2);
-        doc.text('Item e Quantidade: ', M + COL_W + 6 + 1, yItem);
+        doc.text('Item e Quantidade: ', xDir, yItem);
         const wi = doc.getTextWidth('Item e Quantidade: ');
         doc.setFont('helvetica','normal');
-        doc.text(itemPar || '', M + COL_W + 6 + 1 + wi, yItem);
+        doc.text(itemPar || '', xDir + wi, yItem);
+
+        // DESCRIÇÃO — o que foi feito naquele ponto.
+        //
+        // Sai da legenda da foto do DEPOIS, e só dela: foi assim que a Ligga
+        // pediu, e é o lado que mostra o serviço pronto.
+        //
+        // A legenda fica gravada dentro da própria foto, junto com hora e GPS.
+        // Isso importa: o "Item e Quantidade" logo acima vem de uma lista
+        // casada por POSIÇÃO (par 0, par 1...), que escorrega se o técnico
+        // anexar quantidades diferentes de antes e depois. A descrição não
+        // corre esse risco — cada foto carrega o texto dela.
+        // Legenda digitada ganha da automática: se alguém escreveu alguma coisa
+        // ali, foi porque o caso pedia. A automática é o padrão, não a regra.
+        const fDepois = depois[i] || null;
+        const digitada = fDepois ? String(fDepois.legend || fDepois.obs || '').trim() : '';
+        const descricao = digitada || legendaAutomaticaDepois(st, i, st.tipoObra);
+        const yDesc = yItem + H_META;
+        doc.setFont('helvetica','bold'); doc.setFontSize(7.2);
+        doc.text('Descrição: ', xDir, yDesc);
+        const wd = doc.getTextWidth('Descrição: ');
+        doc.setFont('helvetica','normal');
+        if(descricao){
+          // duas linhas no máximo: mais que isso invadiria o par de baixo
+          const cabe = doc.splitTextToSize(descricao, COL_W - wd - 2).slice(0, 2);
+          doc.text(cabe, xDir + wd, yDesc);
+        } else {
+          // vazio aparece, não some: relatório que vai pra Ligga sem a
+          // descrição é pendência, e some da vista é como pendência vira
+          // reclamação depois
+          doc.setTextColor(150,150,150);
+          doc.text('(não informado)', xDir + wd, yDesc);
+          doc.setTextColor(0,0,0);
+        }
 
         py += H_BLOCO;
       }
@@ -6899,6 +7061,45 @@
     if(typeof v === 'string') return v;
     return [v.code, v.qtd ? v.qtd + ' UND' : ''].filter(Boolean).join(' - ');
   }
+
+  // Os serviços lançados na obra, na ordem do FORMULÁRIO — não na ordem em que
+  // foram digitados.
+  //
+  // O relatório lista as atividades nessa ordem e a Ligga confere de cima pra
+  // baixo. Duas obras iguais, lançadas em ordens diferentes, têm que sair com
+  // as mesmas legendas nas mesmas fotos; ordem de digitação não daria isso.
+  function servicosLancados(st, tipo){
+    const qtds = (st && st.valuesQty) || {};
+    const cat = catalogoDe(tipo || (st && st.tipoObra) || tipoObraAtual).servicos;
+    return cat.filter(v => Number(qtds[v.code]) > 0)
+              .map(v => ({code: v.code, qtd: Number(qtds[v.code])}));
+  }
+
+  // A legenda da foto N do Depois: o serviço lançado que corresponde a ela.
+  //
+  // Um serviço por foto, na ordem. O técnico não marca nada — o texto vem do
+  // que ele já lançou no passo Valores, e é a regra que o Gustavo definiu.
+  //
+  // Foto que sobrar fica sem legenda, de propósito: carimbar um serviço numa
+  // foto que talvez não seja aquela é pior que deixar em branco, porque a
+  // Ligga lê e confere.
+  //
+  // Serviço que sobrar (mais serviços do que fotos) vai junto na ÚLTIMA foto:
+  // 4 fotos e 5 serviços, a foto 4 leva dois. Assim nenhum serviço executado
+  // fica de fora do anexo fotográfico — o que a Ligga não vê, ela questiona.
+  function legendaAutomaticaDepois(st, i, tipo){
+    const lista = servicosLancados(st, tipo);
+    if(!lista.length) return '';
+    const nFotos = (((st && st.photos) || {})[102] || []).length;
+    const rotulo = s => s.code + ' - ' + formatarQtd(s.qtd);
+
+    // é a última foto E ainda tem serviço sobrando: junta todos aqui
+    if(nFotos > 0 && i === nFotos - 1 && lista.length > nFotos){
+      return lista.slice(i).map(rotulo).join('; ');
+    }
+    return lista[i] ? rotulo(lista[i]) : '';
+  }
+
 
   // Fotos que o gerador de PDF recusou nesta rodada. Zerada a cada relatório;
   // se sobrar alguma, quem gerou é avisado em vez de descobrir na Ligga.
