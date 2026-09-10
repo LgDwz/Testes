@@ -3300,6 +3300,20 @@
       </div>
 
       <div id="listaChaves"></div>
+
+      <div class="api-url-caixa" style="margin-top:14px;">
+        <div class="api-url-rot">Conferir uma chave antes de enviar</div>
+        <div class="step-sub" style="padding:0 0 8px;">
+          Cole a chave exatamente como você vai mandar. Serve para não descobrir
+          pela reclamação do outro lado que ela foi copiada pela metade.
+        </div>
+        <input id="chaveTeste" placeholder="eop_..." autocomplete="off"
+               style="width:100%;margin-bottom:8px;">
+        <button class="job-edit-btn" id="btnTestarChave" type="button" style="width:100%;">
+          Conferir
+        </button>
+        <div id="chaveTesteResultado" style="font-size:12px;line-height:1.6;margin-top:9px;"></div>
+      </div>
     </div>
   </div>
 
@@ -3766,7 +3780,7 @@
 (function(){
   // Marque aqui a cada build enviado ao campo. O testador informa esta
   // string ao relatar um problema, senao nao da pra saber o que ele rodou.
-  const APP_VERSION = 'Enlace Ops · alpha-11.11 · 10/09/2026';
+  const APP_VERSION = 'Enlace Ops · alpha-11.12 · 10/09/2026';
 
   // ---------- Supabase config ----------
   // Troque pelos valores reais do seu projeto (Project Settings -> API no Supabase).
@@ -12024,6 +12038,46 @@
       caixa.style.display = 'none';
       document.getElementById('ccChave').textContent = '';
     });
+
+    // Conferir a chave ANTES de mandar pra alguém.
+    //
+    // Isto pergunta ao banco, não à API: é o mesmo `api_token_conferir` do SQL
+    // Editor. A API em si não dá pra chamar daqui — o navegador manda uma
+    // verificação prévia antes de qualquer cabeçalho personalizado, e o portão
+    // do Supabase recusa essa verificação. Pra saber se a FUNÇÃO está de pé,
+    // o caminho é abrir o endereço com ?ping=1 no navegador.
+    const btnTeste = document.getElementById('btnTestarChave');
+    const campoTeste = document.getElementById('chaveTeste');
+    const saidaTeste = document.getElementById('chaveTesteResultado');
+    if(btnTeste){
+      const mostrar = (texto, bom)=>{
+        saidaTeste.textContent = texto;
+        saidaTeste.style.color = bom === true ? 'var(--success)'
+                              : bom === false ? 'var(--danger)'
+                              : 'var(--text-dim)';
+      };
+      btnTeste.addEventListener('click', async ()=>{
+        const t = (campoTeste.value || '');
+        if(!t.trim()){ mostrar('Cole a chave no campo acima.', null); return; }
+        if(modoDemo){ mostrar('No modo demonstração não há chave de verdade pra conferir.', null); return; }
+        btnTeste.disabled = true; btnTeste.textContent = 'Conferindo...';
+        mostrar('Perguntando ao servidor...', null);
+        try{
+          // vai o texto CRU de propósito: se sobrou espaço ou quebra de linha
+          // na cópia, é isso que a conferência tem que enxergar e denunciar
+          const {data, error} = await supabaseClient.rpc('api_token_conferir', {p_token: t});
+          if(error) throw error;
+          const bom = /CERTA e ATIVA/.test(String(data || ''));
+          mostrar(String(data || 'sem resposta'), bom);
+        } catch(e){
+          mostrar('Não deu pra conferir: ' + (e.message || e)
+            + (/function|não existe|does not exist/i.test(e.message || '')
+                ? ' — falta rodar a versão nova do sql-api-json.sql.' : ''), false);
+        } finally {
+          btnTeste.disabled = false; btnTeste.textContent = 'Conferir';
+        }
+      });
+    }
 
     btnSalvar.addEventListener('click', async ()=>{
       const nome = (campo.value || '').trim();
