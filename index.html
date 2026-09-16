@@ -3780,7 +3780,7 @@
 (function(){
   // Marque aqui a cada build enviado ao campo. O testador informa esta
   // string ao relatar um problema, senao nao da pra saber o que ele rodou.
-  const APP_VERSION = 'Enlace Ops · alpha-11.20 · 10/09/2026';
+  const APP_VERSION = 'Enlace Ops · alpha-11.21 · 16/09/2026';
 
   // ---------- Supabase config ----------
   // Troque pelos valores reais do seu projeto (Project Settings -> API no Supabase).
@@ -4038,9 +4038,9 @@
   // conhecida e mantida de propósito: no 02.20 o manual diz UR/abraçadeira e o
   // formulário diz UR/un. Vale o formulário, que é o documento que sai daqui.
   //
-  // Consequência conhecida e ainda em aberto: serviço executado fora destas 17
-  // não tem linha aqui, então a quantidade dele não aparece no relatório. Ele
-  // continua contando na medição e no fechamento — some só deste documento.
+  // Serviço executado fora destas 17 não tem linha fixa aqui: o relatório
+  // acrescenta ele no fim da tabela, pra quantidade e valor não sumirem do
+  // documento (e o total do PDF bater com o total da obra).
   const LPU_MAREXT = 19;
   const MAREXT_ATIVIDADES = [
     {code:'02.03', un:'UR/m',          ur:0.29,  desc:'Instalação de cabo óptico aéreo espinado, qualquer tipo e capacidade com cordoalha dielétrica nova, inclusive retensionamento da cordoalha.'},
@@ -4064,6 +4064,47 @@
 
 
 
+  // O preço de faturamento de uma atividade MAREXT é UR × LPU, arredondado no
+  // centavo. Uma função só, usada pelo catálogo e pelo relatório — se cada um
+  // fizesse a conta do seu jeito, o total do PDF e o valor da obra podiam
+  // discordar por um centavo e ninguém saberia qual está certo.
+  function precoMarext(ur, lpu){
+    return Math.round(Number(ur) * Number(lpu || LPU_MAREXT) * 100) / 100;
+  }
+
+  // O banco manda no catálogo, mas o banco da modernização foi semeado com a
+  // lista ANTIGA (os serviços do modelo PNG-201). Quando ele carregava, trocava
+  // as 17 atividades do formulário por essa lista, e quem lançou 02.xx ou 03.06
+  // ficava com o serviço "fora do catálogo", valendo zero — some do valor da
+  // obra e da medição. Aqui as 17 são garantidas: o que o banco tem, vale o do
+  // banco; o que não tem, entra com UR × LPU. Serviço extra do banco continua
+  // no fim da lista, nada é jogado fora.
+  function completarComMarext(lista){
+    const doBanco = new Map(lista.map(sv => [String(sv.code), sv]));
+    const saida = MAREXT_ATIVIDADES.map(at=>{
+      const formula = precoMarext(at.ur);
+      const b = doBanco.get(at.code);
+      doBanco.delete(at.code);
+      if(!b){
+        return {code: at.code, desc: at.desc + ' (' + at.un.replace('UR/', '') + ')',
+                price: formula, precoTec: formula, precoTecBruto: null,
+                ur: at.ur, unidade: at.un,
+                // não existe linha no banco: a tela de catálogo precisa
+                // INSERIR ao editar, um update aqui não acharia nada
+                soNoApp: true};
+      }
+      const price = Number(b.price) > 0 ? Number(b.price) : formula;
+      return Object.assign({}, b, {
+        price,
+        precoTec: Number(b.precoTecBruto) > 0 ? Number(b.precoTecBruto) : price,
+        ur: at.ur, unidade: at.un,
+      });
+    });
+    doBanco.forEach(sv => saida.push(sv));
+    lista.length = 0;
+    saida.forEach(sv => lista.push(sv));
+  }
+
   function lpuDaObra(st){
     const n = Number((st && st.contract && st.contract.lpu) || LPU_MAREXT);
     return isFinite(n) && n > 0 ? n : LPU_MAREXT;
@@ -4080,7 +4121,7 @@
   const SERV_MODERNIZACAO = MAREXT_ATIVIDADES.map(a => ({
     code: a.code,
     desc: a.desc + ' (' + a.un.replace('UR/', '') + ')',
-    price: Number((a.ur * LPU_MAREXT).toFixed(2)),
+    price: precoMarext(a.ur),
     ur: a.ur,
     unidade: a.un,
   }));
@@ -5572,6 +5613,7 @@
           precoTecBruto: (x.preco_tecnico == null ? null : Number(x.preco_tecnico)),
         }));
       }
+      if(alvo === 'modernizacao') completarComMarext(acervo.servicos);
       // só marca como carregado se as DUAS deram certo — antes, uma falha
       // isolada numa das tabelas travava o catálogo inteiro na lista antiga
       // até fechar e abrir o app, mesmo com o dado certo já no banco.
@@ -6761,26 +6803,35 @@
     y = faixa('ATIVIDADES', y);
     y = cabecalhoAtividades(y);
 
-    // QUANTIDADE sim, DINHEIRO não.
+    // Quantidade E valor, como na planilha da Ligga (Valor - Total =
+    // UR × Qtde × LPU). Decisão do usuário: o relatório sai com a conta feita.
     //
-    // A coluna Qtde agora sai preenchida com o que o técnico lançou no passo
-    // Valores — é o "apontamento do total de itens" que a própria observação
-    // do formulário pede logo abaixo da tabela. Quantidade é o que foi
-    // executado; não é cobrança.
+    // O preço de cada linha vem do MESMO lugar que o valor da obra
+    // (servicosDaObra), então o total do PDF bate com o total da obra na lista
+    // e na Medição. Se o catálogo não tiver preço pro código, cai na fórmula
+    // UR × LPU — nunca num zero calado.
     //
-    // A coluna "Valor - Total" continua saindo "R$ -", e isso é de propósito:
-    // o relatório que vai pra Ligga não leva conta nenhuma. Preço fica dentro
-    // da ferramenta, no passo Valores e na Medição. Quem preenche valor é a
-    // Ligga, se preencher.
-    //
-    // Linha sem quantidade sai vazia em vez de "0": zero é uma afirmação
-    // ("executei nada disso"), vazio é o formulário em branco — que é o que
-    // aquela linha realmente é.
+    // Linha sem quantidade sai com "R$ -", como na planilha: zero seria uma
+    // afirmação ("executei nada disso"), vazio é o formulário em branco.
     const qtdPorCodigo = (st && st.valuesQty) || {};
-    let totalItens = 0;
+    const lpu = lpuDaObra(st);
+    const servicosLancados = servicosDaObra(st || {}, 'modernizacao');
+    const precoLancado = {};
+    servicosLancados.forEach(sv => { precoLancado[String(sv.code)] = Number(sv.preco) || 0; });
+    const unitario = (code, ur) => (precoLancado[code] > 0 ? precoLancado[code]
+                                   : (ur != null ? precoMarext(ur, lpu) : 0));
+    let totalItens = 0, totalValor = 0;
+    const ehMarext = code => MAREXT_ATIVIDADES.some(a => a.code === String(code));
+    // Serviço lançado que não é uma das 17 do formulário: antes sumia daqui
+    // (mas contava na obra). Agora entra no fim da tabela, senão o total do
+    // relatório fica menor que o da obra e ninguém sabe por quê.
+    const linhasTabela = MAREXT_ATIVIDADES.concat(
+      servicosLancados.filter(sv => !ehMarext(sv.code)).map(sv => ({
+        code: String(sv.code), desc: String(sv.desc || ''), un: '', ur: null,
+      })));
 
     doc.setFont('helvetica','normal'); doc.setFontSize(7);
-    MAREXT_ATIVIDADES.forEach(at=>{
+    linhasTabela.forEach(at=>{
       const linhas = doc.splitTextToSize(at.desc, COL_ATIV - 4);
       const h = Math.max(6.2, linhas.length * 3.0 + 2.6);
 
@@ -6807,23 +6858,30 @@
       doc.setFontSize(7);
       doc.text(at.un, xc + COL_UN/2, y + h/2 + 1, {align:'center'});
       xc += COL_UN;
-      doc.text(at.ur.toFixed(2).replace('.', ','), xc + COL_UR/2, y + h/2 + 1, {align:'center'});
+      if(at.ur != null)
+        doc.text(at.ur.toFixed(2).replace('.', ','), xc + COL_UR/2, y + h/2 + 1, {align:'center'});
       xc += COL_UR;
 
       const q = Number(qtdPorCodigo[at.code]) || 0;
+      const valorLinha = q > 0 ? Math.round(q * unitario(at.code, at.ur) * 100) / 100 : 0;
       if(q > 0){
         totalItens += q;
+        totalValor += valorLinha;
         doc.setFont('helvetica','bold'); doc.setFontSize(7.5);
         doc.text(formatarQtd(q), xc + COL_QTD/2, y + h/2 + 1, {align:'center'});
         doc.setFont('helvetica','normal'); doc.setFontSize(7);
       }
       xc += COL_QTD;
 
-      // "R$ -" como na planilha: a coluna existe no formulário, mas sai sem
-      // valor. Quem preenche é a Ligga, se preencher
-      doc.setTextColor(90,90,90);
-      doc.text('R$    -', xc + COL_TOT/2, y + h/2 + 1, {align:'center'});
-      doc.setTextColor(0,0,0);
+      if(q > 0){
+        doc.setFontSize(7.5);
+        doc.text(formatBRL(valorLinha), xc + COL_TOT - 1.8, y + h/2 + 1, {align:'right'});
+        doc.setFontSize(7);
+      } else {
+        doc.setTextColor(90,90,90);
+        doc.text('R$    -', xc + COL_TOT/2, y + h/2 + 1, {align:'center'});
+        doc.setTextColor(0,0,0);
+      }
       y += h;
     });
 
@@ -6840,9 +6898,13 @@
     doc.text('Total', xTot + COL_UR/2, y + 5.4, {align:'center'});
     doc.text(totalItens > 0 ? formatarQtd(totalItens) : '',
              xTot + COL_UR + COL_QTD/2, y + 5.4, {align:'center'});
-    doc.setTextColor(90,90,90);
-    doc.text('R$    -', xTot + COL_UR + COL_QTD + COL_TOT/2, y + 5.4, {align:'center'});
-    doc.setTextColor(0,0,0);
+    if(totalValor > 0){
+      doc.text(formatBRL(totalValor), xTot + COL_UR + COL_QTD + COL_TOT - 1.8, y + 5.4, {align:'right'});
+    } else {
+      doc.setTextColor(90,90,90);
+      doc.text('R$    -', xTot + COL_UR + COL_QTD + COL_TOT/2, y + 5.4, {align:'center'});
+      doc.setTextColor(0,0,0);
+    }
     y += 8;
 
     doc.setFont('helvetica','italic'); doc.setFontSize(7.5);
@@ -10025,9 +10087,14 @@
     return lista;
   }
 
+  // Usa o catálogo do tipo DA OBRA. Antes somava com `valuesItems`, que é o
+  // catálogo do tipo aberto no assistente (quase sempre o convencional) — obra
+  // de modernização entrava nos indicadores valendo zero.
   function valorObraRow(o){
-    const vq = (o.dados || {}).valuesQty || {};
-    return valuesItems.reduce((sum, v) => sum + ((Number(vq[v.code]) || 0) * precoVisivel(v)), 0);
+    const d = o.dados || {};
+    const tipo = o.tipo_obra || d.tipoObra || 'convencional';
+    return servicosDaObra(d, tipo).reduce((sum, sv) => sum + (Number(sv.qtd) || 0)
+      * precoVisivel({price: sv.preco, precoTec: sv.precoTec}), 0);
   }
 
   async function renderQuadro(){
@@ -15007,9 +15074,21 @@
     campos[2].classList.toggle('zerado', !(precoTec > 0));
     if(supabaseConfigured && online && empId){
       const campos2 = {descricao: desc, preco, preco_tecnico: precoTec};
-      let {error} = await supabaseClient.from('servicos_catalogo')
-        .update(campos2).eq('empresa_id', empId)
-        .eq('tipo', catTipoTela).eq('code', item.code);
+      let error = null;
+      if(item.soNoApp){
+        // atividade do MAREXT que o banco ainda não tinha: grava a linha
+        const cat = catalogoDe(catTipoTela);
+        const r0 = await supabaseClient.from('servicos_catalogo').insert(Object.assign(
+          {empresa_id: empId, tipo: catTipoTela, code: item.code,
+           ordem: Math.max(0, cat.servicos.indexOf(item))}, campos2));
+        error = r0.error;
+        if(!error) delete item.soNoApp;
+      } else {
+        const r1 = await supabaseClient.from('servicos_catalogo')
+          .update(campos2).eq('empresa_id', empId)
+          .eq('tipo', catTipoTela).eq('code', item.code);
+        error = r1.error;
+      }
       // banco ainda sem a coluna dos dois preços: grava o que dá e avisa, em
       // vez de perder a edição inteira por causa de uma coluna que falta
       if(error && /preco_tecnico/.test(error.message || '')){
