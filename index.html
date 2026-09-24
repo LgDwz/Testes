@@ -3042,7 +3042,7 @@
     <div class="my-jobs-head">
       <span class="logout-link" id="backFromDespacho">&#8592; Voltar</span>
       <div class="step-title" style="margin:10px 0 0;">Nova obra</div>
-      <div class="step-sub" style="padding:0;">Identifique a obra e anexe os documentos. O técnico é atribuído depois, na aba Obras.</div>
+      <div class="step-sub" style="padding:0;" id="dSub">Identifique a obra e anexe os documentos. O técnico é atribuído depois, na aba Obras.</div>
     </div>
 
     <div style="padding:0 16px 24px;">
@@ -3110,7 +3110,7 @@
         <textarea class="field-input" id="dObs" rows="2" placeholder="Opcional — o que ele precisa saber antes de ir"></textarea>
       </div>
 
-      <div class="step-sub" style="padding:16px 0 8px;">Documentos do projeto</div>
+      <div class="step-sub" style="padding:16px 0 8px;" id="dDocsLabel">Documentos do projeto</div>
       <div id="dDocs"></div>
 
       <div id="dTecnicoWrap" style="display:none;">
@@ -3780,7 +3780,7 @@
 (function(){
   // Marque aqui a cada build enviado ao campo. O testador informa esta
   // string ao relatar um problema, senao nao da pra saber o que ele rodou.
-  const APP_VERSION = 'Enlace Ops · alpha-11.21 · 16/09/2026';
+  const APP_VERSION = 'Enlace Ops · alpha-11.23 · 24/09/2026';
 
   // ---------- Supabase config ----------
   // Troque pelos valores reais do seu projeto (Project Settings -> API no Supabase).
@@ -3813,7 +3813,10 @@
   // no meio do caminho do técnico, que passava batido por eles todo dia.
   const PASSOS_POR_TIPO = {
     convencional: ['contrato','docsProjeto','fotos','materiais','valores','docsExecutados','review'],
-    modernizacao: ['contrato','docsProjeto','fotos','materiais','valores','review'],
+    // Modernização não tem passo de documentos do projeto: o escritório não
+    // recebe OS, projeto nem unifilar da Ligga. Cadastra-se a identificação da
+    // obra e o resto é campo — evidências, materiais e serviços.
+    modernizacao: ['contrato','fotos','materiais','valores','review'],
   };
 
   // E na tela do técnico esse passo não existe. Passo que uma pessoa nunca
@@ -3843,6 +3846,14 @@
     {id:'projeto_doc', title:"Documento de rota (Projeto / GEO)", storeKey:'projectDocs', hasObs:true},
     {id:'diagrama_doc', title:"Diagrama unifilar", storeKey:'projectDocs', hasObs:true},
   ];
+
+  // Na modernização não existe documento de projeto: nem OS, nem rota, nem
+  // unifilar. Pedir qualquer um criava pendência que ninguém podia resolver —
+  // o passo nunca ficava completo, a obra ficava eternamente "rascunho" e o
+  // aviso de FALTA cobrava documento que não existe.
+  function docsProjetoDoTipo(tipo){
+    return (tipo || tipoObraAtual) === 'modernizacao' ? [] : projectDocItems;
+  }
 
   // Tipo da obra que está aberta no assistente. Toda obra tem um; as antigas
   // são convencionais (é o que o banco preenche por padrão na migração).
@@ -4173,7 +4184,7 @@
       case 'contrato':
         return !!(dataState.contract.numero && dataState.contract.data);
       case 'docsProjeto':
-        return projectDocItems.every(it => !!dataState.projectDocs[it.id]);
+        return docsProjetoDoTipo().every(it => !!dataState.projectDocs[it.id]);
       case 'fotos':
         return photoItems.filter(it => !it.opcional).every(it=>{
           const v = dataState.photos[it.id];
@@ -4541,7 +4552,11 @@
   const docsProjetoChecklist = document.getElementById('docsProjetoChecklist');
   function renderDocsProjeto(){
     docsProjetoChecklist.innerHTML = '';
-    projectDocItems.forEach((item, idx)=>{
+    const sub = document.querySelector('#stepDocsProjeto .step-sub');
+    if(sub) sub.textContent = ehModernizacao()
+      ? 'Anexe a Ordem de Serviço recebida do escritório.'
+      : 'Anexe, na ordem, a OS, o documento de rota e o Diagrama unifilar recebidos do escritório.';
+    docsProjetoDoTipo().forEach((item, idx)=>{
       docsProjetoChecklist.appendChild(buildAttachCard(item, String(idx+1).padStart(2,'0')));
     });
   }
@@ -6511,7 +6526,7 @@
       const s = dataState.photos[item.id];
       return item.multiple ? (s && s.length > 0) : !!s;
     });
-    const docsProjetoDone = projectDocItems.every(item => !!dataState.projectDocs[item.id]);
+    const docsProjetoDone = docsProjetoDoTipo().every(item => !!dataState.projectDocs[item.id]);
     const status = document.getElementById('reviewStatus');
     const allDone = photosDone && docsProjetoDone;
     status.textContent = allDone ? 'Gerado' : 'Rascunho';
@@ -6519,7 +6534,14 @@
 
     const reviewDocsProjeto = document.getElementById('reviewDocsProjeto');
     reviewDocsProjeto.innerHTML = '';
-    projectDocItems.forEach(item=>{
+    // sem documentos no tipo: some a seção inteira, senão fica um cartão vazio
+    // com título por cima, que parece erro
+    const tituloDocs = reviewDocsProjeto.previousElementSibling;
+    const temDocs = docsProjetoDoTipo().length > 0;
+    reviewDocsProjeto.style.display = temDocs ? '' : 'none';
+    if(tituloDocs && tituloDocs.classList.contains('review-section-title'))
+      tituloDocs.style.display = temDocs ? '' : 'none';
+    docsProjetoDoTipo().forEach(item=>{
       const s = dataState.projectDocs[item.id];
       const row = document.createElement('div');
       row.className = 'review-row';
@@ -7703,9 +7725,10 @@
       doc.setFont('helvetica','bold'); doc.setFontSize(13);
       doc.text('Documentos', M, y); y += 10;
       doc.setFontSize(10); doc.setFont('helvetica','bold');
-      doc.text('Documentos do projeto', M, y); y += 7;
+      const docsProj = docsProjetoDoTipo(st.tipoObra);
+      if(docsProj.length){ doc.text('Documentos do projeto', M, y); y += 7; }
       doc.setFont('helvetica','normal');
-      projectDocItems.forEach(item=>{
+      docsProj.forEach(item=>{
         const s = (st.projectDocs||{})[item.id];
         doc.text('\u2022 ' + item.title + ': ' + (s ? 'anexado' : 'pendente'), M, y); y += 6;
         if(s && s.obs){
@@ -10521,9 +10544,15 @@
   // documentos que o escritorio anexa antes de mandar pro campo
   const docsDespacho = [
     {id:'os_doc',       titulo:'Ordem de Serviço',  obrig:true},
-    {id:'projeto_doc',  titulo:'Projeto / rota',    obrig:true},
-    {id:'diagrama_doc', titulo:'Diagrama unifilar', obrig:false},
+    {id:'projeto_doc',  titulo:'Projeto / rota',    obrig:true,  soConvencional:true},
+    {id:'diagrama_doc', titulo:'Diagrama unifilar', obrig:false, soConvencional:true},
   ];
+  // Obra de modernização não tem documento nenhum pra anexar no cadastro: o
+  // escritório lança a identificação da obra e pronto. O bloco inteiro some do
+  // formulário em vez de ficar pedindo arquivo que não existe.
+  function docsDoDespacho(){
+    return tipoDespacho() === 'modernizacao' ? [] : docsDespacho;
+  }
   let arquivosDespacho = {};       // {id: {dataUrl, nome, mime}}
   let tecnicosCache = [];
   let equipesCache = [];
@@ -10586,7 +10615,15 @@
   function renderDocsDespacho(){
     const cx = document.getElementById('dDocs');
     cx.innerHTML = '';
-    docsDespacho.forEach(d=>{
+    const rot = document.getElementById('dDocsLabel');
+    const temDocs = docsDoDespacho().length > 0;
+    const sub = document.getElementById('dSub');
+    if(sub) sub.textContent = temDocs
+      ? 'Identifique a obra e anexe os documentos. O técnico é atribuído depois, na aba Obras.'
+      : 'Identifique a obra. O técnico é atribuído depois, na aba Obras.';
+    cx.style.display = temDocs ? '' : 'none';
+    if(rot) rot.style.display = temDocs ? '' : 'none';
+    docsDoDespacho().forEach(d=>{
       const anexo = arquivosDespacho[d.id];
       const row = document.createElement('div');
       row.className = 'user-row';
@@ -10777,6 +10814,12 @@
         cx.querySelectorAll('.med-modo').forEach(x=>
           x.classList.toggle('ativo', x.dataset.tipo === tipoDespachoAtual));
         pintarSeletorTecnico();
+        // trocou o tipo: o formulário mostra outra lista de documentos. O que
+        // já tinha sido anexado e não vale mais pro tipo novo é descartado,
+        // senão subia escondido no despacho.
+        docsDespacho.filter(d => !docsDoDespacho().includes(d))
+                    .forEach(d => { delete arquivosDespacho[d.id]; });
+        renderDocsDespacho();
       });
     });
   })();
@@ -10926,7 +10969,7 @@
     // técnico agora é opcional: dá pra cadastrar a obra só vinculada à
     // empresa e escolher quem vai fazer depois, na aba Obras (mesmo lápis
     // que já existe pra remanejar).
-    const faltando = docsDespacho.filter(d => d.obrig && !arquivosDespacho[d.id]);
+    const faltando = docsDoDespacho().filter(d => d.obrig && !arquivosDespacho[d.id]);
     if(faltando.length){
       showToast('Anexe ' + faltando.map(f => f.titulo).join(' e '));
       return;
@@ -10955,7 +10998,7 @@
       if(!emp){ throw new Error(ehSuper() ? 'Escolha uma empresa antes de despachar' : 'Sua conta não está vinculada a uma empresa'); }
       const base = emp + '/' + numero + '/' + (tecnico || 'sem-tecnico') + '/documentos-projeto';
       const paths = {};
-      for(const d of docsDespacho){
+      for(const d of docsDoDespacho()){
         const a = arquivosDespacho[d.id];
         if(!a) continue;
         const blob = dataUrlToBlob(a.dataUrl);
@@ -13680,7 +13723,7 @@
       .map(it => it.title);
     if(fotos.length) grupos.push({rot:'Fotos', itens:fotos});
 
-    const proj = projectDocItems
+    const proj = docsProjetoDoTipo(tipo)
       .filter(it => !(arq.projectDocs || {})[it.id])
       .map(it => it.title);
     if(proj.length) grupos.push({rot:'Documentos do projeto', itens:proj});
