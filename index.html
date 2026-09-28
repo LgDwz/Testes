@@ -3059,6 +3059,8 @@
           <b>Convencional</b>ativação de cliente</button>
         <button type="button" class="med-modo" data-tipo="modernizacao">
           <b>Modernização</b>melhoria / manutenção de rede</button>
+        <button type="button" class="med-modo" data-tipo="nap">
+          <b>NAP sem sinal</b>manutenção corretiva</button>
       </div>
       <div class="field-label" style="margin-top:4px;">Polo *</div>
       <div class="polo-chips" id="dPolo" style="padding:2px 0 14px;"></div>
@@ -3780,7 +3782,7 @@
 (function(){
   // Marque aqui a cada build enviado ao campo. O testador informa esta
   // string ao relatar um problema, senao nao da pra saber o que ele rodou.
-  const APP_VERSION = 'Enlace Ops · alpha-11.23 · 24/09/2026';
+  const APP_VERSION = 'Enlace Ops · alpha-11.26 · 28/09/2026';
 
   // ---------- Supabase config ----------
   // Troque pelos valores reais do seu projeto (Project Settings -> API no Supabase).
@@ -3817,6 +3819,7 @@
     // recebe OS, projeto nem unifilar da Ligga. Cadastra-se a identificação da
     // obra e o resto é campo — evidências, materiais e serviços.
     modernizacao: ['contrato','fotos','materiais','valores','review'],
+    nap:          ['contrato','fotos','materiais','valores','review'],
   };
 
   // E na tela do técnico esse passo não existe. Passo que uma pessoa nunca
@@ -3852,7 +3855,7 @@
   // o passo nunca ficava completo, a obra ficava eternamente "rascunho" e o
   // aviso de FALTA cobrava documento que não existe.
   function docsProjetoDoTipo(tipo){
-    return (tipo || tipoObraAtual) === 'modernizacao' ? [] : projectDocItems;
+    return usaModeloMarext(tipo) ? [] : projectDocItems;
   }
 
   // Tipo da obra que está aberta no assistente. Toda obra tem um; as antigas
@@ -3928,10 +3931,31 @@
       rotNumero: 'Identificação da obra',
       exemploNumero: 'Ex: PNG - 201',
     },
+    // Manutenção corretiva de NAP. Identificação, relatório e tabela de
+    // serviços são os mesmos da modernização (MAREXT); o tipo existe à parte
+    // pra separar na lista, na Medição e no catálogo — é outra atividade e um
+    // dia pode ter preço, serviço ou evidência própria.
+    nap: {
+      rot: 'NAP sem sinal',
+      rotLongo: 'NAP sem sinal / manutenção corretiva',
+      tituloPdf: 'Relatório de Manutenção de Rede',
+      nomePdf: 'Relatorio-NAP-sem-sinal',
+      cabecalho: 'Relatório Manutenção',
+      prefixoNumero: '',
+      rotNumero: 'Identificação da obra',
+      exemploNumero: 'Ex: PNG - 201',
+    },
   };
 
+  // Tipos que seguem o modelo MAREXT: mesmo relatório (execução de
+  // notificações e obras), mesmas evidências antes/depois, mesma tabela em UR
+  // e nenhum documento de projeto. Quem for testar "é modernização?" na
+  // verdade está perguntando isto.
+  const TIPOS_MAREXT = ['modernizacao', 'nap'];
+  function usaModeloMarext(t){ return TIPOS_MAREXT.indexOf(t || tipoObraAtual) !== -1; }
+
   function rotuloTipo(t){ return (TIPOS_OBRA[t] || TIPOS_OBRA.convencional).rot; }
-  function ehModernizacao(){ return tipoObraAtual === 'modernizacao'; }
+  function ehModernizacao(){ return usaModeloMarext(tipoObraAtual); }
   function valorCampo(id){
     const el = document.getElementById(id);
     return el ? el.value.trim() : '';
@@ -3986,7 +4010,9 @@
   // todo o resto do assistente (checklist, conferência, upload, rascunho) segue
   // funcionando sem saber que existe mais de um tipo.
   let photoItems = ITENS_CONVENCIONAL;
-  const ITENS_POR_TIPO = {convencional: ITENS_CONVENCIONAL, modernizacao: ITENS_MODERNIZACAO};
+  const ITENS_POR_TIPO = {convencional: ITENS_CONVENCIONAL,
+                          modernizacao: ITENS_MODERNIZACAO,
+                          nap:          ITENS_MODERNIZACAO};
 
   function itensDoTipo(t){ return ITENS_POR_TIPO[t] || ITENS_CONVENCIONAL; }
 
@@ -4083,6 +4109,34 @@
     return Math.round(Number(ur) * Number(lpu || LPU_MAREXT) * 100) / 100;
   }
 
+  // As atividades do atendimento de NAP sem sinal. São outras linhas do mesmo
+  // MAREXT (classe F, emendas e caixas), na ordem da planilha da Ligga.
+  //
+  // A última NÃO é MAREXT: 05.99 é serviço especial cobrado por HORA HOMEM, em
+  // real, sem UR. Por isso `ur` é null e o preço vem de `valor` — a coluna
+  // "Valor - UR" do relatório sai vazia nessa linha, e a quantidade lançada é
+  // em horas. Se a Ligga reajustar a hora, muda aqui e só aqui.
+  const ATIV_NAP = [
+    {code:'03.01', un:'UR/conjunto',   ur:4.00,  desc:'Abertura e Fechamento de conjunto emenda óptica (subterrâneo/aéreo).'},
+    {code:'03.06', un:'UR/conexão',    ur:1.50,  desc:'Conexão/terminação de fibras ópticas, utilizando conector mecânico ou fusão.'},
+    {code:'03.08', un:'UR/caixa',      ur:18.00, desc:'Substituição de caixa terminal óptica ou NAP externa, exceto caixa pré-conectorizada.'},
+    {code:'03.24', un:'UR/CEO ou TFO', ur:1.00,  desc:'Identificação de CEO/TFO.'},
+    {code:'03.19', un:'UR/RDM',        ur:2.50,  desc:'Programação e Acompanhamento de RDM – Impacto até 50 circuitos ativos.'},
+    {code:'03.05', un:'UR/splitter',   ur:2.00,  desc:'Instalação de splitter em caixa terminal interna ou externa.'},
+    {code:'05.99', un:'R$/hora homem', ur:null, valor:70,
+     desc:'Instalação de kit adaptador de caixas Commscope. (hora homem)'},
+  ];
+
+  const ATIVIDADES_POR_TIPO = {modernizacao: MAREXT_ATIVIDADES, nap: ATIV_NAP};
+  function atividadesDoTipo(t){
+    return ATIVIDADES_POR_TIPO[t || tipoObraAtual] || MAREXT_ATIVIDADES;
+  }
+  // Preço de faturamento de uma atividade: UR × LPU, ou o valor fixo em real
+  // quando ela não é medida em UR (a hora homem do 05.99).
+  function precoAtividade(at, lpu){
+    return at && at.ur != null ? precoMarext(at.ur, lpu) : (Number(at && at.valor) || 0);
+  }
+
   // O banco manda no catálogo, mas o banco da modernização foi semeado com a
   // lista ANTIGA (os serviços do modelo PNG-201). Quando ele carregava, trocava
   // as 17 atividades do formulário por essa lista, e quem lançou 02.xx ou 03.06
@@ -4090,10 +4144,10 @@
   // obra e da medição. Aqui as 17 são garantidas: o que o banco tem, vale o do
   // banco; o que não tem, entra com UR × LPU. Serviço extra do banco continua
   // no fim da lista, nada é jogado fora.
-  function completarComMarext(lista){
+  function completarComMarext(lista, tipo){
     const doBanco = new Map(lista.map(sv => [String(sv.code), sv]));
-    const saida = MAREXT_ATIVIDADES.map(at=>{
-      const formula = precoMarext(at.ur);
+    const saida = atividadesDoTipo(tipo).map(at=>{
+      const formula = precoAtividade(at);
       const b = doBanco.get(at.code);
       doBanco.delete(at.code);
       if(!b){
@@ -4129,13 +4183,16 @@
   // O catálogo da modernização É o MAREXT: mesma lista, mesma ordem, mesmos
   // códigos que saem no relatório. Montada a partir da tabela pra nunca
   // desencontrar dela — mexeu na UR lá em cima, mexeu aqui junto.
-  const SERV_MODERNIZACAO = MAREXT_ATIVIDADES.map(a => ({
-    code: a.code,
-    desc: a.desc + ' (' + a.un.replace('UR/', '') + ')',
-    price: precoMarext(a.ur),
-    ur: a.ur,
-    unidade: a.un,
-  }));
+  function servicosMarext(tipo){
+    return atividadesDoTipo(tipo).map(a => ({
+      code: a.code,
+      desc: a.desc + ' (' + a.un.replace('UR/', '') + ')',
+      price: precoAtividade(a),
+      ur: a.ur,
+      unidade: a.un,
+    }));
+  }
+  const SERV_MODERNIZACAO = servicosMarext('modernizacao');
 
   // Duas listas separadas, como você pediu: o que é de um tipo nunca aparece na
   // tela do outro. `materials` e `valuesItems` continuam sendo "a lista do tipo
@@ -4143,6 +4200,18 @@
   const CATALOGO = {
     convencional: {materiais: MAT_CONVENCIONAL, servicos: SERV_CONVENCIONAL},
     modernizacao: {materiais: MAT_MODERNIZACAO, servicos: SERV_MODERNIZACAO},
+    // NAP começa com a mesma lista, mas em CÓPIA: o catálogo de cada tipo é
+    // editado e recarregado do banco separadamente, e lista compartilhada faria
+    // uma edição na modernização mudar a NAP sem ninguém pedir.
+    // A NAP usa os materiais dos dois: os da convencional (B2B) e os três da
+    // modernização. Os ids se repetiam entre as duas listas (1, 2, 3 em cada),
+    // e id repetido embaralharia a quantidade lançada — por isso os da
+    // modernização entram renumerados a partir do 9. O SQL do catálogo grava
+    // exatamente esses ids.
+    nap: {materiais: MAT_CONVENCIONAL.map(m => Object.assign({}, m))
+            .concat(MAT_MODERNIZACAO.map((m, i) =>
+              Object.assign({}, m, {id: MAT_CONVENCIONAL.length + 1 + i}))),
+          servicos: servicosMarext('nap')},
   };
   function catalogoDe(t){ return CATALOGO[t] || CATALOGO.convencional; }
   let materials   = CATALOGO.convencional.materiais;
@@ -4923,7 +4992,7 @@
   function marcadorItemHtml(item, idx){
     if(!ehItemDeParFoto(item)) return '';
     const marca = (dataState.itensPorFoto || {})[idx] || {};
-    const opcoes = MAREXT_ATIVIDADES.map(a =>
+    const opcoes = atividadesDoTipo(tipoObraAtual).map(a =>
       '<option value="' + a.code + '"' + (marca.code === a.code ? ' selected' : '') + '>'
       + a.code + ' — ' + esc(a.desc.slice(0, 44)) + (a.desc.length > 44 ? '…' : '')
       + '</option>').join('');
@@ -5139,10 +5208,10 @@
   // Pelo mesmo motivo, serviço JÁ lançado na obra continua aparecendo na busca
   // mesmo estando fora das 17: quem abre uma obra antiga precisa enxergar o que
   // está lá pra poder corrigir ou tirar.
-  const CODIGOS_DO_FORMULARIO = new Set(MAREXT_ATIVIDADES.map(a => a.code));
   function servicoOfertavel(v){
-    if(tipoObraAtual !== 'modernizacao') return true;
-    return CODIGOS_DO_FORMULARIO.has(v.code) || preenchido(dataState.valuesQty[v.code]);
+    if(!usaModeloMarext(tipoObraAtual)) return true;
+    const doFormulario = atividadesDoTipo(tipoObraAtual).some(a => a.code === v.code);
+    return doFormulario || preenchido(dataState.valuesQty[v.code]);
   }
 
   // O catálogo do tipo, já com a marca de quem entrou na obra.
@@ -5628,7 +5697,7 @@
           precoTecBruto: (x.preco_tecnico == null ? null : Number(x.preco_tecnico)),
         }));
       }
-      if(alvo === 'modernizacao') completarComMarext(acervo.servicos);
+      if(usaModeloMarext(alvo)) completarComMarext(acervo.servicos, alvo);
       // só marca como carregado se as DUAS deram certo — antes, uma falha
       // isolada numa das tabelas travava o catálogo inteiro na lista antiga
       // até fechar e abrir o app, mesmo com o dado certo já no banco.
@@ -6670,6 +6739,7 @@
   // cobrado embaixo.
   function pdfModernizacao(ctx){
     const {doc, st, c, opts, PW, PH, M, CW, contrato, dataRel, tecnico, cfgTipo} = ctx;
+    const tipoRel = ctx.tipoRelatorio || (st && st.tipoObra) || 'modernizacao';
 
     const CINZA = [217,217,217];
     const linhaFina = ()=> { doc.setDrawColor(0,0,0); doc.setLineWidth(0.25); };
@@ -6837,18 +6907,19 @@
     // afirmação ("executei nada disso"), vazio é o formulário em branco.
     const qtdPorCodigo = (st && st.valuesQty) || {};
     const lpu = lpuDaObra(st);
-    const servicosLancados = servicosDaObra(st || {}, 'modernizacao');
+    const servicosLancados = servicosDaObra(st || {}, tipoRel);
     const precoLancado = {};
     servicosLancados.forEach(sv => { precoLancado[String(sv.code)] = Number(sv.preco) || 0; });
-    const unitario = (code, ur) => (precoLancado[code] > 0 ? precoLancado[code]
-                                   : (ur != null ? precoMarext(ur, lpu) : 0));
+    const doFormulario = atividadesDoTipo(tipoRel);
+    const unitario = (at) => (precoLancado[at.code] > 0 ? precoLancado[at.code]
+                                                       : precoAtividade(at, lpu));
     let totalItens = 0, totalValor = 0;
-    const ehMarext = code => MAREXT_ATIVIDADES.some(a => a.code === String(code));
-    // Serviço lançado que não é uma das 17 do formulário: antes sumia daqui
+    const noFormulario = code => doFormulario.some(a => a.code === String(code));
+    // Serviço lançado que não está no formulário deste tipo: antes sumia daqui
     // (mas contava na obra). Agora entra no fim da tabela, senão o total do
     // relatório fica menor que o da obra e ninguém sabe por quê.
-    const linhasTabela = MAREXT_ATIVIDADES.concat(
-      servicosLancados.filter(sv => !ehMarext(sv.code)).map(sv => ({
+    const linhasTabela = doFormulario.concat(
+      servicosLancados.filter(sv => !noFormulario(sv.code)).map(sv => ({
         code: String(sv.code), desc: String(sv.desc || ''), un: '', ur: null,
       })));
 
@@ -6885,7 +6956,7 @@
       xc += COL_UR;
 
       const q = Number(qtdPorCodigo[at.code]) || 0;
-      const valorLinha = q > 0 ? Math.round(q * unitario(at.code, at.ur) * 100) / 100 : 0;
+      const valorLinha = q > 0 ? Math.round(q * unitario(at) * 100) / 100 : 0;
       if(q > 0){
         totalItens += q;
         totalValor += valorLinha;
@@ -7334,9 +7405,9 @@
 
     // A modernização é outro documento — capa, evidências antes/depois e as
     // duas tabelas. Só o cabeçalho (logos + caixa da direita) é compartilhado.
-    if(tipoRelatorio === 'modernizacao'){
+    if(usaModeloMarext(tipoRelatorio)){
       return pdfModernizacao({doc, st, c, opts, header, CONTENT_TOP,
-        PW, PH, M, CW, contrato, dataRel, tecnico, cfgTipo});
+        PW, PH, M, CW, contrato, dataRel, tecnico, cfgTipo, tipoRelatorio});
     }
 
     // ================= PAGINA 1 - CAPA =================
@@ -10551,7 +10622,7 @@
   // escritório lança a identificação da obra e pronto. O bloco inteiro some do
   // formulário em vez de ficar pedindo arquivo que não existe.
   function docsDoDespacho(){
-    return tipoDespacho() === 'modernizacao' ? [] : docsDespacho;
+    return usaModeloMarext(tipoDespacho()) ? [] : docsDespacho;
   }
   let arquivosDespacho = {};       // {id: {dataUrl, nome, mime}}
   let tecnicosCache = [];
@@ -10831,6 +10902,7 @@
   const HABILITACOES = [
     {id:'convencional', rot:'Convencional'},
     {id:'modernizacao', rot:'Modernização'},
+    {id:'nap', rot:'NAP sem sinal'},
   ];
 
   function habilitacoesDe(perfil){
