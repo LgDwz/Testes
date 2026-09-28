@@ -327,6 +327,35 @@
     text-transform:uppercase;border-radius:22px;padding:2px 9px;border:1px solid;}
   .selo-tipo.convencional{color:var(--st-azul);border-color:var(--st-azul);background:var(--accent-dim);}
   .selo-tipo.modernizacao{color:var(--st-ambar);border-color:var(--st-ambar);background:var(--warning-dim);}
+  .selo-tipo.nap{color:var(--st-roxo);border-color:var(--st-roxo);background:var(--bg-elev-2);}
+
+  /* botão principal da lista de Obras: é a ação da tela, tem que parecer uma */
+  .job-edit-btn.destaque{background:var(--accent);color:var(--accent-ink);
+    border-color:var(--accent);font-weight:600;min-height:46px;}
+  .job-edit-btn.destaque:hover{filter:brightness(1.06);}
+
+  /* opção "continuar preenchendo" no cadastro de obra */
+  .seguir-opcao{display:flex;gap:10px;align-items:flex-start;cursor:pointer;
+    padding:12px 14px;margin-top:20px;border:1px solid var(--linha);
+    border-radius:12px;background:var(--bg-elev-2);}
+  .seguir-opcao input{margin-top:2px;width:18px;height:18px;accent-color:var(--accent);flex:0 0 auto;}
+  .seguir-opcao b{display:block;font-size:13.5px;font-weight:600;color:var(--text);}
+  .seguir-opcao small{display:block;font-size:11.5px;color:var(--text-faint);margin-top:2px;}
+
+  /* folha de escolha do tipo de obra */
+  .escolha-fundo{position:fixed;inset:0;z-index:90;background:rgba(0,0,0,.55);
+    display:flex;align-items:flex-end;justify-content:center;padding:16px;}
+  .escolha-cartao{width:100%;max-width:420px;background:var(--bg-elev);border:1px solid var(--linha);
+    border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:10px;}
+  .escolha-tit{font-size:15px;font-weight:600;color:var(--text);margin-bottom:2px;}
+  .escolha-op{display:flex;flex-direction:column;gap:2px;text-align:left;cursor:pointer;
+    background:var(--bg-elev-2);color:var(--text);border:1px solid var(--linha);
+    border-radius:12px;padding:12px 14px;min-height:56px;}
+  .escolha-op:hover{border-color:var(--accent);}
+  .escolha-op b{font-size:14px;}
+  .escolha-op span{font-size:12px;color:var(--text-faint);}
+  .escolha-cancelar{background:transparent;color:var(--text-faint);border:0;
+    padding:8px;cursor:pointer;font-size:13px;}
 
   /* Comunicados */
   .com-barra{padding:0 16px;margin-bottom:4px;}
@@ -2943,7 +2972,7 @@
     <div class="ph">
       <div>
         <div class="ph-hello" id="phHello">&mdash;</div>
-        <div class="ph-t" id="phTitle">Despacho</div>
+        <div class="ph-t" id="phTitle">Painel</div>
         <div class="ph-s" id="phSub">&mdash;</div>
       </div>
       <div class="ph-r">
@@ -3121,7 +3150,12 @@
         <div id="dCarga" style="font-size:11.5px;color:var(--text-faint);margin-top:6px;"></div>
       </div>
 
-      <button class="review-btn pdf" id="btnDespachar" style="width:100%;margin-top:20px;">Cadastrar obra</button>
+      <label class="seguir-opcao" for="dContinuar">
+        <input type="checkbox" id="dContinuar" checked>
+        <span><b>Continuar preenchendo esta obra</b>
+          <small>Abre o assistente na obra criada. Desmarque para cadastrar várias seguidas.</small></span>
+      </label>
+      <button class="review-btn pdf" id="btnDespachar" style="width:100%;margin-top:8px;">Cadastrar obra</button>
       <div id="dStatus" style="font-size:12px;color:var(--text-dim);margin-top:10px;text-align:center;min-height:16px;"></div>
     </div>
   </div>
@@ -3324,7 +3358,7 @@
       <span class="logout-link" id="backFromJobs">&#8592; Início</span>
       <div class="step-title" style="margin:10px 0 0;">Minhas obras</div>
       <span class="logout-link" id="btnTrocarEmpresaJobs" style="display:none;margin-top:4px;">Trocar empresa</span>
-      <button class="job-edit-btn" id="btnNovaObraJobs" type="button" style="width:100%;margin-top:12px;display:none;">
+      <button class="job-edit-btn destaque" id="btnNovaObraJobs" type="button" style="width:100%;margin-top:12px;display:none;">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
         <span>Adicionar obra</span>
       </button>
@@ -3339,7 +3373,7 @@
       </div>
       <div class="jobs-filtro-linha" style="margin-top:10px;">
         <div class="adm-filtros" id="jobsStatusFiltro" style="margin-top:0;margin-bottom:0;padding-bottom:0;">
-          <div class="adm-chip ativo" data-filtro="abertas">Pendentes/Rejeitadas</div>
+          <div class="adm-chip ativo" data-filtro="abertas">Em aberto</div>
           <div class="adm-chip" data-filtro="historico">Aprovadas</div>
         </div>
         <button class="jobs-export" id="btnExportObras" type="button"
@@ -3782,7 +3816,7 @@
 (function(){
   // Marque aqui a cada build enviado ao campo. O testador informa esta
   // string ao relatar um problema, senao nao da pra saber o que ele rodou.
-  const APP_VERSION = 'Enlace Ops · alpha-11.26 · 28/09/2026';
+  const APP_VERSION = 'Enlace Ops · alpha-11.30 · 28/09/2026';
 
   // ---------- Supabase config ----------
   // Troque pelos valores reais do seu projeto (Project Settings -> API no Supabase).
@@ -4175,10 +4209,22 @@
     return isFinite(n) && n > 0 ? n : LPU_MAREXT;
   }
 
-  const TEXTO_DESCRICAO_PADRAO =
-    'Conforme contratualizado entre a COPEL e a LIGGA, foram regularizadas as instalações '
-    + 'compartilhadas nos locais identificados, cumprindo as normas e resoluções de '
-    + 'compartilhamento de estruturas.\nAbaixo os pontos regularizados.';
+  // Texto que já vem escrito no campo "Descrição do serviço" — o técnico pode
+  // trocar. Cada tipo tem o seu: o da modernização fala em regularização de
+  // compartilhamento, que não descreve um atendimento de NAP sem sinal.
+  const DESCRICAO_PADRAO = {
+    modernizacao:
+      'Conforme contratualizado entre a COPEL e a LIGGA, foram regularizadas as instalações '
+      + 'compartilhadas nos locais identificados, cumprindo as normas e resoluções de '
+      + 'compartilhamento de estruturas.\nAbaixo os pontos regularizados.',
+    nap:
+      'Conforme contratualizado entre a COPEL e a LIGGA, foi executado o atendimento corretivo '
+      + 'da NAP sem sinal identificada abaixo, com restabelecimento do sinal óptico.'
+      + '\nAbaixo as atividades executadas.',
+  };
+  function descricaoPadraoDoTipo(t){
+    return DESCRICAO_PADRAO[t || tipoObraAtual] || DESCRICAO_PADRAO.modernizacao;
+  }
 
   // O catálogo da modernização É o MAREXT: mesma lista, mesma ordem, mesmos
   // códigos que saem no relatório. Montada a partir da tabela pra nunca
@@ -4327,7 +4373,7 @@
     valuesItems = catalogoDe(t).servicos;
 
     const cfg = TIPOS_OBRA[t];
-    const mod = (t === 'modernizacao');
+    const mod = usaModeloMarext(t);
 
     const bloco = document.getElementById('camposModernizacao');
     if(bloco) bloco.style.display = mod ? '' : 'none';
@@ -5716,8 +5762,12 @@
   // Carrega os dois tipos de uma vez. A lista de Obras mostra obras dos dois na
   // mesma tela, então precisa dos dois catálogos pra montar material e serviço
   // de cada cartão — senão o cartão da modernização sairia vazio.
+  // Carrega o catálogo de TODOS os tipos. A lista de Obras mostra os três na
+  // mesma tela, então precisa de todos pra montar material e serviço de cada
+  // cartão — senão o cartão de um tipo sairia vazio. Tipo novo entra sozinho:
+  // basta existir em TIPOS_OBRA.
   function garantirCatalogoDosDois(){
-    return Promise.all([garantirCatalogo('convencional'), garantirCatalogo('modernizacao')]);
+    return Promise.all(Object.keys(TIPOS_OBRA).map(t => garantirCatalogo(t)));
   }
 
   // ---------- Capture overlay (generic, driven by item.storeKey) ----------
@@ -6727,8 +6777,6 @@
   // rótulos em destaque amarelo, página de evidências ANTES/DEPOIS em grade de
   // duas colunas, e a última página com as duas tabelas (serviço e material).
   // O cabeçalho com os dois logos é o mesmo da convencional — vem por parâmetro.
-  const VERDE_MOLDURA = [0, 128, 55];
-  const AMARELO_MARCA = [255, 242, 0];
 
   // ---------- Relatório de Execução de Notificações e Obras (modernização) ----------
   // Formato novo da Ligga/COPEL, substituiu o antigo "Relatório de Manutenção de
@@ -6853,7 +6901,7 @@
 
     // ================= DESCRIÇÃO DO SERVIÇO =================
     y = faixa('DESCRIÇÃO DO SERVIÇO', y);
-    const textoDesc = (c.descricaoServico || TEXTO_DESCRICAO_PADRAO);
+    const textoDesc = (c.descricaoServico || descricaoPadraoDoTipo(tipoRel));
     const linhasDesc = [];
     String(textoDesc).split('\n').forEach(par =>
       doc.splitTextToSize(par, CW - 6).forEach(l => linhasDesc.push(l)));
@@ -8744,7 +8792,7 @@
         {id:'diagrama_doc', rot:'Diagrama-unifilar'},
         {id:'asbuilt',      rot:'Asbuilt-atualizado',            soConvencional:true},
         {id:'diagrama_att', rot:'Diagrama-unifilar-atualizado',  soConvencional:true},
-      ].filter(a => !a.soConvencional || tipoDaObra !== 'modernizacao');
+      ].filter(a => !a.soConvencional || !usaModeloMarext(tipoDaObra));
       for(const a of anexos){
         const caminho = caminhos[a.id];
         if(!caminho){ faltando.push(a.rot.replace(/-/g,' ').toLowerCase()); continue; }
@@ -9782,18 +9830,20 @@
   function itensMenu(){
     const L = [];
     if(ehOperador()) L.push({id:'dashboard', t:'Dashboard', ic:'dashboard'});
-    if(ehOperador()) L.push({id:'despacho',  t:'Despacho',  ic:'despacho'});
+    // "Nova obra" saiu do menu (dos dois papéis): criar obra é uma AÇÃO, e o
+    // lugar dela é dentro de Obras, no botão do topo da lista — que já existia
+    // e fazia exatamente isso. Item de menu separado dava duas portas pro
+    // mesmo formulário e deixava a pessoa na dúvida sobre qual usar.
     if(ehOperador()) L.push({id:'tecnicos',  t:'Técnicos',  ic:'tecnicos'});
-    // o técnico cria a própria obra: sem esta entrada ele não tinha caminho
-    // nenhum até o assistente (o cartão antigo saiu do ar com a barra lateral).
-    if(ehTecnico()) L.push({id:'nova', t:'Nova obra', ic:'nova'});
     L.push({id:'obras',     t: ehRevisor() ? 'Obras' : 'Minhas obras', ic:'obras', badge:true});
-    L.push({id:'historico', t:'Histórico', ic:'historico'});
+    // "Histórico" saiu do menu: era a mesma tela de Obras com o chip
+    // "Aprovadas" ligado. Duas portas pro mesmo lugar faziam a pessoa procurar
+    // uma obra em Obras, não achar (porque já tinha sido aprovada) e nem
+    // lembrar que existia outra entrada. O chip dentro da tela resolve.
     if(!ehTecnico()) L.push({id:'catalogo', t:'Materiais e serviços', ic:'catalogo'});
     if(ehRevisor()) L.push({id:'fechamento', t:'Fechamento', ic:'fechamento'});
     // Medição e Relatórios são o faturamento da Ligga, linha a linha
     if(podeVerFaturamento()) L.push({id:'medicao',    t:'Medição',    ic:'medicao'});
-    if(podeVerFaturamento()) L.push({id:'relatorios', t:'Relatórios', ic:'relatorios'});
     if(ehAdmin())   L.push({id:'config',     t:'Configurações', ic:'config'});
     if(ehSuper())   L.push({id:'empresas',   t:'Empresas', ic:'empresas'});
     return L;
@@ -9824,7 +9874,7 @@
     const L = itensMenu();
     sbNav.innerHTML = '<div class="sb-sec">Operação</div>';
     L.forEach((it, n)=>{
-      if(it.id === 'relatorios')
+      if(it.id === 'medicao')
         sbNav.insertAdjacentHTML('beforeend', '<div class="sb-sec">Análise</div>');
       if(it.id === 'config')
         sbNav.insertAdjacentHTML('beforeend', '<div class="sb-sec">Sistema</div>');
@@ -9847,8 +9897,8 @@
   }
 
   const TITULOS = {
-    dashboard:'Dashboard', despacho:'Despacho', tecnicos:'Técnicos',
-    obras:'Obras', historico:'Histórico', relatorios:'Relatórios',
+    dashboard:'Dashboard', despacho:'Nova obra', tecnicos:'Técnicos',
+    obras:'Obras', historico:'Obras', relatorios:'Obras',
     config:'Configurações', empresas:'Empresas', nova:'Nova obra', medicao:'Medição',
     fechamento:'Fechamento', catalogo:'Materiais e serviços',
   };
@@ -9857,7 +9907,8 @@
     // O menu esconde o que o papel não pode abrir, mas esconder não é impedir:
     // qualquer outro trecho que chame navegarMenu('medicao') entraria. A porta
     // é aqui, uma só, e usa a MESMA lista que monta o menu.
-    if(rota && !itensMenu().some(i => i.id === rota)){
+    const ROTAS_SEM_MENU = ['historico', 'relatorios', 'despacho', 'nova'];
+    if(rota && ROTAS_SEM_MENU.indexOf(rota) === -1 && !itensMenu().some(i => i.id === rota)){
       const alvo = rotaInicial();
       if(alvo !== rota){ navegarMenu(alvo); return; }
     }
@@ -9885,10 +9936,10 @@
         if(!vemDoPainel) filtroPainel = null;
         vemDoPainel = false;
         filtroObras = 'abertas';   refreshJobsList(); break;
-      case 'historico': filtroObras = 'historico'; refreshJobsList(); break;
-      case 'relatorios':
-        showToast('Relatórios ainda não têm tela própria — por ora, use o Histórico');
-        filtroObras = 'historico'; refreshJobsList(); break;
+      // rotas sem item de menu: continuam funcionando pra quem chega de
+      // dentro do app (o card de obras do técnico, um link antigo)
+      case 'historico':
+      case 'relatorios': filtroObras = 'historico'; refreshJobsList(); break;
       case 'config':
         showAppView('usuarios');
         escopoTecnicos = false; escopoEmpresas = false; filtroUsuarios = 'todos';
@@ -9959,11 +10010,6 @@
   const fechamentoScreen = document.getElementById('fechamentoScreen');
   const catalogoScreen = document.getElementById('catalogoScreen');
   const quadroCard   = document.getElementById('quadroCard');
-
-  const ROTULO_STATUS = {
-    despachada:'despachada', em_execucao:'em execução',
-    enviado:'enviada', reprovado:'devolvida'
-  };
 
   let tecCache = [];
   let filtroTecStatus = 'todos';   // 'todos' | 'free' | 'busy' | 'over'
@@ -10199,7 +10245,7 @@
     // direto — misturaria técnico e obra de todas as empresas juntos.
     if(ehSuper() && !empresaContexto){
       pintarCabecalho();
-      document.getElementById('phTitle').textContent = 'Despacho';
+      document.getElementById('phTitle').textContent = 'Painel';
       document.getElementById('phHello').textContent = 'Escolha a empresa';
       document.getElementById('phSub').textContent = '';
       document.getElementById('quadroKpis').innerHTML = '';
@@ -10231,7 +10277,7 @@
     document.getElementById('phHello').textContent =
       (hoje.getHours() < 12 ? 'Bom dia, ' : hoje.getHours() < 18 ? 'Boa tarde, ' : 'Boa noite, ')
       + (techNameDisplay.textContent || '').trim().split(/\s+/)[0];
-    document.getElementById('phTitle').textContent = 'Despacho';
+    document.getElementById('phTitle').textContent = 'Painel';
 
     try{
       let qTecsQuadro = supabaseClient.from('perfis').select('id,nome,email,equipe_id,ultimo_acesso,status_manual')
@@ -11085,7 +11131,7 @@
       // "despachada" quando alguém é de fato atribuído (aqui ou depois, ao
       // remanejar na aba Obras). Assim dá pra bater o olho e ver o que ainda
       // precisa de gente vs. o que já foi mandado pra alguém.
-      const {error} = await supabaseClient.from(SUPABASE_TABLE).insert({
+      const {data: obraCriada, error} = await supabaseClient.from(SUPABASE_TABLE).insert({
         contrato: numero,
         status: tecnico ? 'despachada' : 'pendente',
         tipo_obra: tipoDespacho(),
@@ -11103,7 +11149,7 @@
           materialsQty: {}, valuesQty: {},
           tecnico: tecnico ? ((tecnicosCache.find(t => t.id === tecnico) || {}).nome || '') : '',
         }
-      });
+      }).select().single();
       if(error) throw error;
 
       // guarda o contrato pra proxima obra no mesmo endereço já vir preenchida
@@ -11120,10 +11166,17 @@
       } else {
         showToast('Obra ' + numero + ' cadastrada — atribua o técnico na aba Obras quando decidir');
       }
-      // Antes voltava pro Dashboard. Quem acabou de cadastrar uma obra quase
-      // sempre vai cadastrar a próxima ou conferir a que entrou — a lista de
-      // Obras é o lugar certo pra cair.
-      navegarMenu('obras');
+      // Cadastrar e continuar preenchendo era impossível: a tela pulava pra
+      // lista de Obras, e a obra recém-criada tinha que ser procurada e aberta
+      // de novo. Agora ela abre no assistente, no passo 1, pronta pra seguir.
+      // Quem cadastra várias seguidas desmarca a opção e cai na lista, como antes.
+      const seguir = document.getElementById('dContinuar');
+      if(seguir && seguir.checked && obraCriada){
+        arquivosDespacho = {};
+        await abrirObraDespachada({row: obraCriada, tipo: obraCriada.tipo_obra}, null);
+      } else {
+        navegarMenu('obras');
+      }
     } catch(err){
       st.textContent = 'Não deu pra despachar: ' + (err.message || err);
       showToast('Falha no despacho');
@@ -13694,7 +13747,7 @@
       const v = c[map[id]];
       // a descrição do serviço nasce com o texto padrão do contrato: obra que
       // ainda não guardou nada nesse campo recebe ele, não um campo vazio
-      if(id === 'fDescricaoServico' && !v){ el.value = TEXTO_DESCRICAO_PADRAO; return; }
+      if(id === 'fDescricaoServico' && !v){ el.value = descricaoPadraoDoTipo(); return; }
       el.value = v || '';
     });
     pintarPoloAssistente();
@@ -13724,38 +13777,6 @@
     return estado;
   }
 
-  function loadJobSnapshot(job){
-    const snap = job.snapshot;
-    poloObraAtual = poloValido(snap.polo) ? snap.polo : poloDaObra(job);
-    dataState.polo = poloObraAtual;
-    dataState.contract = JSON.parse(JSON.stringify(snap.contract || {}));
-    dataState.projectDocs = JSON.parse(JSON.stringify(snap.projectDocs || {}));
-    dataState.photos = JSON.parse(JSON.stringify(snap.photos || {}));
-    dataState.docsAtt = JSON.parse(JSON.stringify(snap.docsAtt || {}));
-    dataState.materialsQty = JSON.parse(JSON.stringify(snap.materialsQty || {}));
-    dataState.valuesQty = JSON.parse(JSON.stringify(snap.valuesQty || {}));
-    normalizarFotos(dataState);
-
-    const c = dataState.contract;
-    document.getElementById('fNumero').value = c.numero || '';
-    document.getElementById('fData').value = c.data || '';
-    document.getElementById('fEndereco').value = c.endereco || '';
-    document.getElementById('fCodtcomp').value = c.codtcomp || '';
-    document.getElementById('fCidade').value = c.cidade || '';
-    document.getElementById('fCep').value = c.cep || '';
-    document.getElementById('fCoord').value = c.coordenadas || '';
-    document.getElementById('fEmpresa').value = c.empresa || '';
-
-    renderDocsProjeto();
-    renderFotos();
-    renderDocsExecutados();
-    renderMateriais();
-    renderValores();
-
-    showAppView('wizard');
-    showStep(0);
-    showToast('Editando o contrato ' + job.contrato);
-  }
 
   function jobTotal(job){
     return (job.servicos || []).reduce((sum, s) => sum + s.qtd * precoVisivel(s), 0);
@@ -13803,7 +13824,7 @@
     // Modernização não pede asbuilt nem unifilar — o relatório de manutenção
     // de rede da Ligga não tem esses dois. Cobrar ali seria pendência falsa em
     // toda obra de melhoria.
-    if(tipo !== 'modernizacao'){
+    if(!usaModeloMarext(tipo)){
       const exec = docExecItems
         .filter(it => !(arq.docsAtt || {})[it.id])
         .map(it => it.title);
@@ -14240,7 +14261,7 @@
             {id:'diagrama_doc', rot:'Diagrama-unifilar'},
             {id:'asbuilt',      rot:'Asbuilt-atualizado',           soConvencional:true},
             {id:'diagrama_att', rot:'Diagrama-unifilar-atualizado', soConvencional:true},
-          ].filter(a => !a.soConvencional || tipoDaObra !== 'modernizacao');
+          ].filter(a => !a.soConvencional || !usaModeloMarext(tipoDaObra));
 
           for(const a of anexos){
             const caminho = caminhos[a.id];
@@ -14471,7 +14492,7 @@
       header.innerHTML = `
         <div class="job-item-body">
           <div class="job-item-title" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-            <span>${job.tipo === 'modernizacao' ? '' : 'Contrato '}${esc(normalizarContrato(job.contrato))}</span>
+            <span>${usaModeloMarext(job.tipo) ? '' : 'Contrato '}${esc(normalizarContrato(job.contrato))}</span>
             <span class="selo-tipo ${esc(job.tipo || 'convencional')}">${esc(rotuloTipo(job.tipo))}</span>
             <span class="selo-polo" title="Polo da obra">${esc(poloDaObra(job))}</span>
             ${pend ? `<span class="selo-falta" title="${esc(pend.grupos.map(g => g.rot + ': ' + g.itens.join(', ')).join(' | '))}">falta ${pend.total}</span>` : ''}
@@ -16455,6 +16476,29 @@
     setTimeout(()=> alvo.classList.remove('piscando'), 1800);
   }
 
+  // Folha de escolha do tipo de obra. Uma pergunta, um botão por tipo, com o
+  // nome e a explicação de cada um — o técnico lê o que está escolhendo.
+  function escolherTipoObra(tipos){
+    return new Promise(resolve=>{
+      const fundo = document.createElement('div');
+      fundo.className = 'escolha-fundo';
+      fundo.innerHTML = '<div class="escolha-cartao">'
+        + '<div class="escolha-tit">Que tipo de obra?</div>'
+        + tipos.map(t => '<button type="button" class="escolha-op" data-tipo="' + t + '">'
+            + '<b>' + esc(TIPOS_OBRA[t].rot) + '</b>'
+            + '<span>' + esc(TIPOS_OBRA[t].rotLongo) + '</span></button>').join('')
+        + '<button type="button" class="escolha-cancelar">Cancelar</button></div>';
+      const fechar = (val)=>{ fundo.remove(); resolve(val); };
+      fundo.addEventListener('click', e=>{
+        if(e.target === fundo) return fechar(null);
+        const op = e.target.closest('.escolha-op');
+        if(op) return fechar(op.dataset.tipo);
+        if(e.target.closest('.escolha-cancelar')) fechar(null);
+      });
+      document.body.appendChild(fundo);
+    });
+  }
+
   // Abrir o assistente numa obra nova, do zero. Ficava só no clique do
   // cartão da tela inicial antiga — que a barra lateral aposentou, e por
   // isso o técnico não tinha caminho nenhum até aqui. Agora é uma função
@@ -16462,16 +16506,18 @@
   function abrirObraNova(tipo){
     // Obra criada pelo próprio técnico: ele escolhe entre os tipos em que está
     // habilitado. Quem faz só um tipo nem vê a pergunta.
-    let alvo = tipo;
-    if(!alvo){
-      const podem = habilitacoesDe(perfilAtual);
-      if(podem.length > 1){
-        alvo = confirm('Que tipo de obra?\n\nOK = Modernização (melhoria de rede)\nCancelar = Ativação convencional')
-             ? 'modernizacao' : 'convencional';
-      } else {
-        alvo = podem[0] || 'convencional';
-      }
+    const podem = habilitacoesDe(perfilAtual).filter(t => TIPOS_OBRA[t]);
+    // Mais de um tipo: pergunta com os tipos NA TELA. Era um confirm de OK /
+    // Cancelar, que só cabia dois — com três tipos ele não conseguia nem
+    // escolher o terceiro, e ninguém adivinha que "Cancelar" quer dizer
+    // convencional.
+    if(!tipo && podem.length > 1){
+      escolherTipoObra(podem).then(escolhido => {
+        if(escolhido) abrirObraNova(escolhido);
+      });
+      return;
     }
+    const alvo = tipo || podem[0] || 'convencional';
     aplicarTipoObra(alvo, {semRedesenhar:true});
     poloObraAtual = POLO_PADRAO;
     resetDataState();
@@ -16572,7 +16618,10 @@
     if(btnNovaJobs){
       btnNovaJobs.style.display = (ehOperador() || ehTecnico()) ? '' : 'none';
       const rot = btnNovaJobs.querySelector('span');
-      if(rot) rot.textContent = ehTecnico() ? 'Nova obra' : 'Adicionar obra';
+      // mesmo nome pros dois papéis: por dentro o caminho difere (o escritório
+      // cadastra e despacha, o técnico abre direto), mas pra quem usa é a
+      // mesma coisa — começar uma obra.
+      if(rot) rot.textContent = 'Nova obra';
     }
     renderJobsList();
     showAppView('myjobs');
