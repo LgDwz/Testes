@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#020A1D">
+<meta name="theme-color" content="#EEF2F8">
 
 <title>Enlace Ops</title>
 <link rel="manifest" href="manifest.json">
@@ -2544,13 +2544,16 @@
 </style>
 <script>
   /* Aplica o tema ANTES de a página pintar. Se ficasse lá embaixo, no script
-     principal, quem usa o tema claro veria a tela escura piscar a cada
-     abertura — e no celular, no sol, isso incomoda de verdade. */
+     principal, a tela piscaria na cor errada a cada abertura — e no celular,
+     no sol, isso incomoda de verdade.
+     O padrão do app é o tema CLARO: só fica escuro quem escolheu escuro. */
   (function(){
     try{
-      var t = localStorage.getItem('enlace-tema');
-      if(t === 'claro') document.documentElement.setAttribute('data-tema', 'claro');
-    }catch(e){}
+      if(localStorage.getItem('enlace-tema') !== 'escuro')
+        document.documentElement.setAttribute('data-tema', 'claro');
+    }catch(e){
+      document.documentElement.setAttribute('data-tema', 'claro');
+    }
   })();
 </script>
 </head>
@@ -3816,7 +3819,7 @@
 (function(){
   // Marque aqui a cada build enviado ao campo. O testador informa esta
   // string ao relatar um problema, senao nao da pra saber o que ele rodou.
-  const APP_VERSION = 'Enlace Ops · alpha-11.30 · 28/09/2026';
+  const APP_VERSION = 'Enlace Ops · alpha-11.31 · 28/09/2026';
 
   // ---------- Supabase config ----------
   // Troque pelos valores reais do seu projeto (Project Settings -> API no Supabase).
