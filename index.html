@@ -80,11 +80,11 @@
      invisível, então accent, success e warning ficam mais fechados aqui pra
      manter o contraste de leitura. */
   html[data-tema="claro"]{
-    --bg:#EEF2F8;
+    --bg:#F4F7FC;
     --bg-elev:#FFFFFF;
     --bg-elev-2:#E4EBF5;
-    --border:#D2DBE8;
-    --border-strong:#AFBECF;
+    --border:#E1E8F2;
+    --border-strong:#B9C6D8;
     --accent:#0B69C7;
     --accent-alt:#00798C;
     --accent-dim:#DCEBFB;
@@ -108,8 +108,8 @@
     --pilula:rgba(255,255,255,.9);
     --surf:#FFFFFF;
     --surf2:#F6F9FD;
-    --line:#DCE3EE;
-    --line2:#BCC9DA;
+    --line:#E4EAF3;
+    --line2:#CBD6E4;
     --st-azul:#0B69C7;  --st-azul-2:#1E6FB8;  --st-azul-forte:#1E6FB8;
     --st-verde:#0C7A55; --st-verde-2:#0E7A55; --st-verde-forte:#0F7A57;
     --st-ambar:#8A5A08; --st-ambar-2:#8A5A08; --st-ambar-forte:#A96F10;
@@ -1151,9 +1151,12 @@
   .my-jobs-head{padding:20px 16px 14px;}
   .job-card{margin-bottom:10px;}
   .job-item{
-    background:var(--bg-elev);border:1px solid var(--border);border-radius:10px;
-    padding:14px;display:flex;align-items:center;gap:12px;cursor:pointer;
+    background:var(--bg-elev);border:1px solid var(--border);border-radius:12px;
+    border-left:3px solid var(--accent);
+    padding:15px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;
   }
+  .job-item:hover{border-color:var(--accent);}
+  .job-item-title span:first-child{color:var(--accent);font-size:15.5px;letter-spacing:.01em;}
   .job-card.open .job-item{border-radius:10px 13px 0 0;border-bottom-color:transparent;}
   .job-item-body{flex:1;min-width:0;}
   .job-item-title{font-size:14px;font-weight:600;margin-bottom:3px;}
@@ -1432,21 +1435,93 @@
     color:var(--text-dim);margin:-10px 0 14px;}
   .mes-fora button{background:none;border:none;padding:0;color:var(--accent);
     cursor:pointer;font:inherit;text-decoration:underline;}
-  .jobs-filtro-linha{display:flex;align-items:flex-start;gap:10px;}
-  .jobs-filtro-linha .adm-filtros{flex:1;min-width:0;}
-  .jobs-export{flex:0 0 auto;min-height:34px;margin-top:-1px;cursor:pointer;
-    background:transparent;border:1px solid var(--success);color:var(--success);
-    border-radius:999px;padding:0 13px;display:inline-flex;align-items:center;gap:6px;
-    font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.04em;white-space:nowrap;}
-  .jobs-export:hover{background:var(--success);color:var(--bg);}
-  .jobs-export:disabled{opacity:.45;cursor:default;}
-  /* no celular os dois chips + o botão não cabem na mesma linha: o segundo
-     chip ficava cortado atrás do botão e parecia defeito. */
-  @media (max-width:520px){
-    .jobs-filtro-linha{flex-wrap:wrap;}
-    .jobs-filtro-linha .adm-filtros{flex:1 1 100%;padding-bottom:8px;}
-    .jobs-export{margin-left:auto;margin-top:0;}
+  /* Cabeçalho da lista de Obras: título + ação, uma barra de busca/período e
+     uma barra de recortes. Antes eram cinco faixas soltas, cada uma com altura
+     e forma próprias, e a lista só começava lá embaixo. */
+  /* Faixa de abertura da lista: título, uma linha dizendo pra que serve a tela
+     e a ação principal à direita. */
+  .jobs-hero{display:flex;align-items:flex-end;justify-content:space-between;
+    gap:16px;flex-wrap:wrap;margin:6px -16px 16px;padding:22px 16px 24px;
+    background:linear-gradient(105deg,var(--bg-elev) 0%,var(--accent-dim) 62%,var(--bg-elev) 100%);
+    border-bottom:1px solid var(--border);}
+  .jobs-hero-txt{display:flex;flex-direction:column;gap:4px;min-width:0;}
+  .jobs-hero-sub{font-size:13.5px;color:var(--text-dim);}
+  .jobs-hero .step-title{font-size:30px;letter-spacing:-.01em;}
+  .btn-nova{flex:0 0 auto;min-height:40px;padding:0 18px;cursor:pointer;
+    display:inline-flex;align-items:center;gap:7px;white-space:nowrap;
+    background:var(--accent);color:var(--accent-ink);border:1px solid var(--accent);
+    border-radius:10px;font-family:inherit;font-size:13.5px;font-weight:600;}
+  .btn-nova:hover{filter:brightness(1.07);}
+
+  .jobs-barra{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px;}
+
+  /* busca com lupa dentro, do jeito que todo mundo espera de um campo de busca */
+  .busca-box{flex:1 1 100%;display:flex;align-items:center;gap:10px;
+    background:var(--bg-elev);border:1px solid var(--border);border-radius:12px;
+    padding:0 14px;min-height:46px;}
+  .busca-box:focus-within{border-color:var(--accent);}
+  .busca-box svg{flex:0 0 auto;color:var(--text-faint);}
+  .busca-box .adm-busca{flex:1;margin:0;border:0;background:transparent;padding:0;min-height:44px;}
+  .busca-box .adm-busca:focus{border:0;}
+
+  /* linha dos recortes: cada grupo com o nome do lado, senão vira um monte de
+     pílula solta e ninguém sabe o que cada uma filtra */
+  .jobs-barra-filtros{gap:8px;}
+  .filtro-rot{font-size:12px;color:var(--text-faint);letter-spacing:.02em;}
+  .filtro-sep{width:1px;align-self:stretch;min-height:26px;background:var(--border);margin:0 4px;}
+  .jobs-barra .mes-linha{flex:0 1 auto;}
+  .jobs-barra-2{margin-bottom:0;align-items:center;
+    border-top:1px solid var(--border);padding-top:10px;}
+  .jobs-barra-2 .polo-chips{flex:0 1 auto;}
+  .jobs-total{font-size:13px;color:var(--text-dim);margin-left:auto;white-space:nowrap;}
+  .jobs-total b{color:var(--text);font-size:15px;margin-left:6px;}
+
+  /* abas com a contagem: dá pra ver quantas tem de cada lado sem trocar de aba */
+  .abas{flex:0 0 auto;display:inline-flex;gap:4px;}
+  .abas .adm-chip{border:0;background:transparent;border-radius:0;padding:9px 4px;margin:0 10px 0 0;
+    display:inline-flex;align-items:center;gap:7px;font-family:inherit;font-size:13.5px;
+    letter-spacing:0;color:var(--text-dim);border-bottom:2px solid transparent;}
+  .abas .adm-chip.ativo{color:var(--accent);border-bottom-color:var(--accent);background:transparent;}
+  .aba-n{min-width:22px;padding:1px 7px;border-radius:999px;background:var(--bg-elev-2);
+    border:1px solid var(--border);font-size:11px;font-family:'IBM Plex Mono',monospace;}
+  .abas .adm-chip.ativo .aba-n{background:var(--accent-dim);border-color:var(--accent);color:var(--accent);}
+  /* tipo de obra: mesma forma dos polos, letra normal — polo é sigla, tipo é
+     palavra, e ler "MODERNIZAÇÃO" em caixa alta monoespaçada cansa */
+  .tipo-chip{font-family:inherit;font-size:12.5px;letter-spacing:0;font-weight:500;}
+  .tipo-chip.ativo.t-modernizacao{border-color:var(--st-ambar);color:var(--st-ambar);
+    background:var(--warning-dim);}
+  .tipo-chip.ativo.t-nap{border-color:var(--st-roxo);color:var(--st-roxo);
+    background:var(--bg-elev-2);}
+  .jobs-acoes{display:flex;align-items:center;gap:8px;margin-left:auto;flex-wrap:wrap;}
+
+  /* par colado: é um OU outro, não dois filtros independentes */
+  .seg{flex:0 0 auto;display:inline-flex;background:var(--bg-elev-2);
+    border:1px solid var(--border);border-radius:10px;padding:3px;gap:3px;}
+  .seg .adm-chip{border:0;background:transparent;border-radius:8px;padding:7px 14px;}
+  .seg .adm-chip.ativo{background:var(--accent-dim);color:var(--accent);}
+
+  @media (max-width:640px){
+    .jobs-hero{align-items:stretch;padding:18px 16px 20px;}
+    .jobs-hero .step-title{font-size:24px;}
+    .btn-nova{width:100%;justify-content:center;}
+    .jobs-barra .mes-linha,
+    .jobs-barra-2 .abas{flex:1 1 100%;}
+    .filtro-sep{display:none;}
+    .filtro-rot{flex:1 1 100%;margin-top:2px;}
+    .jobs-total{margin-left:0;flex:1 1 100%;}
+    .jobs-acoes{margin-left:0;width:100%;}
+    .jobs-acoes .jobs-export{flex:1;justify-content:center;}
   }
+
+  .jobs-export{flex:0 0 auto;min-height:38px;cursor:pointer;
+    background:var(--bg-elev);border:1px solid var(--border);color:var(--text-dim);
+    border-radius:10px;padding:0 14px;display:inline-flex;align-items:center;gap:7px;
+    font-family:inherit;font-size:12.5px;letter-spacing:0;white-space:nowrap;}
+  .jobs-export svg{color:var(--success);}
+  #btnExportDocs svg{color:var(--accent);}
+  #btnExportFaltas svg{color:var(--warning);}
+  .jobs-export:hover{border-color:var(--accent);color:var(--text);}
+  .jobs-export:disabled{opacity:.45;cursor:default;}
 
   .adm-chip.alerta{border-color:var(--warning);color:var(--warning);}
   .user-row.pendente{border-color:var(--warning);background:var(--warning-dim);}
@@ -1881,10 +1956,29 @@
      precisa abrir espaço fixo pra ela, então não tem mais margin-left. */
   .main{ flex:1; margin-left:0; display:flex; flex-direction:column; min-width:0; }
 
+  /* Tela grande: a barra lateral deixa de ser menu suspenso e vira parte da
+     moldura, sempre à vista. Quem administra passa o dia trocando de tela, e
+     abrir o menu a cada troca era um toque a mais por navegação. No celular
+     ela continua deslizando por cima, que é o certo pra tela estreita. */
+  @media (min-width:1100px){
+    body.app-on .sb{ transform:translateX(0); box-shadow:none; }
+    body.app-on .main{ margin-left:var(--sb-w); }
+    body.app-on .hd-burger{ display:none; }
+    body.app-on .menu-fundo{ display:none; }
+  }
+
+  /* A barra do topo é escura nos DOIS temas, igual à barra lateral: as duas
+     formam a moldura do app, e a marca é desenhada pra fundo escuro. Mesma
+     saída usada na .sb — redeclarar os tokens aqui dentro, pra tudo que mora
+     no topo continuar pintado com a paleta escura no tema claro. */
   .hd{
+    --text:#EAF1F8; --text-dim:#9DB0CA; --text-faint:#8095B4;
+    --hover:#12234A; --border:#1C2E52; --line:#17294C;
+    --st-azul:#4FC0FF; --accent:#4FC0FF;
+    color:var(--text);
     height:var(--hd-h); flex:0 0 var(--hd-h); display:flex; align-items:center;
-    gap:var(--sp3); padding:0 var(--sp4); border-bottom:1px solid var(--line);
-    background:var(--hd-vidro); backdrop-filter:blur(8px);
+    gap:var(--sp3); padding:0 var(--sp4); border-bottom:1px solid #12234A;
+    background:linear-gradient(90deg,#060F22 0%,#0A1730 55%,#10254A 100%);
     position:sticky; top:0; z-index:50;
   }
   .hd-burger{
@@ -1896,6 +1990,17 @@
     font-family:'Barlow Condensed',sans-serif; font-size:21px; font-weight:700;
     letter-spacing:.06em; text-transform:uppercase; white-space:nowrap;
   }
+  /* empresa do contexto, ao lado do título da seção */
+  .hd-emp{ display:flex; flex-direction:column; gap:1px; min-width:0;
+    padding-left:var(--sp3); border-left:1px solid #1C2E52; }
+  .hd-emp b{ font-size:13px; font-weight:600; white-space:nowrap; overflow:hidden;
+    text-overflow:ellipsis; max-width:260px; }
+  .hd-emp-trocar{ display:inline-flex; align-items:center; gap:5px; background:none;
+    border:0; padding:0; cursor:pointer; color:var(--text-dim); font-family:inherit;
+    font-size:11px; white-space:nowrap; }
+  .hd-emp-trocar:hover{ color:var(--st-azul); }
+  @media (max-width:760px){ .hd-emp{ display:none !important; } }
+
   .hd-mid{ flex:1; display:flex; align-items:center; justify-content:center; gap:var(--sp4); }
   .hd-sync{ display:flex; align-items:center; gap:7px; font-size:11.5px;
     letter-spacing:.08em; text-transform:uppercase; color:var(--st-azul);
@@ -1960,6 +2065,14 @@
   .valdrop-row .lbl{ font-size:12px; color:var(--text-dim); }
   .valdrop-row .val{ font-family:'Barlow Condensed',sans-serif; font-size:19px; font-weight:700; white-space:nowrap; }
 
+  html[data-tema="claro"] .kpi,
+  html[data-tema="claro"] .tec,
+  html[data-tema="claro"] .job-item,
+  html[data-tema="claro"] .fila-despacho,
+  html[data-tema="claro"] .pnl,
+  html[data-tema="claro"] .cat-item,
+  html[data-tema="claro"] .user-row{ box-shadow:0 1px 2px rgba(16,27,43,.05); }
+
   /* ---------- KPI ---------- */
   .kpis{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:var(--sp3);
     margin-bottom:var(--sp5); }
@@ -1978,12 +2091,41 @@
   .kpi.amber .kpi-ic{ background:rgba(217,164,65,.10); color:var(--st-ambar); border-color:rgba(217,164,65,.24);}
   .kpi.green .kpi-ic{ background:rgba(34,192,138,.10); color:var(--st-verde); border-color:rgba(34,192,138,.24);}
   .kpi.red   .kpi-ic{ background:rgba(228,88,90,.10);  color:var(--st-vermelho); border-color:rgba(228,88,90,.24);}
+  .kpi{border-radius:14px;}
+  .kpi-ic{width:48px;height:48px;border-radius:12px;}
   .kpi-n{ font-family:'Barlow Condensed',sans-serif; font-size:40px; font-weight:700;
-    line-height:.95; letter-spacing:.01em; }
+    line-height:.95; letter-spacing:.01em; font-variant-numeric:tabular-nums; }
   .kpi-l{ font-size:11.5px; letter-spacing:.07em; text-transform:uppercase;
     color:var(--text-dim); margin-top:5px; }
   .kpi-h{ font-size:11px; color:var(--text-faint); margin-top:3px; }
   .kpi.zero .kpi-n{ color:var(--text-faint); }
+
+  /* barra de carga do técnico */
+  .carga-linha{display:flex;align-items:center;gap:8px;}
+  .carga-barra{flex:1;min-width:52px;height:7px;border-radius:99px;
+    background:var(--bg-elev-2);border:1px solid var(--border);overflow:hidden;}
+  .carga-barra i{display:block;height:100%;border-radius:99px;}
+  .carga-barra i.baixa{background:var(--st-verde);}
+  .carga-barra i.media{background:var(--st-ambar);}
+  .carga-barra i.alta{background:var(--st-vermelho);}
+  .carga-pct{font-size:12px;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;}
+  .carga-sel{font-size:10.5px;padding:2px 9px;border-radius:999px;border:1px solid var(--border);
+    color:var(--text-dim);}
+  .carga-sel.baixa{color:var(--st-verde);border-color:var(--st-verde);background:var(--success-dim);}
+  .carga-sel.media{color:var(--st-ambar);border-color:var(--st-ambar);background:var(--warning-dim);}
+  .carga-sel.alta{color:var(--st-vermelho);border-color:var(--st-vermelho);}
+
+  /* período do painel: rótulo dentro do campo e uma seta de cada lado */
+  .datebox-mes{flex-direction:column;align-items:flex-start;gap:0;padding:7px 14px;}
+  .datebox-rot{font-size:10.5px;color:var(--text-faint);letter-spacing:.04em;}
+  .mes-passo{flex:0 0 auto;min-width:38px;min-height:42px;cursor:pointer;
+    background:var(--surf);border:1px solid var(--line2);color:var(--text-dim);
+    border-radius:var(--r-md);font-size:18px;line-height:1;}
+  .mes-passo:hover{border-color:var(--accent);color:var(--accent);}
+
+  /* faixa "aguardando despacho": é a fila do dia, tem que parecer um bloco */
+  .fila-despacho{border:1px solid var(--border);border-radius:14px;
+    background:var(--bg-elev);padding:14px 16px;margin:0 16px 18px;}
 
   /* ---------- seção ---------- */
   .sec-h{ display:flex; align-items:center; gap:var(--sp3); margin-bottom:var(--sp3); }
@@ -2844,6 +2986,17 @@
           <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M3 12h18"/><path d="M3 18h18"/></svg>
         </button>
         <div class="hd-title" id="hdTitle">Dashboard</div>
+        <!-- De qual empresa é o que está na tela. Antes isso aparecia solto
+             dentro de cada tela (e só em algumas), então dava pra estar
+             olhando a empresa errada sem perceber. -->
+        <div class="hd-emp" id="hdEmpresa" style="display:none;">
+          <b id="hdEmpNome"></b>
+          <button type="button" class="hd-emp-trocar" id="hdEmpTrocar" style="display:none;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round"><path d="M7 4L3 8l4 4"/><path d="M3 8h13"/><path d="M17 20l4-4-4-4"/><path d="M21 16H8"/></svg>
+            Trocar empresa
+          </button>
+        </div>
         <div class="hd-mid">
           <span class="hd-sync"><i></i><span id="hdSync">Sincronizado</span></span>
           <span class="hd-upd" id="hdUpd"></span>
@@ -2997,8 +3150,10 @@
             </div>
           </div>
         </div>
+        <button class="mes-passo" type="button" id="mesAnterior" title="Mês anterior" aria-label="Mês anterior">&#8249;</button>
         <div class="valdrop" id="mesDrop">
-        <div class="datebox" id="dateBox">
+        <div class="datebox datebox-mes" id="dateBox">
+          <span class="datebox-rot">Período</span>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4.5" width="18" height="17" rx="2"/><path d="M3 9.5h18"/><path d="M8 2.5v4M16 2.5v4"/></svg>
           <span id="dateTxt">&mdash;</span>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity:.6"><path d="M6 9l6 6 6-6"/></svg>
@@ -3017,6 +3172,11 @@
             </div>
           </div>
         </div>
+        <button class="mes-passo" type="button" id="mesProximo" title="Próximo mês" aria-label="Próximo mês">&#8250;</button>
+        <button class="btn-nova" id="btnNovaObraPainel" type="button" style="display:none;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+          <span>Nova obra</span>
+        </button>
       </div>
     </div>
 
@@ -3359,26 +3519,58 @@
   <div class="my-jobs-screen" id="myJobsScreen">
     <div class="my-jobs-head">
       <span class="logout-link" id="backFromJobs">&#8592; Início</span>
-      <div class="step-title" style="margin:10px 0 0;">Minhas obras</div>
-      <span class="logout-link" id="btnTrocarEmpresaJobs" style="display:none;margin-top:4px;">Trocar empresa</span>
-      <button class="job-edit-btn destaque" id="btnNovaObraJobs" type="button" style="width:100%;margin-top:12px;display:none;">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
-        <span>Adicionar obra</span>
-      </button>
-      <input class="adm-busca" id="jobsBusca" placeholder="Buscar por contrato, cliente, técnico ou status" autocomplete="off" style="margin-top:12px;margin-bottom:0;">
-      <div class="faixa-painel" id="faixaFiltroPainel" style="display:none;"></div>
-      <div class="polo-chips" id="jobsPolo" style="margin-top:10px;"></div>
-      <div class="mes-linha" id="jobsMesLinha" style="margin-top:10px;">
-        <button class="mes-nav" type="button" data-mes="-1" title="Mês anterior" aria-label="Mês anterior">&#8249;</button>
-        <input type="month" class="mes-campo" id="jobsMes" aria-label="Mês das obras">
-        <button class="mes-nav" type="button" data-mes="1" title="Próximo mês" aria-label="Próximo mês">&#8250;</button>
-        <button class="mes-todos" type="button" id="jobsMesTodos">Todos</button>
-      </div>
-      <div class="jobs-filtro-linha" style="margin-top:10px;">
-        <div class="adm-filtros" id="jobsStatusFiltro" style="margin-top:0;margin-bottom:0;padding-bottom:0;">
-          <div class="adm-chip ativo" data-filtro="abertas">Em aberto</div>
-          <div class="adm-chip" data-filtro="historico">Aprovadas</div>
+
+      <!-- Título e ação principal na MESMA linha: antes o botão era uma barra
+           azul da largura da tela, que gritava mais alto que o próprio título
+           e empurrava a lista pra baixo. -->
+      <div class="jobs-hero">
+        <div class="jobs-hero-txt">
+          <div class="step-title" style="margin:0;">Minhas obras</div>
+          <div class="jobs-hero-sub" id="jobsSubtitulo"></div>
+          <span class="logout-link" id="btnTrocarEmpresaJobs" style="display:none;">Trocar empresa</span>
         </div>
+        <button class="btn-nova" id="btnNovaObraJobs" type="button" style="display:none;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+          <span>Nova obra</span>
+        </button>
+      </div>
+
+      <!-- Uma barra só de filtros: buscar e período lado a lado no desktop,
+           empilhados no celular. -->
+      <div class="jobs-barra">
+        <div class="busca-box">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+          <input class="adm-busca" id="jobsBusca" placeholder="Buscar por contrato, cliente, técnico ou status..." autocomplete="off">
+        </div>
+      </div>
+
+      <div class="jobs-barra jobs-barra-filtros">
+        <span class="filtro-rot">Polo</span>
+        <div class="polo-chips" id="jobsPolo"></div>
+        <span class="filtro-sep"></span>
+        <span class="filtro-rot">Tipo</span>
+        <div class="polo-chips" id="jobsTipo"></div>
+        <span class="filtro-sep"></span>
+        <span class="filtro-rot">Período</span>
+        <div class="mes-linha" id="jobsMesLinha">
+          <button class="mes-nav" type="button" data-mes="-1" title="Mês anterior" aria-label="Mês anterior">&#8249;</button>
+          <input type="month" class="mes-campo" id="jobsMes" aria-label="Mês das obras">
+          <button class="mes-nav" type="button" data-mes="1" title="Próximo mês" aria-label="Próximo mês">&#8250;</button>
+          <button class="mes-todos" type="button" id="jobsMesTodos">Todos</button>
+        </div>
+      </div>
+
+      <!-- Abas com a contagem de cada recorte, o total do que está na tela e
+           as exportações. Uma linha só: é o que a pessoa olha antes de descer
+           pra lista. -->
+      <div class="jobs-barra jobs-barra-2">
+        <div class="abas" id="jobsStatusFiltro">
+          <div class="adm-chip ativo" data-filtro="abertas">Em aberto<span class="aba-n" id="nAbertas"></span></div>
+          <div class="adm-chip" data-filtro="historico">Aprovadas<span class="aba-n" id="nAprovadas"></span></div>
+        </div>
+        <div class="jobs-total" id="jobsTotalTopo"></div>
+        <div class="jobs-acoes">
         <button class="jobs-export" id="btnExportObras" type="button"
                 title="Exportar esta lista para Excel" aria-label="Exportar esta lista para Excel">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
@@ -3399,7 +3591,10 @@
                stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>
           FALTAS
         </button>
+        </div>
       </div>
+
+      <div class="faixa-painel" id="faixaFiltroPainel" style="display:none;"></div>
     </div>
     <!-- dono do produto de fora de qualquer empresa não pode cair direto na
          lista — misturaria obra de todo mundo. Escolhe aqui antes de ver. -->
@@ -3819,7 +4014,7 @@
 (function(){
   // Marque aqui a cada build enviado ao campo. O testador informa esta
   // string ao relatar um problema, senao nao da pra saber o que ele rodou.
-  const APP_VERSION = 'Enlace Ops · alpha-11.31 · 28/09/2026';
+  const APP_VERSION = 'Enlace Ops · alpha-11.37 · 29/09/2026';
 
   // ---------- Supabase config ----------
   // Troque pelos valores reais do seu projeto (Project Settings -> API no Supabase).
@@ -9591,6 +9786,7 @@
         // só que escopados nela — sem misturar com as outras empreiteiras
         row.querySelector('[data-acao="gerenciar"]').addEventListener('click', ()=>{
           empresaContexto = {id: e.id, nome: e.nome};
+          pintarEmpresaTopo();
           navegarMenu('config');
         });
 
@@ -9871,6 +10067,20 @@
       (ROTULO_PAPEL[papelAtual()] || papelAtual() || '')
       + (perfilAtual.empresa_nome ? ' · ' + perfilAtual.empresa_nome : '');
     bloco.style.display = '';
+    pintarEmpresaTopo();
+  }
+
+  // Nome da empresa no topo. Pro dono do produto é a empresa em que ele
+  // entrou (e dá pra sair dela ali mesmo); pros demais, a empresa da conta.
+  function pintarEmpresaTopo(){
+    const cx = document.getElementById('hdEmpresa');
+    if(!cx) return;
+    const nome = (ehSuper() && empresaContexto) ? empresaContexto.nome
+               : (perfilAtual && perfilAtual.empresa_nome) || '';
+    cx.style.display = nome ? '' : 'none';
+    document.getElementById('hdEmpNome').textContent = nome;
+    document.getElementById('hdEmpTrocar').style.display =
+      (ehSuper() && empresaContexto) ? '' : 'none';
   }
 
   function montarMenu(){
@@ -10268,6 +10478,7 @@
     }
     gate.style.display = 'none';
     if(btnTrocarQuadro) btnTrocarQuadro.style.display = (ehSuper() && empresaContexto) ? '' : 'none';
+    if(btnNovaPainel) btnNovaPainel.style.display = ehOperador() ? '' : 'none';
     document.getElementById('valDrop').style.display = '';
     document.getElementById('mesDrop').style.display = '';
 
@@ -10350,6 +10561,9 @@
         ['green','livre',   livres, livres, 'Técnicos livres', 'Disponíveis para despacho', 'tecnicos'],
       ].map(([cls, ic, n, disp, rot, ajuda, destino]) => {
         const clicavel = n > 0;
+        // 07 em vez de 7: com dois dígitos os cinco cartões ficam do mesmo
+        // tamanho e o olho compara os números sem reposicionar
+        disp = String(disp).length < 2 ? '0' + disp : disp;
         return `
         <${clicavel ? 'button type="button"' : 'div'} class="kpi ${cls}${n ? '' : ' zero'}${(ic==='alerta'&&n)?' hot':''}${clicavel ? ' clicavel' : ''}"
           ${clicavel ? 'data-destino="' + destino + '" aria-label="' + esc(rot) + ': ' + n + '. Toque para ver."' : ''}>
@@ -10479,7 +10693,19 @@
           </div>
           <div class="tec-c">
             <div class="tec-cl">${ICO_COL.carga} Carga atual</div>
-            <div class="tec-cv">${t.n ? t.n + ' em aberto' : '—'}</div>
+            ${(()=>{
+              // barra em vez de "3 em aberto": quem despacha precisa comparar
+              // técnicos de relance, e número solto obriga a ler um por um.
+              // Cheio = CARGA_CHEIA obras em aberto; acima disso, 100%.
+              const pct = Math.min(100, Math.round((t.n / CARGA_CHEIA) * 100));
+              const nivel = pct >= 75 ? 'alta' : (pct >= 45 ? 'media' : 'baixa');
+              const rotN = {alta:'Alta', media:'Média', baixa:'Baixa'}[nivel];
+              return '<div class="carga-linha" title="' + t.n + ' obra(s) em aberto">'
+                + '<span class="carga-barra"><i class="' + nivel + '" style="width:' + pct + '%"></i></span>'
+                + '<span class="carga-pct">' + pct + '%</span>'
+                + '<span class="carga-sel ' + nivel + '">' + rotN + '</span>'
+                + '</div>';
+            })()}
           </div>
         </div>
         <button class="tec-go" type="button">+ Despachar
@@ -10606,11 +10832,21 @@
     const sel = document.getElementById('quadroEmpresaAlvo');
     if(!sel.value){ showToast('Escolha uma empresa'); return; }
     empresaContexto = {id: Number(sel.value), nome: sel.options[sel.selectedIndex].textContent};
+    pintarEmpresaTopo();
     renderQuadro();
   });
   document.getElementById('btnTrocarEmpresaQuadro').addEventListener('click', ()=>{
     empresaContexto = null;
+    pintarEmpresaTopo();
     renderQuadro();
+  });
+
+  document.getElementById('hdEmpTrocar').addEventListener('click', ()=>{
+    empresaContexto = null;
+    pintarEmpresaTopo();
+    // volta pra escolha da empresa na tela em que a pessoa está
+    if(rotaAtual === 'obras') refreshJobsList();
+    else navegarMenu('dashboard');
   });
 
   document.getElementById('valDropTrigger').addEventListener('click', (e)=>{
@@ -10655,6 +10891,25 @@
     atualizarDateTxt();
     renderQuadro();
   });
+
+  // Setas ao lado do período: trocar de mês era abrir o menu, escolher no
+  // campo e aplicar — três toques pro caso mais comum, que é olhar o mês
+  // passado.
+  function passoDeMes(delta){
+    const d = new Date(mesReferencia);
+    d.setMonth(d.getMonth() + delta);
+    d.setDate(1); d.setHours(0,0,0,0);
+    mesReferencia = d;
+    atualizarDateTxt();
+    renderQuadro();
+  }
+  const btnMesAnt = document.getElementById('mesAnterior');
+  const btnMesProx = document.getElementById('mesProximo');
+  if(btnMesAnt)  btnMesAnt.addEventListener('click', ()=> passoDeMes(-1));
+  if(btnMesProx) btnMesProx.addEventListener('click', ()=> passoDeMes(1));
+
+  const btnNovaPainel = document.getElementById('btnNovaObraPainel');
+  if(btnNovaPainel) btnNovaPainel.addEventListener('click', ()=> despacharCard.click());
 
   // ---------- Despacho de obra (analista e admin) ----------
   const despachoScreen  = document.getElementById('despachoScreen');
@@ -13934,6 +14189,10 @@
   // Polo começa em "Todos": filtrar por polo já na abertura esconderia três
   // quartos da operação de quem nem sabe que o filtro existe.
   let poloObras = '';
+  // Tipo também começa em "Todos": a lista tem que mostrar a operação inteira
+  // pra quem acabou de abrir. Com três tipos convivendo (convencional,
+  // modernização e NAP), procurar "as NAP do mês" na mão virou trabalho.
+  let tipoObras = '';
 
   function obrasDoFiltro(opts){
     let lista = reportsList.filter(j => filtroObras === 'historico'
@@ -13942,6 +14201,9 @@
     if(filtroPainel) lista = lista.filter(j => filtroPainel.status.includes(j.status));
     if(poloObras && !(opts && opts.todosOsPolos)){
       lista = lista.filter(j => poloDaObra(j) === poloObras);
+    }
+    if(tipoObras && !(opts && opts.todosOsTipos)){
+      lista = lista.filter(j => (j.tipo_obra || 'convencional') === tipoObras);
     }
     if(mesObras && !(opts && opts.todosOsMeses)){
       lista = lista.filter(j=>{
@@ -13967,6 +14229,7 @@
     // lista abrisse filtrada, o cartão diria "3 obras" e o analista acharia 1.
     mesObras = '';
     poloObras = '';
+    tipoObras = '';
     document.querySelectorAll('#jobsStatusFiltro .adm-chip')
       .forEach(c => c.classList.toggle('ativo', c.dataset.filtro === 'abertas'));
     const busca = document.getElementById('jobsBusca');
@@ -14029,6 +14292,25 @@
     refreshJobsList();
   }
 
+  // Quantas obras de cada lado, na própria aba, e o total do que está na tela.
+  // Sem isso a pessoa tem que trocar de aba pra descobrir se tem algo lá.
+  function pintarContagemAbas(naTela){
+    const conta = (f) => reportsList.filter(j => f === 'historico'
+      ? j.status === 'aprovado' : ABERTAS.includes(j.status)).length;
+    const nA = document.getElementById('nAbertas');
+    const nH = document.getElementById('nAprovadas');
+    if(nA) nA.textContent = conta('abertas');
+    if(nH) nH.textContent = conta('historico');
+    const tot = document.getElementById('jobsTotalTopo');
+    if(tot){
+      const soma = (naTela || []).reduce((acc, job) => acc + jobTotal(job), 0);
+      // de quem é o dinheiro entra no rótulo: o número muda com a chave
+      // "valores do técnico", e total sem dono é como nasce fatura errada
+      tot.innerHTML = (filtroObras === 'historico' ? 'Total aprovado' : 'Total em aberto')
+        + ' · ' + esc(donoDoValor()) + ' <b>' + formatBRL(soma) + '</b>';
+    }
+  }
+
   function pintarPoloObras(){
     pintarChipsPolo(document.getElementById('jobsPolo'), poloObras, (v)=>{
       poloObras = v || '';
@@ -14036,17 +14318,39 @@
     }, true);
   }
 
+  // Chips de tipo de obra. Saem da própria TIPOS_OBRA: tipo novo aparece aqui
+  // sozinho, sem ninguém lembrar de vir mexer nesta lista.
+  function pintarTipoObras(){
+    const el = document.getElementById('jobsTipo');
+    if(!el) return;
+    const opcoes = [{v:'', r:'Todos os tipos'}]
+      .concat(Object.keys(TIPOS_OBRA).map(t => ({v:t, r:TIPOS_OBRA[t].rot})));
+    el.innerHTML = '';
+    opcoes.forEach(o=>{
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'polo-chip tipo-chip' + (tipoObras === o.v ? ' ativo' : '') + (o.v ? ' t-' + o.v : '');
+      b.textContent = o.r;
+      b.addEventListener('click', ()=>{
+        tipoObras = o.v;
+        refreshJobsList();
+      });
+      el.appendChild(b);
+    });
+  }
+
   // O que o recorte escondeu tem que se anunciar, e sair do caminho com um
   // toque. Sem isso o filtro vira "a obra sumiu do sistema".
   function avisoForaDoFiltro(quantas){
-    const onde = (mesObras && poloObras) ? ['outro mês ou polo', 'outros meses ou polos']
-               : (mesObras ? ['outro mês', 'outros meses'] : ['outro polo', 'outros polos']);
+    const usados = [mesObras && 'mês', poloObras && 'polo', tipoObras && 'tipo'].filter(Boolean);
+    const onde = usados.length > 1 ? ['outro recorte', 'outros recortes']
+               : ['outro ' + usados[0], 'outros ' + usados[0] + 's'];
     const el = document.createElement('div');
     el.className = 'mes-fora';
     el.innerHTML = (quantas === 1 ? '1 obra em ' + onde[0] : quantas + ' obras em ' + onde[1])
       + '. <button type="button">Ver todas</button>';
     el.querySelector('button').addEventListener('click', ()=>{
-      poloObras = ''; mesObras = ''; refreshJobsList();
+      poloObras = ''; mesObras = ''; tipoObras = ''; refreshJobsList();
     });
     return el;
   }
@@ -14432,42 +14736,38 @@
     const termoJobs = (document.getElementById('jobsBusca').value || '').trim().toLowerCase();
     const lista = obrasNaTela();   // mesma conta que o botão de exportar usa
     // quantas o filtro de mês está escondendo, com a mesma busca aplicada
-    const foraDoFiltro = (mesObras || poloObras)
-      ? obrasNaTela({todosOsMeses:true, todosOsPolos:true}).length - lista.length : 0;
+    const foraDoFiltro = (mesObras || poloObras || tipoObras)
+      ? obrasNaTela({todosOsMeses:true, todosOsPolos:true, todosOsTipos:true}).length - lista.length : 0;
 
     pintarFaixaPainel();
     pintarMesObras();
     pintarPoloObras();
+    pintarTipoObras();
+    pintarContagemAbas(lista);
     if(!lista.length){
+      // A frase diz quais recortes estão ligados. "Nenhuma obra em setembro"
+      // faz a pessoa procurar defeito onde só tem filtro — e agora são três.
+      const recortes = [
+        tipoObras ? 'do tipo ' + esc(TIPOS_OBRA[tipoObras].rot) : '',
+        poloObras ? 'no polo ' + esc(poloObras) : '',
+        mesObras ? 'em ' + esc(rotuloMes(mesObras)) : '',
+      ].filter(Boolean).join(' ');
       jobsList.innerHTML = '<div class="job-service-empty" style="padding:24px 4px;">'
         + (termoJobs
              ? 'Nada encontrado com esse termo.'
-             : (mesObras
-                  ? 'Nenhuma obra em ' + esc(rotuloMes(mesObras))
-                      + (poloObras ? ' no polo ' + esc(poloObras) : '') + '.'
+             : (recortes
+                  ? 'Nenhuma obra ' + recortes + '.'
                   : (filtroObras === 'historico'
                        ? 'Nenhuma obra aprovada ainda.'
-                       : (poloObras
-                            ? 'Nenhuma obra em aberto no polo ' + esc(poloObras) + '.'
-                            : (ehRevisor() ? 'Nenhuma obra em aberto no momento.'
-                                           : 'Nenhuma obra despachada para você no momento.')))))
+                       : (ehRevisor() ? 'Nenhuma obra em aberto no momento.'
+                                      : 'Nenhuma obra despachada para você no momento.'))))
         + '</div>';
       if(foraDoFiltro) jobsList.appendChild(avisoForaDoFiltro(foraDoFiltro));
       return;
     }
 
-    const totalGeral = lista.reduce((sum, job) => sum + jobTotal(job), 0);
-    const summary = document.createElement('div');
-    summary.className = 'values-total-row';
-    summary.style.marginBottom = '16px';
-    summary.innerHTML = `<span>${filtroObras === 'historico' ? 'Aprovadas' : 'Em aberto'}`
-      + `${poloObras ? ' · ' + esc(poloObras) : ''}`
-      + `${mesObras ? ' · ' + esc(rotuloMes(mesObras)) : ''} (${lista.length})`
-      // dizer de quem é o dinheiro no próprio rótulo: o número muda com a
-      // chave, e um total sem dono é o tipo de coisa que vira fatura errada
-      + ` · ${esc(donoDoValor())}</span>`
-      + `<span>${formatBRL(totalGeral)}</span>`;
-    jobsList.appendChild(summary);
+    // O total saiu daqui: agora ele fica na linha das abas, junto da contagem.
+    // Dois totais na mesma tela, um embaixo do outro, era só ruído.
 
     if(foraDoFiltro) jobsList.appendChild(avisoForaDoFiltro(foraDoFiltro));
 
@@ -15568,6 +15868,10 @@
   let obraNaMao = null;        // obra escolhida por toque (o caminho sem arrastar)
   let arrasto = null;          // {obra, el, fantasma, alvo, x0, y0, ativo}
 
+  // Quantas obras em aberto já são "carga cheia" pra um técnico. Não é regra
+  // de negócio nem trava nada: só a escala da barra do painel.
+  const CARGA_CHEIA = 4;
+
   function pintarFilaDespacho(){
     const cx = document.getElementById('filaDespacho');
     if(!cx) return;
@@ -16548,12 +16852,14 @@
     const sel = document.getElementById('jobsEmpresaAlvo');
     if(!sel.value){ showToast('Escolha uma empresa'); return; }
     empresaContexto = {id: Number(sel.value), nome: sel.options[sel.selectedIndex].textContent};
+    pintarEmpresaTopo();
     reportsList = [];   // lista antiga pode ser de outra empresa (ou de todas)
     refreshJobsList();
   });
 
   document.getElementById('btnTrocarEmpresaJobs').addEventListener('click', ()=>{
     empresaContexto = null;
+    pintarEmpresaTopo();
     reportsList = [];
     refreshJobsList();
   });
@@ -16566,6 +16872,10 @@
     document.querySelector('#myJobsScreen .step-title').textContent =
       (ehRevisor() ? 'Todas as obras' : 'Minhas obras')
       + (ehSuper() && empresaContexto ? ' · ' + empresaContexto.nome : '');
+    const sub = document.getElementById('jobsSubtitulo');
+    if(sub) sub.textContent = ehRevisor()
+      ? 'Acompanhe e gerencie as obras da sua empresa.'
+      : 'Suas obras despachadas e em andamento.';
     document.querySelectorAll('#jobsStatusFiltro .adm-chip').forEach(chip=>{
       chip.classList.toggle('ativo', chip.dataset.filtro === filtroObras);
     });
