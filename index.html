@@ -1157,6 +1157,28 @@
   }
   .job-item:hover{border-color:var(--accent);}
   .job-item-title span:first-child{color:var(--accent);font-size:15.5px;letter-spacing:.01em;}
+
+  /* valor numa coluna própria, com o dono embaixo: é o número que o escritório
+     procura no cartão, e ele estava no meio do texto cinza */
+  .job-val{flex:0 0 auto;display:flex;align-items:center;gap:10px;
+    padding-left:16px;border-left:1px solid var(--line);min-width:172px;}
+  .job-val-ico{width:32px;height:32px;border-radius:9px;flex:0 0 auto;
+    display:flex;align-items:center;justify-content:center;
+    background:var(--accent-dim);color:var(--accent);}
+  .job-val-n{font-size:15px;font-weight:600;color:var(--success);white-space:nowrap;}
+  .job-val-r{font-size:11px;color:var(--text-faint);margin-top:1px;}
+
+  /* status como pílula, não como texto solto */
+  .job-item .job-status{border-radius:999px;padding:6px 13px;border:1px solid var(--border);
+    background:var(--bg-elev-2);font-size:11.5px;white-space:nowrap;}
+  .job-item .job-status.aprovado{background:var(--success-dim);}
+  .job-item .job-status.enviado{background:var(--success-dim);}
+  .job-item .job-status.reprovado{background:var(--danger-dim);}
+
+  @media (max-width:760px){
+    .job-item{flex-wrap:wrap;}
+    .job-val{border-left:0;padding-left:0;min-width:0;flex:1 1 100%;margin-top:6px;}
+  }
   .job-card.open .job-item{border-radius:10px 13px 0 0;border-bottom-color:transparent;}
   .job-item-body{flex:1;min-width:0;}
   .job-item-title{font-size:14px;font-weight:600;margin-bottom:3px;}
@@ -1330,9 +1352,16 @@
   .ct-vazio{margin:0 16px; padding:30px 16px; text-align:center; font-size:13.5px;
     color:var(--text-faint); border:1px dashed var(--border); border-radius:14px;}
   @media (max-width:560px){
-    .ct-item{flex-wrap:wrap;}
-    .ct-in{flex:1 1 100%; order:3;}
-    .ct-in.dinheiro{flex:0 0 110px; order:4;}
+    /* No celular a linha do catálogo vira três faixas: identificação em cima,
+       nome ocupando a largura toda (nome de material tem 40 caracteres e
+       ficava cortado em metade da linha) e os campos curtos lado a lado. */
+    .ct-item{flex-wrap:wrap; gap:8px; padding:12px 14px;}
+    .ct-num, .ct-cod{order:1; flex:0 0 auto;}
+    .ct-salvo{order:2; margin-left:auto;}
+    .ct-x{order:3; flex:0 0 36px;}
+    .ct-in{order:4; flex:1 1 100%; font-size:13px;}
+    .ct-in.ct-uni{order:5; flex:1 1 calc(50% - 4px);}
+    .ct-in.dinheiro{order:6; flex:1 1 calc(50% - 4px); text-align:left;}
   }
 
   /* FECHAMENTO POR TÉCNICO
@@ -1440,7 +1469,18 @@
      e forma próprias, e a lista só começava lá embaixo. */
   /* Faixa de abertura da lista: título, uma linha dizendo pra que serve a tela
      e a ação principal à direita. */
-  .jobs-hero{display:flex;align-items:flex-end;justify-content:space-between;
+  .jobs-hero-arte{position:absolute;right:0;bottom:0;height:100%;width:min(46%,520px);
+    color:var(--accent);opacity:.45;pointer-events:none;}
+  .btn-filtros{flex:0 0 auto;min-height:46px;padding:0 16px;cursor:pointer;
+    display:inline-flex;align-items:center;gap:8px;white-space:nowrap;
+    background:var(--bg-elev);border:1px solid var(--border);color:var(--text-dim);
+    border-radius:12px;font-family:inherit;font-size:13.5px;}
+  .btn-filtros:hover{border-color:var(--accent);color:var(--text);}
+  .btn-filtros .seta{transition:transform .15s;}
+  .btn-filtros[aria-expanded="false"] .seta{transform:rotate(-90deg);}
+  .jobs-barra-filtros.escondida{display:none;}
+
+  .jobs-hero{position:relative;overflow:hidden;display:flex;align-items:flex-end;justify-content:space-between;
     gap:16px;flex-wrap:wrap;margin:6px -16px 16px;padding:22px 16px 24px;
     background:linear-gradient(105deg,var(--bg-elev) 0%,var(--accent-dim) 62%,var(--bg-elev) 100%);
     border-bottom:1px solid var(--border);}
@@ -1456,7 +1496,7 @@
   .jobs-barra{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px;}
 
   /* busca com lupa dentro, do jeito que todo mundo espera de um campo de busca */
-  .busca-box{flex:1 1 100%;display:flex;align-items:center;gap:10px;
+  .busca-box{flex:1 1 240px;display:flex;align-items:center;gap:10px;
     background:var(--bg-elev);border:1px solid var(--border);border-radius:12px;
     padding:0 14px;min-height:46px;}
   .busca-box:focus-within{border-color:var(--accent);}
@@ -1501,8 +1541,25 @@
   .seg .adm-chip.ativo{background:var(--accent-dim);color:var(--accent);}
 
   @media (max-width:640px){
-    .jobs-hero{align-items:stretch;padding:18px 16px 20px;}
-    .jobs-hero .step-title{font-size:24px;}
+    /* Cabeçalho enxuto: no celular, cada linha aqui em cima empurra a primeira
+       obra pra fora da tela. Com a faixa, a busca e as abas no tamanho de
+       desktop, a lista só começava depois de rolar quase uma tela inteira. */
+    .jobs-hero{align-items:stretch;padding:14px 16px 16px;margin-bottom:12px;}
+    .jobs-hero .step-title{font-size:22px;}
+    .jobs-hero-sub{display:none;}
+    .jobs-hero-arte{width:62%;opacity:.35;}
+    .btn-nova{min-height:44px;}
+    /* busca e Filtros na mesma linha */
+    .busca-box{flex:1 1 0;min-width:0;min-height:44px;}
+    .busca-box .adm-busca{min-width:0;}
+    .btn-filtros{flex:0 0 auto;min-height:44px;padding:0 12px;}
+    .btn-filtros svg:first-child{display:none;}
+    /* abas, total e exportações mais compactos */
+    .jobs-barra-2{padding-top:8px;gap:8px;}
+    .abas .adm-chip{font-size:13px;padding:7px 2px;}
+    .jobs-total{font-size:12px;}
+    .jobs-total b{font-size:14px;}
+    .jobs-acoes .jobs-export{min-height:34px;padding:0 10px;font-size:11.5px;}
     .btn-nova{width:100%;justify-content:center;}
     .jobs-barra .mes-linha,
     .jobs-barra-2 .abas{flex:1 1 100%;}
@@ -1804,7 +1861,7 @@
      Escala de espaçamento: 8 / 12 / 16 / 24 / 32
      ============================================================ */
   :root{
-    --sb-w:236px;          /* largura da sidebar */
+    --sb-w:236px; --sb-rail:68px;          /* largura da sidebar */
     --sb-w-min:68px;       /* sidebar recolhida  */
     --hd-h:64px;           /* altura do header   */
     --sp1:8px; --sp2:12px; --sp3:16px; --sp4:24px; --sp5:32px;
@@ -1923,17 +1980,21 @@
     white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
   }
   .sb-item{
-    display:flex; align-items:center; gap:12px; padding:11px var(--sp2);
-    border-radius:var(--r-md); cursor:pointer; margin-bottom:2px;
-    font-size:13.5px; color:#A9BAD4; white-space:nowrap; overflow:hidden;
+    display:flex; align-items:center; gap:13px; padding:12px 14px;
+    border-radius:12px; cursor:pointer; margin-bottom:4px;
+    font-size:14px; color:#A9BAD4; white-space:nowrap; overflow:hidden;
     transition:background .12s, color .12s;
   }
   .sb-item:hover{ background:var(--hover); color:var(--text); }
-  /* a barrinha à esquerda diz onde você está sem depender só da cor de fundo */
+  /* onde você está é um bloco azul cheio: lido de relance, sem precisar
+     comparar dois tons de azul escuro pra achar o item aceso */
   .sb-item.on{
-    background:rgba(0,162,245,.14); color:var(--st-azul); font-weight:600;
-    box-shadow:inset 3px 0 0 var(--st-azul);
+    background:linear-gradient(97deg,#1668E3 0%,#1F7BF0 100%);
+    color:#FFFFFF; font-weight:600;
+    box-shadow:0 6px 16px rgba(22,104,227,.35);
   }
+  .sb-item.on svg{ opacity:1; }
+  .sb-item.on .sb-badge{ background:rgba(255,255,255,.22); color:#FFFFFF; }
   .sb-item svg{ flex:0 0 20px; opacity:.9; }
   .sb-badge{
     margin-left:auto; font-size:10px; min-width:19px; height:19px; padding:0 6px;
@@ -1950,21 +2011,62 @@
   }
   .sb-sync b{ display:block; color:var(--st-verde); font-size:10.5px; letter-spacing:.08em;
     text-transform:uppercase; font-family:'IBM Plex Mono',monospace; margin-bottom:4px; }
+  .sb-marca{ padding:12px 4px 2px; }
+  .sb-marca b{ display:block; font-size:12px; letter-spacing:.22em; color:#8FA3BE; font-weight:600; }
+  .sb-marca b i{ font-style:normal; color:var(--st-azul); }
+  .sb-marca span{ display:block; font-size:11px; color:#6B80A4; margin-top:3px; }
 
   /* ---------- conteúdo ----------
      a sidebar agora flutua por cima (menu suspenso) — o conteúdo nunca
      precisa abrir espaço fixo pra ela, então não tem mais margin-left. */
   .main{ flex:1; margin-left:0; display:flex; flex-direction:column; min-width:0; }
 
-  /* Tela grande: a barra lateral deixa de ser menu suspenso e vira parte da
-     moldura, sempre à vista. Quem administra passa o dia trocando de tela, e
-     abrir o menu a cada troca era um toque a mais por navegação. No celular
-     ela continua deslizando por cima, que é o certo pra tela estreita. */
+  /* Tela grande: a barra lateral fica como uma faixa fina de ícones, sempre à
+     vista, e se abre sozinha quando o mouse entra nela — sai o mouse, ela
+     fecha. Assim dá pra trocar de tela sem abrir menu nenhum, e ela não come
+     espaço do conteúdo o tempo todo. Como ela flutua por cima ao abrir, a
+     página não se mexe: nada de texto pulando pro lado a cada passada de
+     mouse. No celular continua deslizando por cima, que é o certo lá. */
   @media (min-width:1100px){
-    body.app-on .sb{ transform:translateX(0); box-shadow:none; }
-    body.app-on .main{ margin-left:var(--sb-w); }
+    body.app-on .sb{
+      transform:translateX(0); box-shadow:none; width:var(--sb-rail);
+      transition:width .18s ease, box-shadow .18s ease;
+    }
+    body.app-on .sb:hover,
+    body.app-on .sb:focus-within{
+      width:var(--sb-w); box-shadow:0 0 40px rgba(0,0,0,.35);
+    }
+    body.app-on .main{ margin-left:var(--sb-rail); }
     body.app-on .hd-burger{ display:none; }
     body.app-on .menu-fundo{ display:none; }
+
+    /* fechada: só os ícones. Tudo que é texto some, e o que sobra fica
+       centralizado — senão os ícones ficam colados na borda esquerda. */
+    body.app-on .sb:not(:hover):not(:focus-within) .sb-item{ justify-content:center; padding:12px 0; }
+    body.app-on .sb:not(:hover):not(:focus-within) .sb-item span,
+    body.app-on .sb:not(:hover):not(:focus-within) .sb-badge,
+    body.app-on .sb:not(:hover):not(:focus-within) .sb-sec,
+    body.app-on .sb:not(:hover):not(:focus-within) .sb-quem-txt,
+    body.app-on .sb:not(:hover):not(:focus-within) .sb-sync,
+    body.app-on .sb:not(:hover):not(:focus-within) .sb-marca,
+    body.app-on .sb:not(:hover):not(:focus-within) .sb-logo b{ display:none; }
+    body.app-on .sb:not(:hover):not(:focus-within) .sb-logo,
+    body.app-on .sb:not(:hover):not(:focus-within) .sb-quem{ justify-content:center; padding-left:0; padding-right:0; }
+    body.app-on .sb:not(:hover):not(:focus-within) .sb-nav{ padding-left:10px; padding-right:10px; }
+    body.app-on .sb:not(:hover):not(:focus-within) .sb-foot{ padding-left:10px; padding-right:10px; }
+    /* a marca é larga demais pra faixa fina: mostra só o símbolo, recortando
+       o resto do desenho em vez de deixar o nome cortado pela metade */
+    body.app-on .sb:not(:hover):not(:focus-within) .sb-logo{ overflow:hidden; }
+    body.app-on .sb:not(:hover):not(:focus-within) .sb-logo img{
+      height:26px; width:30px; object-fit:cover; object-position:left center; }
+    /* o número de pendências não cabe na faixa: vira um ponto no canto do ícone */
+    body.app-on .sb:not(:hover):not(:focus-within) .sb-item{ position:relative; }
+    body.app-on .sb:not(:hover):not(:focus-within) .sb-badge{
+      display:block; position:absolute; top:7px; right:12px; min-width:8px; width:8px; height:8px;
+      padding:0; border-radius:50%; font-size:0; overflow:hidden; }
+  }
+  @media (prefers-reduced-motion:reduce){
+    body.app-on .sb{ transition:none; }
   }
 
   /* A barra do topo é escura nos DOIS temas, igual à barra lateral: as duas
@@ -2039,12 +2141,12 @@
 
   /* ---------- cabeçalho de página ---------- */
   .ph{ display:flex; align-items:flex-start; gap:var(--sp4); margin-bottom:var(--sp4); }
-  .ph-hello{ font-size:14px; color:var(--text-dim); margin-bottom:2px; }
+  .ph-hello{ font-size:12.5px; color:var(--accent); margin-bottom:5px; font-weight:500; }
   .ph-t{
-    font-family:'Barlow Condensed',sans-serif; font-size:38px; font-weight:700;
-    letter-spacing:.02em; text-transform:uppercase; line-height:1.05;
+    font-family:'Inter',sans-serif; font-size:34px; font-weight:700;
+    letter-spacing:-.015em; text-transform:none; line-height:1.1;
   }
-  .ph-s{ font-size:13px; color:var(--text-dim); margin-top:4px; }
+  .ph-s{ font-size:13.5px; color:var(--text-dim); margin-top:6px; }
   .ph-r{ margin-left:auto; display:flex; align-items:center; gap:var(--sp2); }
   .datebox{
     display:flex; align-items:center; gap:10px; padding:11px var(--sp3);
@@ -2126,6 +2228,20 @@
   /* faixa "aguardando despacho": é a fila do dia, tem que parecer um bloco */
   .fila-despacho{border:1px solid var(--border);border-radius:14px;
     background:var(--bg-elev);padding:14px 16px;margin:0 16px 18px;}
+  .fila-ico{width:34px;height:34px;border-radius:10px;flex:0 0 auto;
+    display:flex;align-items:center;justify-content:center;
+    background:var(--accent);color:var(--accent-ink);}
+  .fila-cab .fila-t{font-family:inherit;font-size:14px;font-weight:600;
+    letter-spacing:.01em;text-transform:none;color:var(--text);}
+  .fila-cab .fila-n{background:var(--accent-dim);color:var(--accent);border-radius:999px;
+    padding:3px 11px;font-size:11.5px;font-family:inherit;}
+  .fila-obra-topo{display:flex;align-items:center;gap:8px;}
+  .fila-mais{min-width:96px;cursor:pointer;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;gap:2px;
+    background:var(--bg-elev-2);border:1px dashed var(--border-strong);
+    border-radius:11px;color:var(--text-dim);font-family:inherit;font-size:15px;font-weight:600;}
+  .fila-mais span{font-size:10.5px;font-weight:400;}
+  .fila-mais:hover{border-color:var(--accent);color:var(--accent);}
 
   /* ---------- seção ---------- */
   .sec-h{ display:flex; align-items:center; gap:var(--sp3); margin-bottom:var(--sp3); }
@@ -2190,10 +2306,17 @@
     letter-spacing:.06em; text-transform:uppercase; color:var(--text-faint);
     margin-bottom:5px; }
   .tec-cv{ font-size:13.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  /* o seletor de disponibilidade vive atrás dos três pontinhos: ele é ajuste
+     de exceção (faltou, folga), não informação que a linha precisa mostrar */
+  .tec-status-sel{ display:none; }
+  .tec.abrir-sel .tec-status-sel{ display:block; }
+  .tec-kebab{ flex:0 0 auto; background:transparent; border:0; cursor:pointer;
+    color:var(--text-faint); padding:8px; border-radius:9px; display:flex; }
+  .tec-kebab:hover{ background:var(--hover); color:var(--text); }
   .tec-go{
     flex:0 0 auto; display:flex; align-items:center; gap:8px;
     padding:11px var(--sp3); border-radius:var(--r-md);
-    border:1px solid rgba(0,162,245,.5); color:var(--st-azul); background:transparent;
+    border:1px solid var(--accent); color:var(--accent-ink); background:var(--accent);
     font-family:inherit; font-size:12.5px; font-weight:600; letter-spacing:.05em;
     text-transform:uppercase; cursor:pointer; white-space:nowrap;
     transition:background .15s, color .15s, border-color .15s;
@@ -2241,12 +2364,68 @@
     .tec-go{ flex:1 1 100%; justify-content:center; }
     .fld{ min-width:0; flex:1; }
   }
+
+  /* ---------- celular: nada pode ser mais largo que o aparelho ----------
+     Uma linha que não cabe não quebra só ela: o navegador diminui a página
+     INTEIRA pra caber, e aí todo o app aparece encolhido, com letra miúda.
+     Era o que acontecia aqui — 508px de conteúdo num aparelho de 390px. */
+  @media (max-width:760px){
+    /* o bloco do usuário no topo: fica o avatar, que já abre o menu */
+    .hd-user{ gap:0; padding-left:6px; }
+    .hd-user .hd-seta{ display:none; }
+    /* o topo tem 7 blocos; no celular o que sobra pro título é o que sobrar,
+       e ele encolhe com reticências em vez de empurrar a página */
+    .hd{ gap:6px; padding:0 8px; }
+    .hd-title{ font-size:14px; flex:0 1 auto; min-width:0; overflow:hidden;
+      text-overflow:ellipsis; white-space:nowrap; }
+    .hd-burger{ flex:0 0 auto; }
+
+    /* a linha de ações do painel: período com as setas ao lado, depois o
+       seletor de valores, e a ação principal ocupando a largura embaixo */
+    .ph-r{ flex-wrap:wrap; gap:8px; }
+    .ph-r #mesAnterior{ order:1; flex:0 0 auto; }
+    .ph-r #mesDrop{ order:2; flex:1 1 auto; min-width:0; }
+    .ph-r #mesProximo{ order:3; flex:0 0 auto; }
+    .ph-r .datebox{ width:100%; }
+    .ph-r .valdrop{ order:4; flex:1 1 100%; }
+    .ph-r .valdrop > .fld{ width:100%; }
+    .ph-r .btn-nova{ order:5; flex:1 1 100%; }
+
+    /* indicador: um por linha. Em duas colunas, "AGUARDANDO REVISÃO" quebrava
+       em três linhas e a seta caía por cima da palavra. */
+    .kpis{ grid-template-columns:1fr; gap:8px; }
+    .kpi{ position:relative; gap:14px; padding:14px 16px; align-items:center; }
+    .kpi-n{ font-size:30px; min-width:52px; }
+    .kpi-rot{ padding-right:22px; }
+    .kpi-go{ position:absolute; right:12px; top:50%; transform:translateY(-50%); }
+
+    /* o que for tabela larga rola sozinho, em vez de esticar a página */
+    .med-tabela-wrap, .cat-tabela-wrap{ max-width:100%; }
+  }
   @media (max-width:560px){
-    .kpis{ grid-template-columns:1fr 1fr; gap:var(--sp1); }
-    .kpi{ padding:var(--sp3); gap:var(--sp2); }
-    .kpi-ic{ width:38px; height:38px; }
-    .kpi-n{ font-size:30px; }
-    .ph-t{ font-size:30px; }
+    /* Campos em pares não cabem num celular: com 158px cada um, "COTPS130/2025"
+       e a coordenada já saíam cortados na digitação. Cada campo passa a ocupar
+       a linha inteira. */
+    .field-row{flex-direction:column; gap:0;}
+
+    /* A barra de baixo tinha três botões em texto corrido e o "Próximo" ficava
+       cortado na borda. Agora o principal é que manda no tamanho, e os outros
+       dois encolhem. */
+    .bottom-bar{gap:8px; padding-left:12px; padding-right:12px;}
+    .nav-btn{font-size:15px; padding:13px 8px; min-width:0;}
+    .nav-btn.secondary{flex:0 0 auto; padding:13px 12px; font-size:14px; white-space:nowrap;}
+    .nav-btn.tertiary{flex:1 1 auto; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+    .nav-btn.primary{flex:1 1 auto;}
+
+    /* um indicador por linha: em duas colunas o rótulo quebrava em três linhas
+       e a seta pisava na última palavra */
+    .kpis{ grid-template-columns:1fr; gap:8px; }
+    .kpi{ padding:14px 16px; gap:14px; align-items:center; position:relative; }
+    .kpi-ic{ width:42px; height:42px; }
+    .kpi-n{ font-size:30px; min-width:52px; }
+    .kpi-rot{ padding-right:22px; }
+    .kpi-go{ position:absolute; right:12px; top:50%; transform:translateY(-50%); }
+    .ph-t{ font-size:28px; }
   }
   .revisao-box{
     border:1px solid var(--warning);background:var(--warning-dim);border-radius:10px;
@@ -2975,6 +3154,10 @@
           <b id="sbSyncT">&#9679; Sincronizado</b>
           <span id="sbSyncD">&mdash;</span>
         </div>
+        <div class="sb-marca">
+          <b>ENLACE <i>OPS</i></b>
+          <span>Mais controle. Mais resultado.</span>
+        </div>
       </div>
     </nav>
 
@@ -3524,6 +3707,18 @@
            azul da largura da tela, que gritava mais alto que o próprio título
            e empurrava a lista pra baixo. -->
       <div class="jobs-hero">
+        <!-- arte da faixa: desenhada em SVG aqui mesmo, sem imagem externa —
+             o app roda offline no campo e não pode depender de download. -->
+        <svg class="jobs-hero-arte" viewBox="0 0 520 190" fill="none" aria-hidden="true">
+          <path d="M0 120 C 120 60, 240 150, 380 80 S 520 40, 520 40" stroke="currentColor"
+                stroke-width="2" opacity=".55"/>
+          <path d="M0 145 C 140 95, 250 170, 400 110 S 520 80, 520 80" stroke="currentColor"
+                stroke-width="1.2" opacity=".3"/>
+          <g stroke="currentColor" stroke-width="2" opacity=".75">
+            <path d="M455 175 L472 35 L489 175"/><path d="M462 120 h20"/><path d="M459 145 h26"/>
+            <path d="M466 95 h13"/><path d="M472 35 v-14"/><path d="M465 28 h14"/>
+          </g>
+        </svg>
         <div class="jobs-hero-txt">
           <div class="step-title" style="margin:0;">Minhas obras</div>
           <div class="jobs-hero-sub" id="jobsSubtitulo"></div>
@@ -3543,6 +3738,13 @@
                stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
           <input class="adm-busca" id="jobsBusca" placeholder="Buscar por contrato, cliente, técnico ou status..." autocomplete="off">
         </div>
+        <button class="btn-filtros" id="btnFiltrosObras" type="button" aria-expanded="true">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="1.9" stroke-linecap="round"><path d="M4 6h16"/><path d="M7 12h10"/><path d="M10 18h4"/></svg>
+          Filtros
+          <svg class="seta" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2.2" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
       </div>
 
       <div class="jobs-barra jobs-barra-filtros">
@@ -4014,7 +4216,7 @@
 (function(){
   // Marque aqui a cada build enviado ao campo. O testador informa esta
   // string ao relatar um problema, senao nao da pra saber o que ele rodou.
-  const APP_VERSION = 'Enlace Ops · alpha-11.37 · 29/09/2026';
+  const APP_VERSION = 'Enlace Ops · alpha-11.45 · 02/10/2026';
 
   // ---------- Supabase config ----------
   // Troque pelos valores reais do seu projeto (Project Settings -> API no Supabase).
@@ -4653,7 +4855,7 @@
       // único jeito de gravar era "Gerar relatório", que monta o PDF e envia —
       // quem está lançando uma leva inteira precisa só guardar e ir pra próxima.
       saveJobBtn.style.display = '';
-      saveJobBtn.textContent = obraEditandoId ? 'Salvar' : 'Salvar e sair';
+      saveJobBtn.textContent = (obraEditandoId || window.matchMedia('(max-width:560px)').matches) ? 'Salvar' : 'Salvar e sair';
     }
     if(!ehReview(i)) renderStepper();
     atualizarNumeracaoPassos();
@@ -10488,10 +10690,13 @@
 
     const hoje = new Date();
     atualizarDateTxt();
-    document.getElementById('phHello').textContent =
+    // A saudação é o título, e em cima dela fica a trilha dizendo onde você
+    // está. Antes o título era "PAINEL" e a saudação uma linha miúda acima —
+    // a tela anunciava em corpo 38 a palavra menos útil da página.
+    document.getElementById('phHello').textContent = '› Painel operacional';
+    document.getElementById('phTitle').textContent =
       (hoje.getHours() < 12 ? 'Bom dia, ' : hoje.getHours() < 18 ? 'Boa tarde, ' : 'Boa noite, ')
-      + (techNameDisplay.textContent || '').trim().split(/\s+/)[0];
-    document.getElementById('phTitle').textContent = 'Painel';
+      + (techNameDisplay.textContent || '').trim().split(/\s+/)[0] + ' 👋';
 
     try{
       let qTecsQuadro = supabaseClient.from('perfis').select('id,nome,email,equipe_id,ultimo_acesso,status_manual')
@@ -10585,9 +10790,12 @@
         });
       });
 
+      const empNome = (ehSuper() && empresaContexto) ? empresaContexto.nome
+                    : ((perfilAtual && perfilAtual.empresa_nome) || '');
       document.getElementById('phSub').textContent =
-        (tecs||[]).length + ' técnico(s) · ' + (emCampo + aRevisar + devolvidas) + ' obra(s) em aberto'
-        + (ehSuper() && empresaContexto ? ' · ' + empresaContexto.nome : '');
+        (empNome ? empNome + ' • ' : '')
+        + (tecs||[]).length + ' técnicos • '
+        + (emCampo + aRevisar + devolvidas) + ' obras em aberto';
 
       document.getElementById('valDropAndamento').textContent = formatBRL(valorEmAndamento);
       document.getElementById('valDropAprovado').textContent = formatBRL(valorAprovadoMes);
@@ -10710,7 +10918,16 @@
         </div>
         <button class="tec-go" type="button">+ Despachar
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 6l6 6-6 6"/></svg>
+        </button>
+        <button class="tec-kebab" type="button" title="Disponibilidade do técnico" aria-label="Disponibilidade do técnico">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="12" cy="19" r="1.7"/></svg>
         </button>`;
+
+      const kebab = el.querySelector('.tec-kebab');
+      if(kebab) kebab.addEventListener('click', (ev)=>{
+        ev.stopPropagation();
+        el.classList.toggle('abrir-sel');
+      });
 
       // obra na mão pelo caminho do toque: o cartão inteiro vira o alvo
       el.addEventListener('click', (ev)=>{
@@ -14311,6 +14528,26 @@
     }
   }
 
+  // Filtros ligados/desligados: no dia a dia a pessoa filtra uma vez e passa o
+  // resto do tempo lendo a lista — a linha de recortes pode sair do caminho.
+  (function ligarBotaoFiltros(){
+    const btn = document.getElementById('btnFiltrosObras');
+    const linha = document.querySelector('.jobs-barra-filtros');
+    if(!btn || !linha) return;
+    // Celular: começa fechado. Com polo, tipo e período abertos, a primeira
+    // obra só aparecia depois de rolar meia tela — e o que a pessoa abriu o
+    // app pra ver é a obra, não o filtro.
+    if(window.matchMedia('(max-width:760px)').matches){
+      btn.setAttribute('aria-expanded', 'false');
+      linha.classList.add('escondida');
+    }
+    btn.addEventListener('click', ()=>{
+      const aberto = btn.getAttribute('aria-expanded') !== 'false';
+      btn.setAttribute('aria-expanded', aberto ? 'false' : 'true');
+      linha.classList.toggle('escondida', aberto);
+    });
+  })();
+
   function pintarPoloObras(){
     pintarChipsPolo(document.getElementById('jobsPolo'), poloObras, (v)=>{
       poloObras = v || '';
@@ -14803,9 +15040,15 @@
           <div class="job-item-sub">${esc(job.cliente)} &middot; ${esc(job.data)}${job.tecnico && ehRevisor() ? ' &middot; ' + esc(job.tecnico) : ''}</div>
           ${job.status === 'reprovado' && (job.row && job.row.revisao && job.row.revisao.observacao) ? `<div class="job-item-sub" style="color:var(--accent);margin-top:3px;">↩ ${esc(job.row.revisao.observacao)}</div>` : ''}
           ${job.reaberta && job.status === 'enviado' ? `<div class="selo-reaberta">obra já aprovada &mdash; alterada pelo técnico${job.reaberta.por ? ' ' + esc(job.reaberta.por) : ''}, revalidar</div>` : ''}
-          <div class="job-item-sub" style="color:var(--success);margin-top:2px;">${
-            total > 0 ? formatBRL(total) + ' <span class="val-dono">' + esc(donoDoValor()) + '</span>'
-                      : 'valor pendente'}</div>
+        </div>
+        <div class="job-val">
+          <span class="job-val-ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><ellipse cx="12" cy="6" rx="8" ry="3"/>
+            <path d="M4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6"/><path d="M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></svg></span>
+          <div>
+            <div class="job-val-n">${total > 0 ? formatBRL(total) : '&mdash;'}</div>
+            <div class="job-val-r">${total > 0 ? esc(donoDoValor()) : 'valor pendente'}</div>
+          </div>
         </div>
         <div class="job-status ${job.status}" style="${job.status === 'aprovado' ? 'color:var(--success);border-color:var(--success);' : job.status === 'reprovado' ? 'color:var(--accent);border-color:var(--accent);' : ''}">${
           {pendente:'Pendente', despachada:'Despachada', em_execucao:'Em execução', enviado:'Enviado',
@@ -15880,20 +16123,42 @@
       return;
     }
     cx.style.display = '';
+    // Até seis obras na faixa; o resto vira um cartão "+N mais obras" que leva
+    // pra lista. Com vinte na fila a faixa tomava a tela inteira e empurrava
+    // os técnicos — que é justamente onde essas obras precisam chegar.
+    const MOSTRA = 6;
+    const visiveis = filaDespacho.slice(0, MOSTRA);
+    const resto = filaDespacho.length - visiveis.length;
     cx.innerHTML =
-      '<div class="fila-cab"><span class="fila-t">Aguardando despacho</span>'
-      + '<span class="fila-n">' + filaDespacho.length + '</span>'
-      + '<span class="fila-dica">arraste até o técnico &mdash; ou toque na obra e depois nele</span></div>'
+      '<div class="fila-cab">'
+      + '<span class="fila-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" '
+      +   'stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">'
+      +   '<path d="M3 7h18v13H3z"/><path d="M3 7l3-4h12l3 4"/><path d="M9 12h6"/></svg></span>'
+      + '<span class="fila-t">Aguardando despacho</span>'
+      + '<span class="fila-n">' + filaDespacho.length + (filaDespacho.length === 1 ? ' obra' : ' obras') + '</span>'
+      + '<span class="fila-dica">arraste até o técnico &mdash; ou toque na obra e depois nele</span>'
+      + '</div>'
       + '<div class="fila-itens">'
-      + filaDespacho.map(o=>{
+      + visiveis.map(o=>{
           const c = (o.dados || {}).contract || {};
+          const tp = o.tipo_obra || (o.dados || {}).tipoObra || 'convencional';
           return '<div class="fila-obra" data-obra="' + esc(o.id) + '" role="button" tabindex="0">'
-            + '<span class="fila-obra-n">' + esc(o.contrato) + '</span>'
+            + '<div class="fila-obra-topo">'
+            +   '<span class="fila-obra-n">' + esc(o.contrato) + '</span>'
+            +   '<span class="selo-tipo ' + esc(tp) + '">' + esc((TIPOS_OBRA[tp] || {}).rot || tp) + '</span>'
+            + '</div>'
             + '<span class="fila-obra-c">' + esc(c.empresa || c.endereco || 'sem cliente') + '</span>'
             + '</div>';
         }).join('')
+      + (resto > 0
+          ? '<button type="button" class="fila-mais" id="filaMais">+' + resto
+            + '<span>mais obras</span></button>'
+          : '')
       + '</div>'
       + '<div class="fila-escolhida" id="filaEscolhida" style="display:none;"></div>';
+
+    const btnMais = document.getElementById('filaMais');
+    if(btnMais) btnMais.addEventListener('click', ()=> abrirObrasDoPainel('despacho'));
 
     cx.querySelectorAll('.fila-obra').forEach(el=>{
       const o = filaDespacho.find(x => String(x.id) === el.dataset.obra);
