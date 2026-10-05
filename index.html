@@ -1450,12 +1450,16 @@
      equipe fala — inventar nome por extenso aqui só criaria um segundo
      vocabulário pra mesma coisa. */
   .polo-chips{display:flex;flex-wrap:wrap;gap:6px;}
-  .polo-chip{min-height:38px;padding:0 14px;cursor:pointer;
+  /* Pílulas: o filtro ligado é um bloco azul cheio, não um azul claro com
+     borda azul. Com dois grupos de filtro lado a lado (polo e tipo), o
+     contraste fraco obrigava a comparar tons pra achar o que estava ligado. */
+  .polo-chip{min-height:38px;padding:0 18px;cursor:pointer;
     background:var(--bg-elev);border:1px solid var(--border);color:var(--text-dim);
-    border-radius:10px;font-family:'IBM Plex Mono',monospace;font-size:12.5px;
-    font-weight:600;letter-spacing:.05em;}
+    border-radius:999px;font-family:'Inter',sans-serif;font-size:13px;
+    font-weight:500;letter-spacing:0;transition:background .12s,color .12s,border-color .12s;}
   .polo-chip:hover{border-color:var(--accent);color:var(--accent);}
-  .polo-chip.ativo{border-color:var(--accent);color:var(--accent);background:var(--accent-dim);}
+  .polo-chip.ativo{border-color:var(--accent);color:var(--accent-ink);
+    background:var(--accent);font-weight:600;}
   .selo-polo{display:inline-flex;align-items:center;font-family:'IBM Plex Mono',monospace;
     font-size:10px;font-weight:700;letter-spacing:.06em;padding:2px 7px;border-radius:999px;
     color:var(--text-dim);border:1px solid var(--border);background:var(--bg-elev-2);}
@@ -1464,18 +1468,18 @@
   .mes-linha{display:flex;align-items:center;gap:6px;}
   .mes-nav{flex:0 0 auto;min-width:40px;min-height:40px;cursor:pointer;
     background:var(--bg-elev);border:1px solid var(--border);color:var(--text-dim);
-    border-radius:10px;font-size:19px;line-height:1;}
+    border-radius:999px;font-size:19px;line-height:1;}
   .mes-nav:hover{border-color:var(--accent);color:var(--accent);}
   .mes-nav:disabled{opacity:.35;cursor:default;}
   .mes-campo{flex:1 1 auto;min-width:0;min-height:40px;background:var(--bg-elev);
-    border:1px solid var(--border);color:var(--text);border-radius:10px;padding:0 10px;
-    font-family:'IBM Plex Mono',monospace;font-size:12.5px;}
+    border:1px solid var(--border);color:var(--text);border-radius:999px;padding:0 14px;
+    font-family:'Inter',sans-serif;font-size:13px;}
   .mes-campo:focus{outline:none;border-color:var(--accent);}
-  .mes-todos{flex:0 0 auto;min-height:40px;padding:0 13px;cursor:pointer;
+  .mes-todos{flex:0 0 auto;min-height:40px;padding:0 16px;cursor:pointer;
     background:var(--bg-elev);border:1px solid var(--border);color:var(--text-dim);
-    border-radius:10px;font-family:'Inter',sans-serif;font-size:12.5px;}
+    border-radius:999px;font-family:'Inter',sans-serif;font-size:13px;}
   .mes-todos:hover{border-color:var(--accent);color:var(--accent);}
-  .mes-todos.ativo{border-color:var(--accent);color:var(--accent);background:var(--accent-dim);}
+  .mes-todos.ativo{border-color:var(--accent);color:var(--accent-ink);background:var(--accent);font-weight:600;}
   /* A obra que o filtro escondeu tem que se anunciar. Sem isto, o mês fechado
      faz o analista achar que a obra sumiu do sistema. */
   .mes-fora{font-family:'IBM Plex Mono',monospace;font-size:11px;
@@ -1536,8 +1540,8 @@
 
   /* abas com a contagem: dá pra ver quantas tem de cada lado sem trocar de aba */
   .abas{flex:0 0 auto;display:inline-flex;gap:4px;}
-  .abas .adm-chip{border:0;background:transparent;border-radius:0;padding:9px 4px;margin:0 10px 0 0;
-    display:inline-flex;align-items:center;gap:7px;font-family:inherit;font-size:13.5px;
+  .abas .adm-chip{border:0;background:transparent;border-radius:0;padding:11px 4px;margin:0 16px 0 0;
+    display:inline-flex;align-items:center;gap:8px;font-family:inherit;font-size:14.5px;
     letter-spacing:0;color:var(--text-dim);border-bottom:2px solid transparent;}
   .abas .adm-chip.ativo{color:var(--accent);border-bottom-color:var(--accent);background:transparent;}
   .aba-n{min-width:22px;padding:1px 7px;border-radius:999px;background:var(--bg-elev-2);
@@ -1545,11 +1549,11 @@
   .abas .adm-chip.ativo .aba-n{background:var(--accent-dim);border-color:var(--accent);color:var(--accent);}
   /* tipo de obra: mesma forma dos polos, letra normal — polo é sigla, tipo é
      palavra, e ler "MODERNIZAÇÃO" em caixa alta monoespaçada cansa */
-  .tipo-chip{font-family:inherit;font-size:12.5px;letter-spacing:0;font-weight:500;}
-  .tipo-chip.ativo.t-modernizacao{border-color:var(--st-ambar);color:var(--st-ambar);
-    background:var(--warning-dim);}
-  .tipo-chip.ativo.t-nap{border-color:var(--st-roxo);color:var(--st-roxo);
-    background:var(--bg-elev-2);}
+  .tipo-chip{font-family:'Inter',sans-serif;font-size:13px;letter-spacing:0;}
+  .tipo-chip.ativo.t-modernizacao{border-color:var(--st-ambar);background:var(--st-ambar);
+    color:var(--accent-ink);}
+  .tipo-chip.ativo.t-nap{border-color:var(--st-roxo);background:var(--st-roxo);
+    color:var(--accent-ink);}
   .jobs-acoes{display:flex;align-items:center;gap:8px;margin-left:auto;flex-wrap:wrap;}
 
   /* par colado: é um OU outro, não dois filtros independentes */
@@ -1969,6 +1973,7 @@
   .sb-nav::-webkit-scrollbar-track{ background:transparent; }
   .sb-nav::-webkit-scrollbar-thumb{ background:var(--border); border-radius:999px; }
   .sb-nav::-webkit-scrollbar-thumb:hover{ background:var(--st-azul); }
+  .sb-corte{ height:1px; background:#15264A; margin:10px 6px; }
   .sb-sec{
     font-size:10px; letter-spacing:.12em; text-transform:uppercase;
     color:#6B80A4; padding:var(--sp3) var(--sp2) var(--sp1);
@@ -2029,10 +2034,16 @@
   }
   .sb-sync b{ display:block; color:var(--st-verde); font-size:10.5px; letter-spacing:.08em;
     text-transform:uppercase; font-family:'IBM Plex Mono',monospace; margin-bottom:4px; }
-  .sb-marca{ padding:12px 4px 2px; }
-  .sb-marca b{ display:block; font-size:12px; letter-spacing:.22em; color:#8FA3BE; font-weight:600; }
-  .sb-marca b i{ font-style:normal; color:var(--st-azul); }
-  .sb-marca span{ display:block; font-size:11px; color:#6B80A4; margin-top:3px; }
+  /* rodapé: estado do sistema e versão, como no modelo — sem caixa, só texto */
+  .sb-sync{ background:transparent; border:0; padding:10px 4px 2px; }
+  .sb-sync b{ font-family:'Inter',sans-serif; font-size:12.5px; letter-spacing:0;
+    text-transform:none; color:#8FA3BE; }
+  .sb-sync b::first-letter{ color:var(--st-verde); }
+  .sb-sync span{ font-size:11.5px; color:#6B80A4; }
+
+  /* a onda azul no pé da barra, como no modelo */
+  .sb-onda{ position:absolute; left:0; right:0; bottom:0; height:120px; pointer-events:none;
+    color:var(--st-azul); opacity:.5; }
 
   /* ---------- conteúdo ----------
      a sidebar agora flutua por cima (menu suspenso) — o conteúdo nunca
@@ -3169,14 +3180,14 @@
           <span>Sair</span>
         </div>
         <div class="sb-sync">
-          <b id="sbSyncT">&#9679; Sincronizado</b>
+          <b id="sbSyncT">&#9679; Sistema online</b>
           <span id="sbSyncD">&mdash;</span>
         </div>
-        <div class="sb-marca">
-          <b>ENLACE <i>OPS</i></b>
-          <span>Mais controle. Mais resultado.</span>
-        </div>
       </div>
+      <svg class="sb-onda" viewBox="0 0 240 120" fill="none" aria-hidden="true" preserveAspectRatio="none">
+        <path d="M0 96 C 50 70, 95 118, 150 84 S 240 54, 240 54" stroke="currentColor" stroke-width="1.6" opacity=".55"/>
+        <path d="M0 112 C 60 86, 110 128, 170 98 S 240 74, 240 74" stroke="currentColor" stroke-width="1.1" opacity=".3"/>
+      </svg>
     </nav>
 
     <!-- ============ CONTEUDO ============ -->
@@ -4256,7 +4267,7 @@
 (function(){
   // Marque aqui a cada build enviado ao campo. O testador informa esta
   // string ao relatar um problema, senao nao da pra saber o que ele rodou.
-  const APP_VERSION = 'Enlace Ops · alpha-11.47 · 05/10/2026';
+  const APP_VERSION = 'Enlace Ops · alpha-11.49 · 05/10/2026';
 
   // ---------- Supabase config ----------
   // Troque pelos valores reais do seu projeto (Project Settings -> API no Supabase).
@@ -10254,7 +10265,7 @@
     dashboard:'<path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V21h13V9.5"/>',
     despacho :'<path d="M22 2 11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/>',
     tecnicos :'<circle cx="12" cy="8" r="3.6"/><path d="M4.5 21a7.5 7.5 0 0 1 15 0"/>',
-    obras    :'<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M3 12.5h18"/>',
+    obras    :'<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4.5a1.5 1.5 0 0 1 1.5-1.5h3A1.5 1.5 0 0 1 15 4.5V6H9z"/><path d="M9 11h6"/><path d="M9 15h4"/>',
     historico:'<path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 7.5V12l3 2"/>',
     relatorios:'<path d="M5 21V9"/><path d="M12 21V4"/><path d="M19 21v-7"/>',
     config   :'<circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.6 1.6 0 0 0-1-1.5 1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.6 1.6 0 0 0 1.5-1 1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"/>',
@@ -10262,8 +10273,10 @@
     sair     :'<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/>',
     nova     :'<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/><path d="M12 11v6"/><path d="M9 14h6"/>',
     medicao  :'<path d="M3 20h18"/><path d="M6 20V9"/><path d="M11 20V4"/><path d="M16 20v-7"/><path d="M21 20v-4"/>',
+    // documento com linhas, como o "Relatórios" do modelo
+    catalogoDoc:'<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6"/><path d="M9 17h4"/>',
     fechamento:'<rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10.5h18"/><path d="M7.5 15h3"/>',
-    catalogo :'<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H19v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 1 6.5 18H19v3H6.5"/><path d="M8.5 7.5h7M8.5 11h5"/>',
+    catalogo :'<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6"/><path d="M9 17h4"/>', ignorar:'<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H19v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 1 6.5 18H19v3H6.5"/><path d="M8.5 7.5h7M8.5 11h5"/>',
   };
 
   let rotaAtual = '';
@@ -10275,8 +10288,10 @@
     // lugar dela é dentro de Obras, no botão do topo da lista — que já existia
     // e fazia exatamente isso. Item de menu separado dava duas portas pro
     // mesmo formulário e deixava a pessoa na dúvida sobre qual usar.
-    if(ehOperador()) L.push({id:'tecnicos',  t:'Técnicos',  ic:'tecnicos'});
+    const EH_OPERADOR_TEC = ehOperador();
     L.push({id:'obras',     t: ehRevisor() ? 'Obras' : 'Minhas obras', ic:'obras', badge:true});
+    // Obras vem antes de Técnicos: é a tela em que o escritório passa o dia
+    if(EH_OPERADOR_TEC) L.push({id:'tecnicos', t:'Técnicos', ic:'tecnicos'});
     // "Histórico" saiu do menu: era a mesma tela de Obras com o chip
     // "Aprovadas" ligado. Duas portas pro mesmo lugar faziam a pessoa procurar
     // uma obra em Obras, não achar (porque já tinha sido aprovada) e nem
@@ -10327,12 +10342,11 @@
 
   function montarMenu(){
     const L = itensMenu();
-    sbNav.innerHTML = '<div class="sb-sec">Operação</div>';
+    sbNav.innerHTML = '';
     L.forEach((it, n)=>{
-      if(it.id === 'medicao')
-        sbNav.insertAdjacentHTML('beforeend', '<div class="sb-sec">Análise</div>');
-      if(it.id === 'config')
-        sbNav.insertAdjacentHTML('beforeend', '<div class="sb-sec">Sistema</div>');
+      // "Configurações" é de outra natureza (ajuste, não operação): fica
+      // separada por uma linha fina, sem título de seção
+      if(it.id === 'config') sbNav.insertAdjacentHTML('beforeend', '<div class="sb-corte"></div>');
       const el = document.createElement('div');
       el.className = 'sb-item' + (rotaAtual === it.id ? ' on' : '');
       el.dataset.rota = it.id;
@@ -10448,12 +10462,14 @@
     }catch(e){}
     const agora = new Date().toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
     document.getElementById('hdUpd').textContent = 'Última atualização: ' + agora;
+    // o modelo mostra a versão aqui; a hora da última sincronização continua
+    // disponível no topo ("Última atualização"), onde ela muda a cada troca
     document.getElementById('sbSyncD').textContent =
-      new Date().toLocaleDateString('pt-BR') + ' ' + agora;
+      (APP_VERSION.split('·')[1] || '').trim() || APP_VERSION;
     const on = online;
     document.getElementById('hdSync').textContent = on ? 'Sincronizado' : 'Sem conexão';
     document.getElementById('sbSyncT').innerHTML =
-      (on ? '&#9679; Sincronizado' : '&#9679; Offline');
+      (on ? '&#9679; Sistema online' : '&#9679; Sem conexão');
   }
 
   // ---------- Quadro de despacho ----------
