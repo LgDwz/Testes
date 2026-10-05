@@ -329,6 +329,24 @@
   .selo-tipo.modernizacao{color:var(--st-ambar);border-color:var(--st-ambar);background:var(--warning-dim);}
   .selo-tipo.nap{color:var(--st-roxo);border-color:var(--st-roxo);background:var(--bg-elev-2);}
 
+  /* barra da revisão em lote */
+  .sel-barra{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:10px 16px 0;
+    padding:10px 14px;border:1px solid var(--border);border-radius:12px;background:var(--bg-elev);}
+  .sel-todas{display:flex;align-items:center;gap:9px;cursor:pointer;font-size:13.5px;color:var(--text);}
+  .sel-todas input{width:18px;height:18px;accent-color:var(--accent);cursor:pointer;}
+  .sel-conta{font-size:12.5px;color:var(--text-faint);}
+  .sel-acoes{display:flex;gap:8px;margin-left:auto;flex-wrap:wrap;}
+  .sel-aprovar svg{color:var(--success);}
+  .sel-reprovar svg{color:var(--accent);}
+  .sel-barra button:disabled{opacity:.45;cursor:default;}
+  .job-sel{flex:0 0 auto;display:flex;align-items:center;padding:0 2px;cursor:pointer;}
+  .job-sel input{width:20px;height:20px;accent-color:var(--accent);cursor:pointer;}
+  @media (max-width:640px){
+    .sel-barra{margin:10px 12px 0;}
+    .sel-acoes{margin-left:0;width:100%;}
+    .sel-acoes .jobs-export{flex:1;justify-content:center;}
+  }
+
   /* botão principal da lista de Obras: é a ação da tela, tem que parecer uma */
   .job-edit-btn.destaque{background:var(--accent);color:var(--accent-ink);
     border-color:var(--accent);font-weight:600;min-height:46px;}
@@ -3796,6 +3814,28 @@
         </div>
       </div>
 
+      <!-- Revisão em lote. A barra só existe quando há obra aguardando
+           revisão na tela: fora disso não tem o que aprovar. -->
+      <div class="sel-barra" id="selBarra" style="display:none;">
+        <label class="sel-todas">
+          <input type="checkbox" id="selTodas">
+          <span id="selTodasRot">Selecionar todas</span>
+        </label>
+        <span class="sel-conta" id="selConta"></span>
+        <div class="sel-acoes">
+          <button type="button" class="jobs-export sel-aprovar" id="selAprovar">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
+                 stroke-linecap="round"><path d="M4 12l6 6L20 6"/></svg>
+            Aprovar selecionadas
+          </button>
+          <button type="button" class="jobs-export sel-reprovar" id="selReprovar">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
+                 stroke-linecap="round"><path d="M9 14l6-6"/><path d="M15 14L9 8"/></svg>
+            Reprovar selecionadas
+          </button>
+        </div>
+      </div>
+
       <div class="faixa-painel" id="faixaFiltroPainel" style="display:none;"></div>
     </div>
     <!-- dono do produto de fora de qualquer empresa não pode cair direto na
@@ -4216,7 +4256,7 @@
 (function(){
   // Marque aqui a cada build enviado ao campo. O testador informa esta
   // string ao relatar um problema, senao nao da pra saber o que ele rodou.
-  const APP_VERSION = 'Enlace Ops · alpha-11.45 · 02/10/2026';
+  const APP_VERSION = 'Enlace Ops · alpha-11.47 · 05/10/2026';
 
   // ---------- Supabase config ----------
   // Troque pelos valores reais do seu projeto (Project Settings -> API no Supabase).
@@ -14412,9 +14452,13 @@
   let tipoObras = '';
 
   function obrasDoFiltro(opts){
-    let lista = reportsList.filter(j => filtroObras === 'historico'
-      ? j.status === 'aprovado'
-      : ABERTAS.includes(j.status));
+    // ignorarStatus: usado pela contagem das abas, que precisa das obras
+    // recortadas por polo/tipo/mês ANTES de separar aberto de aprovado
+    let lista = (opts && opts.ignorarStatus)
+      ? reportsList.slice()
+      : reportsList.filter(j => filtroObras === 'historico'
+          ? j.status === 'aprovado'
+          : ABERTAS.includes(j.status));
     if(filtroPainel) lista = lista.filter(j => filtroPainel.status.includes(j.status));
     if(poloObras && !(opts && opts.todosOsPolos)){
       lista = lista.filter(j => poloDaObra(j) === poloObras);
@@ -14511,8 +14555,13 @@
 
   // Quantas obras de cada lado, na própria aba, e o total do que está na tela.
   // Sem isso a pessoa tem que trocar de aba pra descobrir se tem algo lá.
+  // A contagem da aba tem que ser o número de obras que a aba vai mostrar.
+  // Antes ela contava tudo, ignorando polo, tipo e período: a aba dizia 73, a
+  // tela mostrava 10 e um aviso explicava que 63 estavam em outro mês. Três
+  // números pra mesma coisa na mesma tela.
   function pintarContagemAbas(naTela){
-    const conta = (f) => reportsList.filter(j => f === 'historico'
+    const recortada = obrasDoFiltro({ignorarStatus: true});
+    const conta = (f) => recortada.filter(j => f === 'historico'
       ? j.status === 'aprovado' : ABERTAS.includes(j.status)).length;
     const nA = document.getElementById('nAbertas');
     const nH = document.getElementById('nAprovadas');
@@ -14548,6 +14597,96 @@
     });
   })();
 
+  // ---------- revisão em lote ----------
+  // Aprovar uma por uma custa caro quando chegam 30 obras no fim do mês. Aqui
+  // a revisão acontece em bloco, com as MESMAS regras da revisão individual:
+  // só obra enviada entra, reprovar exige motivo e período fechado continua
+  // travado.
+  const selRevisao = new Set();
+
+  function obrasRevisaveisNaTela(){
+    return obrasNaTela().filter(j => j.row && j.status === 'enviado');
+  }
+
+  function pintarBarraSelecao(){
+    const barra = document.getElementById('selBarra');
+    if(!barra) return;
+    const elegiveis = ehRevisor() ? obrasRevisaveisNaTela() : [];
+    barra.style.display = elegiveis.length ? 'flex' : 'none';
+    if(!elegiveis.length) return;
+
+    // seleção que ficou de uma lista anterior não vale pra esta
+    const idsNaTela = new Set(elegiveis.map(j => String(j.row.id)));
+    [...selRevisao].forEach(id => { if(!idsNaTela.has(id)) selRevisao.delete(id); });
+
+    const n = selRevisao.size;
+    const todas = document.getElementById('selTodas');
+    todas.checked = n > 0 && n === elegiveis.length;
+    todas.indeterminate = n > 0 && n < elegiveis.length;
+    document.getElementById('selTodasRot').textContent =
+      todas.checked ? 'Limpar seleção' : 'Selecionar todas (' + elegiveis.length + ')';
+    document.getElementById('selConta').textContent =
+      n ? n + (n === 1 ? ' obra selecionada' : ' obras selecionadas') : 'nenhuma selecionada';
+    document.getElementById('selAprovar').disabled = !n;
+    document.getElementById('selReprovar').disabled = !n;
+  }
+
+  (function ligarSelecaoEmLote(){
+    const todas = document.getElementById('selTodas');
+    if(!todas) return;
+    todas.addEventListener('change', ()=>{
+      const elegiveis = obrasRevisaveisNaTela();
+      selRevisao.clear();
+      if(todas.checked) elegiveis.forEach(j => selRevisao.add(String(j.row.id)));
+      document.querySelectorAll('#jobsList [data-sel]').forEach(cx=>{
+        cx.checked = selRevisao.has(String(cx.dataset.sel));
+      });
+      pintarBarraSelecao();
+    });
+    document.getElementById('selAprovar').addEventListener('click', (e)=> revisarEmLote('aprovado', e.currentTarget));
+    document.getElementById('selReprovar').addEventListener('click', (e)=> revisarEmLote('reprovado', e.currentTarget));
+  })();
+
+  async function revisarEmLote(novoStatus, btn){
+    const alvos = obrasRevisaveisNaTela().filter(j => selRevisao.has(String(j.row.id)));
+    if(!alvos.length) return;
+
+    // período fechado trava obra por obra, igual à revisão individual
+    const travadas = alvos.filter(j => !!periodoFechadoEm(dataIsoObra(j)));
+    const livres = alvos.filter(j => travadas.indexOf(j) === -1);
+    if(!livres.length){
+      showToast('Essas obras estão em período já fechado — o status não pode mais mudar');
+      return;
+    }
+
+    let observacao = '';
+    if(novoStatus === 'reprovado'){
+      observacao = (prompt('O que precisa ser corrigido? (vai para todas as obras selecionadas)') || '').trim();
+      if(!observacao){ showToast('Reprovar exige dizer o que corrigir'); return; }
+    } else {
+      const quantas = livres.length === 1 ? '1 obra' : livres.length + ' obras';
+      if(!confirm('Aprovar ' + quantas + '? Elas entram na medição com o valor que está na tela.')) return;
+    }
+
+    const rotulo = btn.textContent;
+    btn.disabled = true; btn.textContent = 'Salvando...';
+    const revisao = {
+      por: perfilAtual.id, nome: perfilAtual.nome || '',
+      em: new Date().toISOString(), observacao,
+    };
+    const {error} = await supabaseClient.from(SUPABASE_TABLE).update({
+      status: novoStatus, revisao, atualizado_em: new Date().toISOString(),
+    }).in('id', livres.map(j => j.row.id));
+    btn.disabled = false; btn.textContent = rotulo;
+
+    if(error){ showToast('Não deu pra salvar: ' + error.message); return; }
+    livres.forEach(j => { j.status = novoStatus; j.row.status = novoStatus; j.row.revisao = revisao; });
+    selRevisao.clear();
+    showToast((novoStatus === 'aprovado' ? 'Aprovadas: ' : 'Devolvidas pro técnico: ') + livres.length
+      + (travadas.length ? ' · ' + travadas.length + ' em período fechado ficaram como estavam' : ''));
+    refreshJobsList();
+  }
+
   function pintarPoloObras(){
     pintarChipsPolo(document.getElementById('jobsPolo'), poloObras, (v)=>{
       poloObras = v || '';
@@ -14579,9 +14718,12 @@
   // O que o recorte escondeu tem que se anunciar, e sair do caminho com um
   // toque. Sem isso o filtro vira "a obra sumiu do sistema".
   function avisoForaDoFiltro(quantas){
-    const usados = [mesObras && 'mês', poloObras && 'polo', tipoObras && 'tipo'].filter(Boolean);
-    const onde = usados.length > 1 ? ['outro recorte', 'outros recortes']
-               : ['outro ' + usados[0], 'outros ' + usados[0] + 's'];
+    // plural escrito à mão: "mês" vira "meses", não "mêss"
+    const PALAVRA = {mes: ['outro mês', 'outros meses'],
+                     polo: ['outro polo', 'outros polos'],
+                     tipo: ['outro tipo', 'outros tipos']};
+    const usados = [mesObras && 'mes', poloObras && 'polo', tipoObras && 'tipo'].filter(Boolean);
+    const onde = usados.length > 1 ? ['outro recorte', 'outros recortes'] : PALAVRA[usados[0]];
     const el = document.createElement('div');
     el.className = 'mes-fora';
     el.innerHTML = (quantas === 1 ? '1 obra em ' + onde[0] : quantas + ' obras em ' + onde[1])
@@ -14981,6 +15123,7 @@
     pintarPoloObras();
     pintarTipoObras();
     pintarContagemAbas(lista);
+    pintarBarraSelecao();
     if(!lista.length){
       // A frase diz quais recortes estão ligados. "Nenhuma obra em setembro"
       // faz a pessoa procurar defeito onde só tem filtro — e agora são três.
@@ -15029,7 +15172,13 @@
 
       const header = document.createElement('div');
       header.className = 'job-item';
+      // Só obra aguardando revisão entra na seleção: aprovar em lote o que
+      // ainda está em execução seria aprovar trabalho que ninguém entregou.
+      const revisavel = ehRevisor() && job.row && job.status === 'enviado';
       header.innerHTML = `
+        ${revisavel ? `<label class="job-sel" title="Selecionar para aprovar ou reprovar em lote">
+          <input type="checkbox" data-sel="${esc(job.row.id)}"${selRevisao.has(String(job.row.id)) ? ' checked' : ''}>
+        </label>` : ''}
         <div class="job-item-body">
           <div class="job-item-title" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
             <span>${usaModeloMarext(job.tipo) ? '' : 'Contrato '}${esc(normalizarContrato(job.contrato))}</span>
@@ -15412,6 +15561,16 @@
           .addEventListener('click', (e)=>{ e.stopPropagation(); revisar('aprovado', e.currentTarget); });
         caixaRevisao.querySelector('[data-acao="reprovar"]')
           .addEventListener('click', (e)=>{ e.stopPropagation(); revisar('reprovado', e.currentTarget); });
+      }
+
+      const caixaSel = header.querySelector('[data-sel]');
+      if(caixaSel){
+        caixaSel.addEventListener('click', (e)=> e.stopPropagation());
+        caixaSel.addEventListener('change', (e)=>{
+          const id = String(e.currentTarget.dataset.sel);
+          if(e.currentTarget.checked) selRevisao.add(id); else selRevisao.delete(id);
+          pintarBarraSelecao();
+        });
       }
 
       header.addEventListener('click', ()=>{
